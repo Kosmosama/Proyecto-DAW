@@ -16,7 +16,7 @@ import { Player } from './player/player.entity';
             username: process.env.DB_USERNAME,
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
-            entities: [Player],
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
             synchronize: true, // #WARNING: Set to false on production
         }),
         PlayerModule,
