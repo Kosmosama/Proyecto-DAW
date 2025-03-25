@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerModule } from './player/player.module';
-import { Player } from './player/player.entity';
 import { ChatGateway } from './websockets/chat/chat.gateway';
 import { ChatModule } from './websockets/chat/chat.module';
 
