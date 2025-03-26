@@ -14,5 +14,4 @@ export class PlayerService {
   register(playerData: Player): Observable<any> {
     return this.http.post(`${this.apiUrl}`, playerData);
   }
-
 }
