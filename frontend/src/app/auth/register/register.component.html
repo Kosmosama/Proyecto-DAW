@@ -13,14 +13,14 @@
         </div>
 
         <div>
-            <label for="password">Password </label>
-            <input id="password" formControlName="password" type="password" />
-            @if(playerForm.controls['password'].invalid && playerForm.controls['password'].touched){
+            <label for="passwordHash">Password </label>
+            <input id="passwordHash" formControlName="passwordHash" type="passwordHash" />
+            @if(playerForm.controls['passwordHash'].invalid && playerForm.controls['passwordHash'].touched){
             <div>
-                @if(playerForm.controls['password'].hasError('required')){
+                @if(playerForm.controls['passwordHash'].hasError('required')){
                 <small>Password is required.</small>
                 }
-                @if(playerForm.controls['password'].hasError('minlength')){
+                @if(playerForm.controls['passwordHash'].hasError('minlength')){
                 <small>Password must be longer.</small>
                 }
             </div>

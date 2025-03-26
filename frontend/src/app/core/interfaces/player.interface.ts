@@ -4,3 +4,7 @@ export interface Player {
     passwordHash: string;
     photo?: string;
 }
+
+export interface SinglePlayerResponse {
+    data: Player;
+}

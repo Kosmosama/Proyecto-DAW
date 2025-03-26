@@ -11,20 +11,16 @@ import { Player } from '../../core/interfaces/player.interface';
   imports: [ReactiveFormsModule]
 })
 export class RegisterComponent {
-  playerForm: FormGroup;
   loading = false;
   successMessage = '';
   errorMessage = '';
   private playerService = inject(PlayerService);
   private fb = inject(NonNullableFormBuilder);
   
-  constructor(
-  ) {
-    this.playerForm = this.fb.group({
-      name: ['', [Validators.required]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
-    });
-  }
+  playerForm = this.fb.group({
+    name: ['', [Validators.required]],
+    passwordHash: ['', [Validators.required, Validators.minLength(6)]]
+  });
 
   onRegister(): void {
     if (this.playerForm.invalid) {
@@ -32,7 +28,11 @@ export class RegisterComponent {
     }
 
     this.loading = true;
-    const playerData: Player = this.playerForm.value;
+    const playerData: Player = {
+      name: this.playerForm.value.name!,
+      passwordHash: this.playerForm.value.passwordHash!,
+      photo: 'foto'
+    };
 
     this.playerService.register(playerData).subscribe(
       (response) => {
