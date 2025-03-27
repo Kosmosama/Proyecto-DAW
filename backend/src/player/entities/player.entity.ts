@@ -1,5 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Friendship } from './friendship.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Player {
@@ -12,7 +11,7 @@ export class Player {
     @Column({ name: 'password_hash', length: 255 })
     passwordHash: string;
 
-    @Column({ length: 255 })
+    @Column({ length: 255, nullable: true })
     photo: string;
 
     @Column({ name: 'last_login', type: 'timestamp', nullable: true })

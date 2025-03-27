@@ -33,4 +33,28 @@ export class PlayerController {
     remove(@Param('id', ParseIntPipe) id: number) {
         return this.playerService.remove(id);
     }
+
+    @Post('friend-request')
+    sendFriendRequest(
+        @Body('idPlayer1', ParseIntPipe) idPlayer1: number,
+        @Body('idPlayer2', ParseIntPipe) idPlayer2: number
+    ) {
+        return this.playerService.sendFriendRequest(idPlayer1, idPlayer2);
+    }
+
+    @Patch('friend-accept/:idPlayer1/:idPlayer2')
+    acceptFriendRequest(
+        @Param('idPlayer1', ParseIntPipe) idPlayer1: number,
+        @Param('idPlayer2', ParseIntPipe) idPlayer2: number
+    ) {
+        return this.playerService.acceptFriendRequest(idPlayer1, idPlayer2);
+    }
+
+    @Patch('friend-decline/:idPlayer1/:idPlayer2')
+    declineFriendRequest(
+        @Param('idPlayer1', ParseIntPipe) idPlayer1: number,
+        @Param('idPlayer2', ParseIntPipe) idPlayer2: number
+    ) {
+        return this.playerService.declineFriendRequest(idPlayer1, idPlayer2);
+    }
 }
