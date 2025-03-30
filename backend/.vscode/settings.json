@@ -1,3 +1,16 @@
 {
     "material-icon-theme.activeIconPack": "nest",
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "proyecto-daw",
+            "group": "proyectos",
+            "database": "proyecto-daw",
+            "username": "postgres",
+            "password": "1234"
+        }
+    ],
 }

@@ -33,6 +33,11 @@ export class PlayerController {
         return this.playerService.remove(id);
     }
 
+    @Get('friends/:id')
+    getFriends(@Param('id', ParseIntPipe) id: number) {
+        return this.playerService.getFriends(id);
+    }
+
     @Post('friend-request')
     sendFriendRequest(
         @Body('idPlayer1', ParseIntPipe) idPlayer1: number,
