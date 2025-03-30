@@ -22,7 +22,7 @@ export class AuthService {
                 throw new UnauthorizedException('Username already exists.');
             }
 
-            const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+            const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
             const newPlayer = this.playerRepository.create({ 
                 name: registerDto.username,
@@ -38,7 +38,7 @@ export class AuthService {
         }
     }
 
-    async login(loginDto: LoginDto): Promise<{ access_token: string }> {
+    async login(loginDto: LoginDto): Promise<{ access_token: string; refresh_token: string }> {
         try {
             const player = await this.validatePlayer(loginDto);
             if (!player) {
@@ -46,10 +46,24 @@ export class AuthService {
             }
 
             const payload = { username: player.name, id: player.id };
-            return { access_token: this.jwtService.sign(payload) };
+            const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+            const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+            return { access_token: accessToken, refresh_token: refreshToken };
         } catch (error) {
             console.error("Login error:", error.message);
             throw new UnauthorizedException('Invalid credentials.');
+        }
+    }
+
+    async refresh(refreshToken: string): Promise<{ access_token: string }> {
+        try {
+            const payload = await this.jwtService.verifyAsync(refreshToken);
+            const newAccessToken = this.jwtService.sign({ username: payload.username, id: payload.id }, { expiresIn: '1h' });
+            return { access_token: newAccessToken };
+        } catch (error) {
+            console.error("Refresh token error:", error.message);
+            throw new UnauthorizedException('Invalid or expired refresh token.');
         }
     }
 
