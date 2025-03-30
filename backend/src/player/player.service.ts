@@ -66,26 +66,26 @@ export class PlayerService {
         }
     }
 
-    async sendFriendRequest(idPlayer1: number, idPlayer2: number): Promise<Friendship> {
+    async sendFriendRequest(idPlayer1: number, idPlayer2: number): Promise<void> {
         try {
             const friendship = this.friendshipRepository.create({
                 idPlayer1,
                 idPlayer2,
                 status: FriendshipStatus.PENDING,
             });
-            return await this.friendshipRepository.save(friendship);
+            await this.friendshipRepository.save(friendship);
         } catch (error) {
             console.error('Error sending friend request:', error);
             throw new HttpException('Error sending friend request.', 500);
         }
     }
 
-    async acceptFriendRequest(idPlayer1: number, idPlayer2: number): Promise<Friendship> {
+    async acceptFriendRequest(idPlayer1: number, idPlayer2: number): Promise<void> {
         try {
             const friendship = await this.friendshipRepository.findOneBy({ idPlayer1, idPlayer2 });
             if (!friendship) throw new NotFoundException('Friend request not found.');
             friendship.status = FriendshipStatus.ACCEPTED;
-            return await this.friendshipRepository.save(friendship);
+            await this.friendshipRepository.save(friendship);
         } catch (error) {
             console.error('Error accepting friend request:', error);
             throw new HttpException('Error accepting friend request.', 500);
@@ -100,6 +100,27 @@ export class PlayerService {
         } catch (error) {
             console.error('Error declining friend request:', error);
             throw new HttpException('Error declining friend request.', 500);
+        }
+    }
+
+    async getFriends(playerId: number): Promise<Player[]> {
+        try {
+            const friendships = await this.friendshipRepository.find({
+                where: [
+                    { idPlayer1: playerId, status: FriendshipStatus.ACCEPTED },
+                    { idPlayer2: playerId, status: FriendshipStatus.ACCEPTED },
+                ],
+                relations: ['player1', 'player2'],
+            });
+
+            const friends = friendships.map(friendship =>
+                friendship.idPlayer1 === playerId ? friendship.player2 : friendship.player1
+            );
+
+            return friends;
+        } catch (error) {
+            console.error('Error finding friends:', error);
+            throw new HttpException('Error finding friends.', 500);
         }
     }
 }
