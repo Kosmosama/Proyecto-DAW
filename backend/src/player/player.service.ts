@@ -14,16 +14,6 @@ export class PlayerService {
         private readonly playerRepository: Repository<Player>,
     ) { }
 
-    // async create(createPlayerDto: CreatePlayerDto): Promise<Player> {
-    //     try {
-    //         const player = this.playerRepository.create(createPlayerDto);
-    //         return await this.playerRepository.save(player);
-    //     } catch (error) {
-    //         console.error("Error creating player:", error);
-    //         throw new HttpException("Error creating player.", 500);
-    //     }
-    // }
-
     async findAll(): Promise<Player[]> {
         try {
             return await this.playerRepository.find();
@@ -79,10 +69,24 @@ export class PlayerService {
         }
     }
 
-    async acceptFriendRequest(idPlayer1: number, idPlayer2: number): Promise<void> {
+    private async findFriendship(playerId: number, friendId: number): Promise<Friendship> {
+        const friendship = await this.friendshipRepository.findOne({
+            where: [
+                { idPlayer1: playerId, idPlayer2: friendId },
+                { idPlayer1: friendId, idPlayer2: playerId }
+            ]
+        });
+
+        if (!friendship) {
+            throw new NotFoundException('Friend request not found.');
+        }
+
+        return friendship;
+    }
+
+    async acceptFriendRequest(playerId: number, friendId: number): Promise<void> {
         try {
-            const friendship = await this.friendshipRepository.findOneBy({ idPlayer1, idPlayer2 });
-            if (!friendship) throw new NotFoundException('Friend request not found.');
+            const friendship = await this.findFriendship(playerId, friendId);
             friendship.status = FriendshipStatus.ACCEPTED;
             await this.friendshipRepository.save(friendship);
         } catch (error) {
@@ -91,11 +95,10 @@ export class PlayerService {
         }
     }
 
-    async declineFriendRequest(idPlayer1: number, idPlayer2: number): Promise<void> {
+    async declineFriendRequest(playerId: number, friendId: number): Promise<void> {
         try {
-            const friendship = await this.friendshipRepository.findOneBy({ idPlayer1, idPlayer2 });
-            if (!friendship) throw new NotFoundException('Friend request not found.');
-            await this.friendshipRepository.delete({ idPlayer1, idPlayer2 });
+            const friendship = await this.findFriendship(playerId, friendId);
+            await this.friendshipRepository.delete({ idPlayer1: playerId, idPlayer2: friendId });
         } catch (error) {
             console.error('Error declining friend request:', error);
             throw new HttpException('Error declining friend request.', 500);

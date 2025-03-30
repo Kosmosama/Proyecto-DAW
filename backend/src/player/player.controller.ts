@@ -1,31 +1,31 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { PlayerService } from './player.service';
 import { UpdatePlayerDto } from './dto/update-player.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
 
 @Controller('player')
+@UseGuards(AuthGuard)
 export class PlayerController {
     constructor(
         private readonly playerService: PlayerService
     ) { }
-
-    // @Post()
-    // create(@Body() createPlayerDto: CreatePlayerDto) {
-    //     return this.playerService.create(createPlayerDto);
-    // }
 
     @Get()
     findAll() {
         return this.playerService.findAll();
     }
 
-    @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.playerService.findOne(id);
+    @Get('profile')
+    getProfile(@Request() req) {
+        return this.playerService.findOne(req.user.id);
     }
 
-    @Patch(':id')
-    update(@Param('id', ParseIntPipe) id: number, @Body() updatePlayerDto: UpdatePlayerDto) {
-        return this.playerService.update(id, updatePlayerDto);
+    @Patch('profile')
+    updateProfile(
+        @Request() req,
+        @Body() updatePlayerDto: UpdatePlayerDto
+    ) {
+        return this.playerService.update(req.user.id, updatePlayerDto);
     }
 
     @Delete(':id')
@@ -38,27 +38,27 @@ export class PlayerController {
         return this.playerService.getFriends(id);
     }
 
-    @Post('friend-request')
+    @Post('friend-request/:friendId')
     sendFriendRequest(
-        @Body('idPlayer1', ParseIntPipe) idPlayer1: number,
-        @Body('idPlayer2', ParseIntPipe) idPlayer2: number
+        @Request() req,
+        @Body('friendId') friendId: number
     ) {
-        return this.playerService.sendFriendRequest(idPlayer1, idPlayer2);
+        return this.playerService.sendFriendRequest(req.user.id, friendId);
     }
 
-    @Patch('friend-accept/:idPlayer1/:idPlayer2')
+    @Patch('friend-accept/:friendId')
     acceptFriendRequest(
-        @Param('idPlayer1', ParseIntPipe) idPlayer1: number,
-        @Param('idPlayer2', ParseIntPipe) idPlayer2: number
+        @Request() req, 
+        @Param('friendId') friendId: number
     ) {
-        return this.playerService.acceptFriendRequest(idPlayer1, idPlayer2);
+        return this.playerService.acceptFriendRequest(req.user.id, friendId);
     }
 
-    @Patch('friend-decline/:idPlayer1/:idPlayer2')
+    @Patch('friend-decline/:friendId')
     declineFriendRequest(
-        @Param('idPlayer1', ParseIntPipe) idPlayer1: number,
-        @Param('idPlayer2', ParseIntPipe) idPlayer2: number
+        @Request() req, 
+        @Param('friendId') friendId: number
     ) {
-        return this.playerService.declineFriendRequest(idPlayer1, idPlayer2);
+        return this.playerService.declineFriendRequest(req.user.id, friendId);
     }
 }
