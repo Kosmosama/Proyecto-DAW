@@ -1,5 +1,4 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
-import { CreatePlayerDto } from './dto/create-player.dto';
 import { PlayerService } from './player.service';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 
@@ -9,10 +8,10 @@ export class PlayerController {
         private readonly playerService: PlayerService
     ) { }
 
-    @Post()
-    create(@Body() createPlayerDto: CreatePlayerDto) {
-        return this.playerService.create(createPlayerDto);
-    }
+    // @Post()
+    // create(@Body() createPlayerDto: CreatePlayerDto) {
+    //     return this.playerService.create(createPlayerDto);
+    // }
 
     @Get()
     findAll() {

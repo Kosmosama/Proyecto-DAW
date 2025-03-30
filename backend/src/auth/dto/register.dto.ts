@@ -1,15 +1,15 @@
 import { IsNotEmpty, IsString, Length, IsOptional } from 'class-validator';
 
-export class CreatePlayerDto {
+export class RegisterDto {
     @IsNotEmpty()
     @IsString()
     @Length(1, 255)
-    name: string;
+    username: string;
 
     @IsNotEmpty()
     @IsString()
     @Length(1, 255)
-    passwordHash: string;
+    password: string;
 
     @IsOptional()
     @IsString()

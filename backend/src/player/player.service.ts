@@ -1,5 +1,4 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Friendship, FriendshipStatus } from './entities/friendship.entity';
@@ -15,15 +14,15 @@ export class PlayerService {
         private readonly playerRepository: Repository<Player>,
     ) { }
 
-    async create(createPlayerDto: CreatePlayerDto): Promise<Player> {
-        try {
-            const player = this.playerRepository.create(createPlayerDto);
-            return await this.playerRepository.save(player);
-        } catch (error) {
-            console.error("Error creating player:", error);
-            throw new HttpException("Error creating player.", 500);
-        }
-    }
+    // async create(createPlayerDto: CreatePlayerDto): Promise<Player> {
+    //     try {
+    //         const player = this.playerRepository.create(createPlayerDto);
+    //         return await this.playerRepository.save(player);
+    //     } catch (error) {
+    //         console.error("Error creating player:", error);
+    //         throw new HttpException("Error creating player.", 500);
+    //     }
+    // }
 
     async findAll(): Promise<Player[]> {
         try {

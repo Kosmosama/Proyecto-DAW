@@ -6,10 +6,13 @@ import { AppService } from './app.service';
 import { PlayerModule } from './player/player.module';
 import { ChatGateway } from './websockets/chat/chat.gateway';
 import { ChatModule } from './websockets/chat/chat.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
+        ConfigModule.forRoot({ 
+            isGlobal: true 
+        }),
         TypeOrmModule.forRoot({
             type: 'postgres',
             host: process.env.DB_HOST,
@@ -22,6 +25,7 @@ import { ChatModule } from './websockets/chat/chat.module';
         }),
         PlayerModule,
         ChatModule,
+        AuthModule,
     ],
     controllers: [AppController],
     providers: [AppService, ChatGateway],
