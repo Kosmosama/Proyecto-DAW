@@ -9,7 +9,7 @@ export class Player {
     name: string;
 
     @Column({ name: 'password_hash', length: 255 })
-    passwordHash: string;
+    password: string;
 
     @Column({ length: 255, nullable: true })
     photo: string;

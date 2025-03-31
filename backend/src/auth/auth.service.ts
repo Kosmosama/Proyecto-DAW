@@ -26,7 +26,7 @@ export class AuthService {
 
             const newPlayer = this.playerRepository.create({ 
                 name: registerDto.username,
-                passwordHash: hashedPassword,
+                password: hashedPassword,
             });
 
             const savedPlayer = await this.playerRepository.save(newPlayer);
@@ -71,7 +71,7 @@ export class AuthService {
         try {
             const player = await this.playerRepository.findOneBy({ name: loginDto.username });
 
-            if (player && await bcrypt.compare(loginDto.password, player.passwordHash)) {
+            if (player && await bcrypt.compare(loginDto.password, player.password)) {
                 return { id: player.id, name: player.name };
             } else {
                 throw new UnauthorizedException('Invalid credentials.');

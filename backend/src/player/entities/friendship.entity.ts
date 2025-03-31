@@ -9,19 +9,19 @@ export enum FriendshipStatus {
 
 @Entity()
 export class Friendship {
-    @PrimaryColumn({ name: "id_player1" })
-    idPlayer1: number;
+    @PrimaryColumn({ name: "sender_id" })
+    senderId: number;
 
-    @PrimaryColumn({ name: "id_player2" })
-    idPlayer2: number;
-
-    @ManyToOne(() => Player, (player) => player.id, { onDelete: "CASCADE" })
-	@JoinColumn({ name: "id_player1" })
-    player1: Player;
+    @PrimaryColumn({ name: "receiver_id" })
+    receiverId: number;
 
     @ManyToOne(() => Player, (player) => player.id, { onDelete: "CASCADE" })
-	@JoinColumn({ name: "id_player2" })
-    player2: Player;
+	@JoinColumn({ name: "sender_id" })
+    sender: Player;
+
+    @ManyToOne(() => Player, (player) => player.id, { onDelete: "CASCADE" })
+	@JoinColumn({ name: "receiver_id" })
+    receiver: Player;
     
 	@CreateDateColumn({ name: "created_at" })
     createdAt: Date;

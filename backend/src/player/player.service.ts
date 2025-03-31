@@ -1,4 +1,4 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Friendship, FriendshipStatus } from './entities/friendship.entity';
@@ -19,7 +19,7 @@ export class PlayerService {
             return await this.playerRepository.find();
         } catch (error) {
             console.error("Error retrieving players:", error);
-            throw new HttpException("Error retrieving players.", 500);
+            throw new InternalServerErrorException("Error retrieving players.");
         }
     }
 
@@ -30,7 +30,7 @@ export class PlayerService {
             return player;
         } catch (error) {
             console.error("Error finding player:", error);
-            throw new HttpException("Error finding player.", 500);
+            throw new InternalServerErrorException("Error finding player.");
         }
     }
 
@@ -41,7 +41,7 @@ export class PlayerService {
             return this.findOne(id);
         } catch (error) {
             console.error("Error updating player:", error);
-            throw new HttpException("Error updating player.", 500);
+            throw new InternalServerErrorException("Error updating player.");
         }
     }
 
@@ -55,50 +55,55 @@ export class PlayerService {
         }
     }
 
-    async sendFriendRequest(idPlayer1: number, idPlayer2: number): Promise<void> {
-        try {
-            const friendship = this.friendshipRepository.create({
-                idPlayer1,
-                idPlayer2,
-                status: FriendshipStatus.PENDING,
-            });
-            await this.friendshipRepository.save(friendship);
-        } catch (error) {
-            console.error('Error sending friend request:', error);
-            throw new HttpException('Error sending friend request.', 500);
-        }
+    private async findFriendship(playerId: number, friendId: number): Promise<Friendship | null> {
+        return await this.friendshipRepository.findOne({
+            where: [
+                { senderId: playerId, receiverId: friendId },
+                { senderId: friendId, receiverId: playerId }
+            ],
+        });
     }
 
-    private async findFriendship(playerId: number, friendId: number): Promise<Friendship> {
-        const friendship = await this.friendshipRepository.findOne({
-            where: [
-                { idPlayer1: playerId, idPlayer2: friendId },
-                { idPlayer1: friendId, idPlayer2: playerId }
-            ]
+    private async createFriendRequest(senderId: number, receiverId: number): Promise<void> {
+        const friendship = this.friendshipRepository.create({
+            senderId,
+            receiverId,
+            status: FriendshipStatus.PENDING,
         });
+        await this.friendshipRepository.save(friendship);
+    }
 
-        if (!friendship) {
-            throw new NotFoundException('Friend request not found.');
+    async sendFriendRequest(senderId: number, receiverId: number): Promise<void> {
+        try {
+            const existingFriendship = await this.findFriendship(senderId, receiverId);
+            if (existingFriendship) throw new ConflictException(`Friend request already exists with status: ${existingFriendship.status}`);
+
+            await this.createFriendRequest(senderId, receiverId);
+        } catch (error) {
+            console.error('Error sending friend request:', error);
+            throw new InternalServerErrorException("Error sending friend request.");
         }
-
-        return friendship;
     }
 
     async acceptFriendRequest(playerId: number, friendId: number): Promise<void> {
         try {
             const friendship = await this.findFriendship(playerId, friendId);
+            if (!friendship) throw new NotFoundException('Friend request not found.');
+    
             friendship.status = FriendshipStatus.ACCEPTED;
             await this.friendshipRepository.save(friendship);
         } catch (error) {
             console.error('Error accepting friend request:', error);
-            throw new HttpException('Error accepting friend request.', 500);
+            throw new InternalServerErrorException("Error accepting friend request.");
         }
     }
 
     async declineFriendRequest(playerId: number, friendId: number): Promise<void> {
         try {
             const friendship = await this.findFriendship(playerId, friendId);
-            await this.friendshipRepository.delete({ idPlayer1: playerId, idPlayer2: friendId });
+            if (!friendship) throw new NotFoundException('Friend request not found.');
+    
+            await this.friendshipRepository.delete({ senderId: friendship.senderId, receiverId: friendship.receiverId });
         } catch (error) {
             console.error('Error declining friend request:', error);
             throw new HttpException('Error declining friend request.', 500);
@@ -109,14 +114,14 @@ export class PlayerService {
         try {
             const friendships = await this.friendshipRepository.find({
                 where: [
-                    { idPlayer1: playerId, status: FriendshipStatus.ACCEPTED },
-                    { idPlayer2: playerId, status: FriendshipStatus.ACCEPTED },
+                    { senderId: playerId, status: FriendshipStatus.ACCEPTED },
+                    { receiverId: playerId, status: FriendshipStatus.ACCEPTED },
                 ],
                 relations: ['player1', 'player2'],
             });
 
             const friends = friendships.map(friendship =>
-                friendship.idPlayer1 === playerId ? friendship.player2 : friendship.player1
+                friendship.senderId === playerId ? friendship.receiver : friendship.sender
             );
 
             return friends;
