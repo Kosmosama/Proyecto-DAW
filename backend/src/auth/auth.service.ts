@@ -25,7 +25,7 @@ export class AuthService {
             const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
             const newPlayer = this.playerRepository.create({ 
-                name: registerDto.username,
+                ...registerDto,
                 password: hashedPassword,
             });
 
