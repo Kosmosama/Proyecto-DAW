@@ -4,7 +4,7 @@ import { UpdatePlayerDto } from './dto/update-player.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 
 @Controller('player')
-@UseGuards(AuthGuard)
+// @UseGuards(AuthGuard)
 export class PlayerController {
     constructor(
         private readonly playerService: PlayerService
@@ -13,6 +13,11 @@ export class PlayerController {
     @Get()
     findAll() {
         return this.playerService.findAll();
+    }
+
+    @Get(':id')
+    findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.playerService.findOne(id);
     }
 
     @Get('profile')
