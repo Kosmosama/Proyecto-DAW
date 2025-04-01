@@ -1,0 +1,22 @@
+<!-- friends-list.component.html -->
+@if(loading) {
+<div>Cargando amigos...</div>
+}
+
+@if(errorMessage) {
+<div class="error">{{ errorMessage }}</div>
+}
+
+@if(friends.length > 0) {
+<ul>
+    @for (friend of friends; track $index) {
+    <li>
+        {{ friend.name }}
+    </li>
+    }
+</ul>
+}
+
+@if(friends.length === 0 && !loading) {
+<div>No tienes amigos aún.</div>
+}

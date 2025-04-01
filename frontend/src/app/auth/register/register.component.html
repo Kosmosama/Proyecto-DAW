@@ -1,7 +1,7 @@
 <div class="register-player-container">
     <h2>Registro de Jugador</h2>
 
-    <form [formGroup]="playerForm" (ngSubmit)="onRegister()">
+    <form [formGroup]="playerForm" (ngSubmit)="register()">
         <div>
             <label for="name">Name </label>
             <input id="name" formControlName="name" type="text" />
@@ -30,4 +30,6 @@
         <button type="submit">Registrar</button>
 
     </form>
+    <button (click)="login()" style="margin-top: 10px;">Login</button>
+
 </div>
