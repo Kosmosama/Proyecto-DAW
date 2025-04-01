@@ -1,10 +1,12 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { PlayerResponse } from 'src/player/interfaces/player-response.interface';
+import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponse } from './interfaces/login-response.interface';
 import { RefreshResponse } from './interfaces/refresh-response.interface';
+import { Public } from './decorators/public.decorator';
 
+@Public()
 @Controller('auth')
 export class AuthController {
     constructor(
@@ -18,7 +20,7 @@ export class AuthController {
     }
 
     @Post('register')
-    register(@Body() registerDto: LoginDto): Promise<PlayerResponse> {
+    register(@Body() registerDto: LoginDto): Promise<PlayerPublic> {
         return this.authService.register(registerDto);
     }
 

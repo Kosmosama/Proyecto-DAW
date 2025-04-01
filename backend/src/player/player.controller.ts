@@ -1,70 +1,74 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Request, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Request } from '@nestjs/common';
+import { Player } from './decorators/player.decorator';
 import { UpdatePlayerDto } from './dto/update-player.dto';
-import { PlayerResponse } from './interfaces/player-response.interface';
+import { PlayerPublic } from './interfaces/player-public.interface';
 import { PlayerService } from './player.service';
 
 @Controller('player')
-// @UseGuards(JwtAuthGuard)
 export class PlayerController {
     constructor(
         private readonly playerService: PlayerService
     ) { }
 
     @Get()
-    findAll(): Promise<PlayerResponse[]> {
+    findAll(): Promise<PlayerPublic[]> {
         return this.playerService.findAll();
     }
 
     @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number): Promise<PlayerResponse> {
+    findOne(@Param('id', ParseIntPipe) id: number): Promise<PlayerPublic> {
         return this.playerService.findOne(id);
     }
 
     @Get('profile')
-    getProfile(@Request() req): Promise<PlayerResponse> {
+    getProfile(@Request() req): Promise<PlayerPublic> {
         return this.playerService.findOne(req.user.id);
     }
 
+    // #TODO Protect for self or admin only
     @Patch('profile')
     updateProfile(
         @Request() req,
         @Body() updatePlayerDto: UpdatePlayerDto
-    ): Promise<PlayerResponse> {
+    ): Promise<PlayerPublic> {
         return this.playerService.update(req.user.id, updatePlayerDto);
     }
 
+    //#TODO Protect for admin only
     @Delete(':id')
     remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         return this.playerService.remove(id);
     }
 
-    @Get('friends/:id')
-    getFriends(@Param('id', ParseIntPipe) id: number): Promise<PlayerResponse[]> {
-        return this.playerService.getFriends(id);
+    @Get('friends')
+    getFriends(@Player() player: PlayerPublic, @Param('id', ParseIntPipe) id: number): Promise<PlayerPublic[]> {
+        return this.playerService.getFriends(player.id);
     }
 
+    // #TODO Protect for self or admin only
     @Post('friend-request/:friendId')
     sendFriendRequest(
-        @Request() req,
+        @Player() player: PlayerPublic,
         @Param('friendId') friendId: number
     ): Promise<void> {
-        return this.playerService.sendFriendRequest(req.user.id, friendId);
+        return this.playerService.sendFriendRequest(player.id, friendId);
     }
 
+    // #TODO Protect for self or admin only
     @Patch('friend-accept/:friendId')
     acceptFriendRequest(
-        @Request() req, 
+        @Player() player: PlayerPublic,
         @Param('friendId') friendId: number
     ): Promise<void> {
-        return this.playerService.acceptFriendRequest(req.user.id, friendId);
+        return this.playerService.acceptFriendRequest(player.id, friendId);
     }
 
+    // #TODO Protect for self or admin only
     @Patch('friend-decline/:friendId')
     declineFriendRequest(
-        @Request() req, 
+        @Player() player: PlayerPublic,
         @Param('friendId') friendId: number
     ): Promise<void> {
-        return this.playerService.declineFriendRequest(req.user.id, friendId);
+        return this.playerService.declineFriendRequest(player.id, friendId);
     }
 }

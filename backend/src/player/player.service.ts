@@ -5,7 +5,7 @@ import { UpdatePlayerDto } from './dto/update-player.dto';
 import { Friendship, FriendshipStatus } from './entities/friendship.entity';
 import { Player } from './entities/player.entity';
 import { FriendResponse } from './interfaces/friend-response.interface';
-import { PlayerResponse } from './interfaces/player-response.interface';
+import { PlayerPublic } from './interfaces/player-public.interface';
 
 @Injectable()
 export class PlayerService {
@@ -18,9 +18,9 @@ export class PlayerService {
 
     /**
      * Retrieve all players' basic information.
-     * @returns {Promise<PlayerResponse[]>} List of players with their ids and usernames.
+     * @returns {Promise<PlayerPublic[]>} List of players with their ids and usernames.
      */
-    async findAll(): Promise<PlayerResponse[]> {
+    async findAll(): Promise<PlayerPublic[]> {
         return await this.playerRepository.find({
             select: ['id', 'username'],
         });
@@ -29,10 +29,10 @@ export class PlayerService {
     /**
      * Retrieve a single player by id.
      * @param {number} id Player id to search for.
-     * @returns {Promise<PlayerResponse>} Player details.
+     * @returns {Promise<PlayerPublic>} Player details.
      * @throws {NotFoundException} if player doesn't exist.
      */
-    async findOne(id: number): Promise<PlayerResponse> {
+    async findOne(id: number): Promise<PlayerPublic> {
         const player = await this.playerRepository.findOne({
             where: { id },
             select: ['id', 'username'],
@@ -45,10 +45,10 @@ export class PlayerService {
      * Update player details.
      * @param {number} id Player id to update.
      * @param {UpdatePlayerDto} updatePlayerDto Data to update player.
-     * @returns {Promise<PlayerResponse>} Updated player data.
+     * @returns {Promise<PlayerPublic>} Updated player data.
      * @throws {NotFoundException} if player doesn't exist.
      */
-    async update(id: number, updatePlayerDto: UpdatePlayerDto): Promise<PlayerResponse> {
+    async update(id: number, updatePlayerDto: UpdatePlayerDto): Promise<PlayerPublic> {
         const result = await this.playerRepository.update(id, updatePlayerDto);
         if (result.affected === 0) throw new NotFoundException("Player not found.");
         return this.findOne(id);

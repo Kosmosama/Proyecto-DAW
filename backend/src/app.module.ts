@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { PlayerModule } from './player/player.module';
 import { ChatGateway } from './websockets/chat/chat.gateway';
 import { ChatModule } from './websockets/chat/chat.module';
+import { JwtGuard } from './auth/guards/jwt-auth.guard';
+import { JwtStrategy } from './auth/strategies/jwt.strategy';
 
 @Module({
     imports: [
@@ -32,6 +34,14 @@ import { ChatModule } from './websockets/chat/chat.module';
         AuthModule,
     ],
     controllers: [AppController],
-    providers: [AppService, ChatGateway],
+    providers: [
+        AppService, 
+        ChatGateway,
+        {
+            provide: 'APP_GUARD',
+            useClass: JwtGuard,
+        },
+        JwtStrategy,
+    ],
 })
 export class AppModule { }

@@ -1,39 +1,20 @@
-
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
+import { ExecutionContext, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { Observable } from 'rxjs';
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
-    constructor(
-        private jwtService: JwtService,
-        private configService: ConfigService
-    ) { }
-
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        const token = this.extractTokenFromHeader(request);
-        if (!token) {
-            throw new UnauthorizedException();
-        }
-
-        try {
-            const secret = this.configService.get<string>('JWT_SECRET');
-            const payload = await this.jwtService.verifyAsync(token, { secret });
-            request.user = payload;
-        } catch (error) {
-            if (error.name === 'TokenExpiredError') {
-                throw new UnauthorizedException('Access token expired, please refresh');
-            }
-            throw new UnauthorizedException('Invalid token');
-        }
-
-        return true;
+export class JwtGuard extends AuthGuard('jwt') {
+    constructor(private reflector: Reflector) {
+        super();
     }
 
-    private extractTokenFromHeader(request: Request): string | undefined {
-        const [type, token] = request.headers.authorization?.split(' ') ?? [];
-        return type === 'Bearer' ? token : undefined;
+    canActivate(context: ExecutionContext): Promise<boolean> | boolean | Observable<boolean> {
+        const isPublic = this.reflector.getAllAndOverride('isPublic', [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        if (isPublic) return true;
+        return super.canActivate(context);
     }
 }

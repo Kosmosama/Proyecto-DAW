@@ -21,6 +21,6 @@ import { PlayerService } from 'src/player/player.service';
     ],
     providers: [AuthService, JwtStrategy, PlayerService],
     controllers: [AuthController],
-    exports: [AuthService],
+    exports: [AuthService, JwtModule],
 })
 export class AuthModule { }

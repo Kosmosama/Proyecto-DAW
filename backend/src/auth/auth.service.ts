@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Player } from 'src/player/entities/player.entity';
-import { PlayerResponse } from 'src/player/interfaces/player-response.interface';
+import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { Repository } from 'typeorm';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -21,10 +21,10 @@ export class AuthService {
     /**
      * Registers a new player.
      * @param {RegisterDto} registerDto Data transfer object containing username and password.
-     * @returns {PlayerResponse} The newly created player's ID and username.
+     * @returns {PlayerPublic} The newly created player's ID and username.
      * @throws {ConflictException} If the username is already taken.
      */
-    async register(registerDto: RegisterDto): Promise<PlayerResponse> {
+    async register(registerDto: RegisterDto): Promise<PlayerPublic> {
         const existingPlayer = await this.playerRepository.findOneBy({ username: registerDto.username });
         if (existingPlayer) throw new ConflictException('Username already exists.');
 
@@ -72,10 +72,10 @@ export class AuthService {
     /**
      * Validates player credentials.
      * @param {LoginDto} loginDto Data transfer object containing login credentials.
-     * @returns {PlayerResponse} Partial player data if credentials are valid.
+     * @returns {PlayerPublic} Partial player data if credentials are valid.
      * @throws {UnauthorizedException} If credentials are invalid.
      */
-    private async validatePlayer(loginDto: LoginDto): Promise<PlayerResponse> {
+    private async validatePlayer(loginDto: LoginDto): Promise<PlayerPublic> {
         const player = await this.playerRepository.findOneBy({ username: loginDto.username });
 
         if (player && await bcrypt.compare(loginDto.password, player.password)) {

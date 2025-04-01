@@ -1,4 +1,4 @@
-export interface PlayerResponse {
+export interface PlayerPublic {
     id: number;
     username: string;
 }
