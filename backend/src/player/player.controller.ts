@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Request, UseGuards } from '@nestjs/common';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { PlayerResponse } from './interfaces/player-response.interface';
 import { PlayerService } from './player.service';
 
 @Controller('player')
-// @UseGuards(AuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class PlayerController {
     constructor(
         private readonly playerService: PlayerService

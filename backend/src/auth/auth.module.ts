@@ -4,6 +4,8 @@ import { AuthController } from './auth.controller';
 import { PlayerModule } from 'src/player/player.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { PlayerService } from 'src/player/player.service';
 
 @Module({
     imports: [
@@ -17,7 +19,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             }),
         }),
     ],
-    providers: [AuthService, ],
+    providers: [AuthService, JwtStrategy, PlayerService],
     controllers: [AuthController],
     exports: [AuthService],
 })

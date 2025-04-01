@@ -66,19 +66,28 @@ export class PlayerService {
     }
 
     /**
+     * Check if a player exists by username.
+     * @param {string} username Player username to check.
+     * @returns {Promise<boolean>} True if the player exists, false otherwise.
+     */
+    async playerExists(username: string): Promise<boolean> {
+        return (await this.playerRepository.count({ where: { username } })) > 0;
+    }
+
+    /**
      * Find friendship between two players.
      * @param {number} playerId Sender player id.
      * @param {number} friendId Receiver player id.
      * @returns {Promise<Friendship | null>} Object if it exists.
      */
-    private async findFriendship(playerId: number, friendId: number): Promise<Friendship | null> {
-        return await this.friendshipRepository.findOne({
-            where: [
-                { senderId: playerId, receiverId: friendId },
-                { senderId: friendId, receiverId: playerId }
-            ],
-        });
-    }
+    private async findFriendship(playerId: number, friendId: number): Promise < Friendship | null > {
+    return await this.friendshipRepository.findOne({
+        where: [
+            { senderId: playerId, receiverId: friendId },
+            { senderId: friendId, receiverId: playerId }
+        ],
+    });
+}
 
     /**
      * Send a friend request from one player to another.
@@ -87,18 +96,18 @@ export class PlayerService {
      * @returns {Promise<void>} Promise that resolves when the request is sent.
      * @throws {ConflictException} if a friend request already exists.
      */
-    async sendFriendRequest(senderId: number, receiverId: number): Promise<void> {
-        const existingFriendship = await this.findFriendship(senderId, receiverId);
-        if (existingFriendship) throw new ConflictException(`Friend request already exists with status: ${existingFriendship.status}`);
+    async sendFriendRequest(senderId: number, receiverId: number): Promise < void> {
+    const existingFriendship = await this.findFriendship(senderId, receiverId);
+    if(existingFriendship) throw new ConflictException(`Friend request already exists with status: ${existingFriendship.status}`);
 
-        const friendship = this.friendshipRepository.create({
-            senderId,
-            receiverId,
-            status: FriendshipStatus.PENDING,
-        });
+    const friendship = this.friendshipRepository.create({
+        senderId,
+        receiverId,
+        status: FriendshipStatus.PENDING,
+    });
 
-        await this.friendshipRepository.save(friendship);
-    }
+    await this.friendshipRepository.save(friendship);
+}
 
     /**
      * Accept a pending friend request.
@@ -107,14 +116,14 @@ export class PlayerService {
      * @returns {Promise<void>} Promise that resolves when the request is accepted.
      * @throws {NotFoundException} if the friendship isn't found.
      */
-    async acceptFriendRequest(senderId: number, receiverId: number): Promise<void> {
-        const result = await this.friendshipRepository.update(
-            { senderId, receiverId },
-            { status: FriendshipStatus.ACCEPTED }
-        );
+    async acceptFriendRequest(senderId: number, receiverId: number): Promise < void> {
+    const result = await this.friendshipRepository.update(
+        { senderId, receiverId },
+        { status: FriendshipStatus.ACCEPTED }
+    );
 
-        if (result.affected === 0) throw new NotFoundException('Friend request not found.');
-    }
+    if(result.affected === 0) throw new NotFoundException('Friend request not found.');
+}
 
     /**
      * Decline (remove) a pending friend request.
@@ -123,54 +132,54 @@ export class PlayerService {
      * @returns {Promise<void>} Promise that resolves when the request is declined.
      * @throws {NotFoundException} if the friendship isn't found.
      */
-    async declineFriendRequest(senderId: number, receiverId: number): Promise<void> {
-        const friendship = await this.findFriendship(senderId, receiverId);
-        if (!friendship) throw new NotFoundException('Friend request not found.');
+    async declineFriendRequest(senderId: number, receiverId: number): Promise < void> {
+    const friendship = await this.findFriendship(senderId, receiverId);
+    if(!friendship) throw new NotFoundException('Friend request not found.');
 
-        await this.friendshipRepository.delete({ senderId: friendship.senderId, receiverId: friendship.receiverId });
-    }
+    await this.friendshipRepository.delete({ senderId: friendship.senderId, receiverId: friendship.receiverId });
+}
 
     /**
      * Get the list of accepted friends for a given player.
      * @param {number} playerId Player id to fetch friends for.
      * @returns {Promise<FriendResponse[]>} List of friends with their details.
      */
-    async getFriends(playerId: number): Promise<FriendResponse[]> {
-        // SELECT friendship."createdAt",
-        //     sender.id AS "sender_id", sender.username AS "sender_username", sender.photo AS "sender_photo", 
-        //     sender.online AS "sender_online", sender."lastLogin" AS "sender_lastLogin",
-        //     receiver.id AS "receiver_id", receiver.username AS "receiver_username", receiver.photo AS "receiver_photo", 
-        //     receiver.online AS "receiver_online", receiver."lastLogin" AS "receiver_lastLogin"
-        // FROM "friendship"
-        // LEFT JOIN "player" AS sender ON sender.id = friendship."senderId"
-        // LEFT JOIN "player" AS receiver ON receiver.id = friendship."receiverId"
-        // WHERE (friendship."senderId" = :playerId OR friendship."receiverId" = :playerId)
-        //     AND friendship.status = :status;
+    async getFriends(playerId: number): Promise < FriendResponse[] > {
+    // SELECT friendship."createdAt",
+    //     sender.id AS "sender_id", sender.username AS "sender_username", sender.photo AS "sender_photo", 
+    //     sender.online AS "sender_online", sender."lastLogin" AS "sender_lastLogin",
+    //     receiver.id AS "receiver_id", receiver.username AS "receiver_username", receiver.photo AS "receiver_photo", 
+    //     receiver.online AS "receiver_online", receiver."lastLogin" AS "receiver_lastLogin"
+    // FROM "friendship"
+    // LEFT JOIN "player" AS sender ON sender.id = friendship."senderId"
+    // LEFT JOIN "player" AS receiver ON receiver.id = friendship."receiverId"
+    // WHERE (friendship."senderId" = :playerId OR friendship."receiverId" = :playerId)
+    //     AND friendship.status = :status;
 
-        const friendships = await this.friendshipRepository.createQueryBuilder('friendship')
-            .leftJoin('friendship.sender', 'sender')
-            .leftJoin('friendship.receiver', 'receiver')
-            .select([
-                'friendship.createdAt',
-                'sender.id', 'sender.username', 'sender.photo', 'sender.online', 'sender.lastLogin',
-                'receiver.id', 'receiver.username', 'receiver.photo', 'receiver.online', 'receiver.lastLogin',
-            ])
-            .where(
-                '(friendship.senderId = :playerId OR friendship.receiverId = :playerId) AND friendship.status = :status',
-                { playerId, status: FriendshipStatus.ACCEPTED }
-            )
-            .getMany();
-    
-        return friendships.map(({ sender, receiver, createdAt }) => {
-            const friend = sender.id === playerId ? receiver : sender;
-            return {
-                id: friend.id,
-                username: friend.username,
-                photo: friend.photo,
-                online: friend.online,
-                lastLogin: friend.lastLogin,
-                friendsSince: createdAt,
-            };
-        });
-    }
+    const friendships = await this.friendshipRepository.createQueryBuilder('friendship')
+        .leftJoin('friendship.sender', 'sender')
+        .leftJoin('friendship.receiver', 'receiver')
+        .select([
+            'friendship.createdAt',
+            'sender.id', 'sender.username', 'sender.photo', 'sender.online', 'sender.lastLogin',
+            'receiver.id', 'receiver.username', 'receiver.photo', 'receiver.online', 'receiver.lastLogin',
+        ])
+        .where(
+            '(friendship.senderId = :playerId OR friendship.receiverId = :playerId) AND friendship.status = :status',
+            { playerId, status: FriendshipStatus.ACCEPTED }
+        )
+        .getMany();
+
+    return friendships.map(({ sender, receiver, createdAt }) => {
+        const friend = sender.id === playerId ? receiver : sender;
+        return {
+            id: friend.id,
+            username: friend.username,
+            photo: friend.photo,
+            online: friend.online,
+            lastLogin: friend.lastLogin,
+            friendsSince: createdAt,
+        };
+    });
+}
 }
