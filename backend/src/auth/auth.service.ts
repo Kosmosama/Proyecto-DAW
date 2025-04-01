@@ -1,11 +1,14 @@
-import { HttpException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Player } from 'src/player/entities/player.entity';
-import { Repository } from 'typeorm';
-import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
+import { Player } from 'src/player/entities/player.entity';
+import { PlayerResponse } from 'src/player/interfaces/player-response.interface';
+import { Repository } from 'typeorm';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { LoginResponse } from './interfaces/login-response.interface';
+import { RefreshResponse } from './interfaces/refresh-response.interface';
 
 @Injectable()
 export class AuthService {
@@ -15,69 +18,69 @@ export class AuthService {
         private readonly jwtService: JwtService
     ) {}
 
-    async register(registerDto: RegisterDto): Promise<{ id: number; username: string }> {
-        try {
-            const existingPlayer = await this.playerRepository.findOneBy({ name: registerDto.username });
-            if (existingPlayer) {
-                throw new UnauthorizedException('Username already exists.');
-            }
+    /**
+     * Registers a new player.
+     * @param {RegisterDto} registerDto Data transfer object containing username and password.
+     * @returns {PlayerResponse} The newly created player's ID and username.
+     * @throws {ConflictException} If the username is already taken.
+     */
+    async register(registerDto: RegisterDto): Promise<PlayerResponse> {
+        const existingPlayer = await this.playerRepository.findOneBy({ username: registerDto.username });
+        if (existingPlayer) throw new ConflictException('Username already exists.');
 
-            const hashedPassword = await bcrypt.hash(registerDto.password, 12);
+        const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
-            const newPlayer = this.playerRepository.create({ 
-                ...registerDto,
-                password: hashedPassword,
-            });
+        const newPlayer = this.playerRepository.create({ 
+            ...registerDto,
+            password: hashedPassword,
+        });
 
-            const savedPlayer = await this.playerRepository.save(newPlayer);
+        const savedPlayer = await this.playerRepository.save(newPlayer);
 
-            return { id: savedPlayer.id, username: savedPlayer.name };
-        } catch (error) {
-            console.error("Error registering player:", error.message);
-            throw new HttpException("An error occurred while registering the player.", 500);
-        }
+        return { id: savedPlayer.id, username: savedPlayer.username };
     }
 
-    async login(loginDto: LoginDto): Promise<{ access_token: string; refresh_token: string }> {
-        try {
-            const player = await this.validatePlayer(loginDto);
-            if (!player) {
-                throw new UnauthorizedException('Invalid credentials.');
-            }
+    /**
+     * Authenticates a player and returns access and refresh tokens.
+     * @param {LoginDto} loginDto Data transfer object containing login credentials.
+     * @returns {LoginResponse} Object containing access and refresh tokens.
+     * @throws {UnauthorizedException} If credentials are invalid.
+     */
+    async login(loginDto: LoginDto): Promise<LoginResponse> {
+        const player = await this.validatePlayer(loginDto);
+        if (!player) throw new UnauthorizedException('Invalid credentials.');
 
-            const payload = { username: player.name, id: player.id };
-            const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-            const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+        const payload = { username: player.username, id: player.id };
+        const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-            return { access_token: accessToken, refresh_token: refreshToken };
-        } catch (error) {
-            console.error("Login error:", error.message);
-            throw new UnauthorizedException('Invalid credentials.');
-        }
+        return { access_token: accessToken, refresh_token: refreshToken };
     }
 
-    async refresh(refreshToken: string): Promise<{ access_token: string }> {
-        try {
-            const payload = await this.jwtService.verifyAsync(refreshToken);
-            const newAccessToken = this.jwtService.sign({ username: payload.username, id: payload.id }, { expiresIn: '1h' });
-            return { access_token: newAccessToken };
-        } catch (error) {
-            console.error("Refresh token error:", error.message);
-            throw new UnauthorizedException('Invalid or expired refresh token.');
-        }
+    /**
+     * Generates a new access token using a refresh token.
+     * @param {string} refreshToken The refresh token provided during login.
+     * @returns {RefreshResponse} Object containing the new access token.
+     * @throws {UnauthorizedException} If the refresh token is invalid or expired.
+     */
+    async refresh(refreshToken: string): Promise<RefreshResponse> {
+        const payload = await this.jwtService.verifyAsync(refreshToken);
+        const newAccessToken = this.jwtService.sign({ username: payload.username, id: payload.id }, { expiresIn: '1h' });
+        return { access_token: newAccessToken };
     }
 
-    private async validatePlayer(loginDto: LoginDto): Promise<Partial<Player>> {
-        try {
-            const player = await this.playerRepository.findOneBy({ name: loginDto.username });
+    /**
+     * Validates player credentials.
+     * @param {LoginDto} loginDto Data transfer object containing login credentials.
+     * @returns {PlayerResponse} Partial player data if credentials are valid.
+     * @throws {UnauthorizedException} If credentials are invalid.
+     */
+    private async validatePlayer(loginDto: LoginDto): Promise<PlayerResponse> {
+        const player = await this.playerRepository.findOneBy({ username: loginDto.username });
 
-            if (player && await bcrypt.compare(loginDto.password, player.password)) {
-                return { id: player.id, name: player.name };
-            } else {
-                throw new UnauthorizedException('Invalid credentials.');
-            }
-        } catch (error) {
-            console.error("Validation error:", error.message);
+        if (player && await bcrypt.compare(loginDto.password, player.password)) {
+            return { id: player.id, username: player.username };
+        } else {
             throw new UnauthorizedException('Invalid credentials.');
         }
     }

@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Request, UseGuards } from '@nestjs/common';
-import { PlayerService } from './player.service';
-import { UpdatePlayerDto } from './dto/update-player.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { UpdatePlayerDto } from './dto/update-player.dto';
+import { PlayerResponse } from './interfaces/player-response.interface';
+import { PlayerService } from './player.service';
 
 @Controller('player')
 @UseGuards(AuthGuard)
@@ -11,12 +12,17 @@ export class PlayerController {
     ) { }
 
     @Get()
-    findAll() {
+    findAll(): Promise<PlayerResponse[]> {
         return this.playerService.findAll();
     }
 
+    @Get(':id')
+    findOne(@Param('id', ParseIntPipe) id: number): Promise<PlayerResponse> {
+        return this.playerService.findOne(id);
+    }
+
     @Get('profile')
-    getProfile(@Request() req) {
+    getProfile(@Request() req): Promise<PlayerResponse> {
         return this.playerService.findOne(req.user.id);
     }
 
@@ -24,25 +30,25 @@ export class PlayerController {
     updateProfile(
         @Request() req,
         @Body() updatePlayerDto: UpdatePlayerDto
-    ) {
+    ): Promise<PlayerResponse> {
         return this.playerService.update(req.user.id, updatePlayerDto);
     }
 
     @Delete(':id')
-    remove(@Param('id', ParseIntPipe) id: number) {
+    remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         return this.playerService.remove(id);
     }
 
     @Get('friends/:id')
-    getFriends(@Param('id', ParseIntPipe) id: number) {
+    getFriends(@Param('id', ParseIntPipe) id: number): Promise<PlayerResponse[]> {
         return this.playerService.getFriends(id);
     }
 
     @Post('friend-request/:friendId')
     sendFriendRequest(
         @Request() req,
-        @Body('friendId') friendId: number
-    ) {
+        @Param('friendId') friendId: number
+    ): Promise<void> {
         return this.playerService.sendFriendRequest(req.user.id, friendId);
     }
 
@@ -50,7 +56,7 @@ export class PlayerController {
     acceptFriendRequest(
         @Request() req, 
         @Param('friendId') friendId: number
-    ) {
+    ): Promise<void> {
         return this.playerService.acceptFriendRequest(req.user.id, friendId);
     }
 
@@ -58,7 +64,7 @@ export class PlayerController {
     declineFriendRequest(
         @Request() req, 
         @Param('friendId') friendId: number
-    ) {
+    ): Promise<void> {
         return this.playerService.declineFriendRequest(req.user.id, friendId);
     }
 }
