@@ -5,7 +5,7 @@ import { PlayerResponse } from './interfaces/player-response.interface';
 import { PlayerService } from './player.service';
 
 @Controller('player')
-@UseGuards(AuthGuard)
+// @UseGuards(AuthGuard)
 export class PlayerController {
     constructor(
         private readonly playerService: PlayerService

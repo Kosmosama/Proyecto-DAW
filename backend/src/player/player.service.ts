@@ -33,7 +33,10 @@ export class PlayerService {
      * @throws {NotFoundException} if player doesn't exist.
      */
     async findOne(id: number): Promise<PlayerResponse> {
-        const player = await this.playerRepository.findOneBy({ id });
+        const player = await this.playerRepository.findOne({
+            where: { id },
+            select: ['id', 'username'],
+        });
         if (!player) throw new NotFoundException("Player not found.");
         return player;
     }
