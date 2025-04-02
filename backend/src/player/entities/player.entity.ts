@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Entity()
 export class Player {
@@ -19,4 +20,11 @@ export class Player {
 
     @Column({ default: false })
     online: boolean;
+
+    @BeforeInsert()
+    async hashPassword() {
+        if (this.password) {
+            this.password = await bcrypt.hash(this.password, 12);
+        }
+    }
 }

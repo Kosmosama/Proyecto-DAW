@@ -28,11 +28,9 @@ export class AuthService {
         const existingPlayer = await this.playerRepository.findOneBy({ username: registerDto.username });
         if (existingPlayer) throw new ConflictException('Username already exists.');
 
-        const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
         const newPlayer = this.playerRepository.create({ 
             ...registerDto,
-            password: hashedPassword,
         });
 
         const savedPlayer = await this.playerRepository.save(newPlayer);
