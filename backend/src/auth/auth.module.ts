@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PlayerService } from 'src/player/player.service';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
     imports: [
@@ -19,7 +20,7 @@ import { PlayerService } from 'src/player/player.service';
             }),
         }),
     ],
-    providers: [AuthService, JwtStrategy, PlayerService],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, PlayerService],
     controllers: [AuthController],
     exports: [AuthService, JwtModule],
 })

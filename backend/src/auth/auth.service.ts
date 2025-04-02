@@ -76,12 +76,32 @@ export class AuthService {
      * @throws {UnauthorizedException} If credentials are invalid.
      */
     private async validatePlayer(loginDto: LoginDto): Promise<PlayerPublic> {
-        const player = await this.playerRepository.findOneBy({ username: loginDto.username });
+        const player = await this.playerRepository.findOneBy({ username: loginDto.username }); //#TODO Repeats logic, already have function to check uniqueness
 
         if (player && await bcrypt.compare(loginDto.password, player.password)) {
             return { id: player.id, username: player.username };
         } else {
             throw new UnauthorizedException('Invalid credentials.');
         }
+    }
+
+    /**
+     * Validates a Google user and creates a new player if they don't exist.
+     * @param {any} profile The Google user profile.
+     * @returns {Promise<PlayerPublic>} The player's ID and username.
+     */
+    async validateGoogleUser(profile: any): Promise<PlayerPublic> {
+        const { id, displayName, emails } = profile;
+        let player = await this.playerRepository.findOneBy({ username: id });
+    
+        if (!player) { //#TODO This might need to be changed
+            player = this.playerRepository.create({
+                username: id,
+                password: id,
+            });
+            await this.playerRepository.save(player);
+        }
+    
+        return { id: player.id, username: player.username };
     }
 }
