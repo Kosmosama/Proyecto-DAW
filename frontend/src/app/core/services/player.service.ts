@@ -27,7 +27,6 @@ export class PlayerService {
                 })
             );
     }
-    
 
     getLoggedPlayer(): Observable<Player> {
         const token = localStorage.getItem('access_token');

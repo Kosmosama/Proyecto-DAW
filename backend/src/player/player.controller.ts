@@ -3,6 +3,7 @@ import { Player } from './decorators/player.decorator';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { PlayerPublic } from './interfaces/player-public.interface';
 import { PlayerService } from './player.service';
+import { Friend } from './interfaces/friend.interface';
 
 @Controller('player')
 export class PlayerController {
@@ -21,17 +22,17 @@ export class PlayerController {
     }
 
     @Get('profile')
-    getProfile(@Request() req): Promise<PlayerPublic> {
-        return this.playerService.findOne(req.user.id);
+    getProfile(@Player() player: PlayerPublic): Promise<PlayerPublic> {
+        return this.playerService.findOne(player.id);
     }
 
     // #TODO Protect for self or admin only
     @Patch('profile')
     updateProfile(
-        @Request() req,
+        @Player() player: PlayerPublic,
         @Body() updatePlayerDto: UpdatePlayerDto
     ): Promise<PlayerPublic> {
-        return this.playerService.update(req.user.id, updatePlayerDto);
+        return this.playerService.update(player.id, updatePlayerDto);
     }
 
     //#TODO Protect for admin only
@@ -41,7 +42,7 @@ export class PlayerController {
     }
 
     @Get('friends')
-    getFriends(@Player() player: PlayerPublic, @Param('id', ParseIntPipe) id: number): Promise<PlayerPublic[]> {
+    getFriends(@Player() player: PlayerPublic): Promise<Friend[]> {
         return this.playerService.getFriends(player.id);
     }
 

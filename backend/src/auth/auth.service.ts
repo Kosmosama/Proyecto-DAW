@@ -28,7 +28,6 @@ export class AuthService {
         const existingPlayer = await this.playerRepository.findOneBy({ username: registerDto.username });
         if (existingPlayer) throw new ConflictException('Username already exists.');
 
-
         const newPlayer = this.playerRepository.create({ 
             ...registerDto,
         });
@@ -74,7 +73,7 @@ export class AuthService {
      * @throws {UnauthorizedException} If credentials are invalid.
      */
     private async validatePlayer(loginDto: LoginDto): Promise<PlayerPublic> {
-        const player = await this.playerRepository.findOneBy({ username: loginDto.username }); //#TODO Repeats logic, already have function to check uniqueness
+        const player = await this.playerRepository.findOneBy({ username: loginDto.email }); //#TODO Repeats logic, already have function to check uniqueness
 
         if (player && await bcrypt.compare(loginDto.password, player.password)) {
             return { id: player.id, username: player.username };

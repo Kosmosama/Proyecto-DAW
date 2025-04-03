@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Length, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, Length, IsOptional, IsEmail } from 'class-validator';
 import { IsUserUnique } from '../validators/user-exists.validator';
 
 export class RegisterDto {
@@ -7,6 +7,11 @@ export class RegisterDto {
     @Length(1, 255)
     @IsUserUnique()
     username: string;
+
+    @IsNotEmpty()
+    @IsEmail()
+    @Length(1, 255)
+    email: string;
 
     @IsNotEmpty()
     @IsString()

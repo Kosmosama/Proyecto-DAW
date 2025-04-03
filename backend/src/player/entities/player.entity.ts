@@ -9,6 +9,9 @@ export class Player {
     @Column({ length: 255 })
     username: string;
 
+    @Column({ length: 255, unique: true })
+    email: string;
+
     @Column({ name: 'password_hash', length: 255 })
     password: string;
 

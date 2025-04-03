@@ -7,6 +7,7 @@ import { RefreshResponse } from './interfaces/refresh-response.interface';
 import { Public } from './decorators/public.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { Player } from 'src/player/decorators/player.decorator';
+import { RegisterDto } from './dto/register.dto';
 
 @Public()
 @Controller('auth')
@@ -22,7 +23,7 @@ export class AuthController {
     }
 
     @Post('register')
-    register(@Body() registerDto: LoginDto): Promise<PlayerPublic> {
+    register(@Body() registerDto: RegisterDto): Promise<PlayerPublic> {
         return this.authService.register(registerDto);
     }
 
