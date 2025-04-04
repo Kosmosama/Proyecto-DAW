@@ -9,6 +9,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginResponse } from './interfaces/login-response.interface';
 import { RefreshResponse } from './interfaces/refresh-response.interface';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +17,7 @@ export class AuthService {
         @InjectRepository(Player)
         private readonly playerRepository: Repository<Player>,
         private readonly jwtService: JwtService
-    ) {}
+    ) { }
 
     /**
      * Registers a new player.
@@ -28,7 +29,7 @@ export class AuthService {
         const existingPlayer = await this.playerRepository.findOneBy({ username: registerDto.username });
         if (existingPlayer) throw new ConflictException('Username already exists.');
 
-        const newPlayer = this.playerRepository.create({ 
+        const newPlayer = this.playerRepository.create({
             ...registerDto,
         });
 
@@ -37,21 +38,12 @@ export class AuthService {
         return { id: savedPlayer.id, username: savedPlayer.username };
     }
 
-    /**
-     * Authenticates a player and returns access and refresh tokens.
-     * @param {LoginDto} loginDto Data transfer object containing login credentials.
-     * @returns {LoginResponse} Object containing access and refresh tokens.
-     * @throws {UnauthorizedException} If credentials are invalid.
-     */
-    async login(loginDto: LoginDto): Promise<LoginResponse> {
-        const player = await this.validatePlayer(loginDto);
-        if (!player) throw new UnauthorizedException('Invalid credentials.');
+    async login(player: PlayerPublic): Promise<LoginResponse> {
+        const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
-        const payload = { username: player.username, id: player.id };
-        const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+        // #TODO Save refresh token in the database | should refreshToken be returned?
 
-        return { access_token: accessToken, refresh_token: refreshToken };
+        return { accessToken, refreshToken };
     }
 
     /**
@@ -67,22 +59,6 @@ export class AuthService {
     }
 
     /**
-     * Validates player credentials.
-     * @param {LoginDto} loginDto Data transfer object containing login credentials.
-     * @returns {PlayerPublic} Partial player data if credentials are valid.
-     * @throws {UnauthorizedException} If credentials are invalid.
-     */
-    private async validatePlayer(loginDto: LoginDto): Promise<PlayerPublic> {
-        const player = await this.playerRepository.findOneBy({ username: loginDto.email }); //#TODO Repeats logic, already have function to check uniqueness
-
-        if (player && await bcrypt.compare(loginDto.password, player.password)) {
-            return { id: player.id, username: player.username };
-        } else {
-            throw new UnauthorizedException('Invalid credentials.');
-        }
-    }
-
-    /**
      * Validates a Google user and creates a new player if they don't exist.
      * @param {any} profile The Google user profile.
      * @returns {Promise<PlayerPublic>} The player's ID and username.
@@ -90,7 +66,7 @@ export class AuthService {
     async validateGoogleUser(profile: any): Promise<PlayerPublic> {
         const { id, displayName, emails } = profile;
         let player = await this.playerRepository.findOneBy({ username: id });
-    
+
         if (!player) { //#TODO This might need to be changed
             player = this.playerRepository.create({
                 username: id,
@@ -98,7 +74,31 @@ export class AuthService {
             });
             await this.playerRepository.save(player);
         }
-    
+
         return { id: player.id, username: player.username };
+    }
+
+    async validatePlayer(login: LoginDto): Promise<PlayerPublic> {
+        const player = await this.playerRepository.findOneBy({ email: login.email });
+        if (!player) throw new UnauthorizedException('Player not found!');
+
+        console.log("Validated player: " + player.email);
+
+        if (player && await bcrypt.compare(login.password, player.password)) {
+            return { id: player.id, username: player.username };
+        } else {
+            throw new UnauthorizedException('Invalid credentials.');
+        }
+    }
+
+    private async generateTokens(playerId: number): Promise<LoginResponse> {
+        const payload: JwtPayload = { id: playerId };
+        
+        const [accessToken, refreshToken] = await Promise.all([
+            this.jwtService.signAsync(payload, { expiresIn: '1h' }),
+            this.jwtService.signAsync(payload, { expiresIn: '7d' }),
+        ]);
+
+        return { accessToken, refreshToken } as LoginResponse;
     }
 }

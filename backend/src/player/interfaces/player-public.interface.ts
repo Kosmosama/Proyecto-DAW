@@ -1,6 +1,6 @@
 export interface PlayerPublic {
     id: number;
-    username: string;
+    username?: string;
     email?: string;
     photo?: string;
     online?: boolean;

@@ -8,6 +8,7 @@ import { Public } from './decorators/public.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { Player } from 'src/player/decorators/player.decorator';
 import { RegisterDto } from './dto/register.dto';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Public()
 @Controller('auth')
@@ -16,10 +17,12 @@ export class AuthController {
         private readonly authService: AuthService
     ) { }
 
+    @Public()
     @HttpCode(HttpStatus.OK)
+    @UseGuards(LocalAuthGuard)
     @Post('login')
-    login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
-        return this.authService.login(loginDto);
+    login(@Body() player: PlayerPublic): Promise<LoginResponse> {
+        return this.authService.login(player);
     }
 
     @Post('register')
