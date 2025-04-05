@@ -7,9 +7,8 @@ import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { Repository } from 'typeorm';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { LoginResponse } from './interfaces/login-response.interface';
-import { RefreshResponse } from './interfaces/refresh-response.interface';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { TokenResponse } from './interfaces/token-response.interface';
 
 @Injectable()
 export class AuthService {
@@ -38,7 +37,7 @@ export class AuthService {
         return { id: savedPlayer.id, username: savedPlayer.username };
     }
 
-    async login(player: PlayerPublic): Promise<LoginResponse> {
+    async login(player: PlayerPublic): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
         // #TODO Save refresh token in the database | should refreshToken be returned?
@@ -46,16 +45,12 @@ export class AuthService {
         return { accessToken, refreshToken };
     }
 
-    /**
-     * Generates a new access token using a refresh token.
-     * @param {string} refreshToken The refresh token provided during login.
-     * @returns {RefreshResponse} Object containing the new access token.
-     * @throws {UnauthorizedException} If the refresh token is invalid or expired.
-     */
-    async refresh(refreshToken: string): Promise<RefreshResponse> {
-        const payload = await this.jwtService.verifyAsync(refreshToken);
-        const newAccessToken = this.jwtService.sign({ username: payload.username, id: payload.id }, { expiresIn: '1h' });
-        return { access_token: newAccessToken };
+    async refreshToken(player: Player): Promise<TokenResponse> {
+        const { accessToken, refreshToken } = await this.generateTokens(player.id);
+
+        // #TODO Save refresh token in the database | should refreshToken be returned?
+
+        return { accessToken, refreshToken };
     }
 
     /**
@@ -78,6 +73,15 @@ export class AuthService {
         return { id: player.id, username: player.username };
     }
 
+    async validateRefreshToken(playerId: number, refreshToken: string): Promise<PlayerPublic> {
+        const player = await this.playerRepository.findOneBy({ id: playerId });
+        if (!player) throw new UnauthorizedException('Player not found!');
+
+        // #TODO Check if refresh token is valid in db
+
+        return { id: player.id, username: player.username, email: player.email }; // #TODO Should we return something?
+    }
+
     async validatePlayer(login: LoginDto): Promise<PlayerPublic> {
         const player = await this.playerRepository.findOneBy({ email: login.email });
         if (!player) throw new UnauthorizedException('Player not found!');
@@ -91,14 +95,14 @@ export class AuthService {
         }
     }
 
-    private async generateTokens(playerId: number): Promise<LoginResponse> {
+    private async generateTokens(playerId: number): Promise<TokenResponse> {
         const payload: JwtPayload = { id: playerId };
-        
+
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload, { expiresIn: '1h' }),
             this.jwtService.signAsync(payload, { expiresIn: '7d' }),
         ]);
 
-        return { accessToken, refreshToken } as LoginResponse;
+        return { accessToken, refreshToken } as TokenResponse;
     }
 }

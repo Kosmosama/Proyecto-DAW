@@ -1,14 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { LoginResponse } from './interfaces/login-response.interface';
-import { RefreshResponse } from './interfaces/refresh-response.interface';
+import { TokenResponse } from './interfaces/token-response.interface';
 import { Public } from './decorators/public.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { Player } from 'src/player/decorators/player.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 
 @Public()
 @Controller('auth')
@@ -21,7 +21,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(LocalAuthGuard)
     @Post('login')
-    login(@Body() player: PlayerPublic): Promise<LoginResponse> {
+    login(@Player() player: PlayerPublic): Promise<TokenResponse> {
         return this.authService.login(player);
     }
 
@@ -43,9 +43,9 @@ export class AuthController {
     //     console.log(player);
     // }
 
-    // @HttpCode(HttpStatus.OK)
-    // @Post('refresh')
-    // refresh(@Body('refresh_token') refreshToken: string): Promise<RefreshResponse> {
-    //     return this.authService.refresh(refreshToken);
-    // }
+    @UseGuards(RefreshAuthGuard)
+    @Post('refresh')
+    refresh(@Player() player): Promise<TokenResponse> {
+        return this.authService.refreshToken(player);
+    }
 }
