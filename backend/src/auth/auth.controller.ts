@@ -1,14 +1,13 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
+import { Player } from 'src/player/decorators/player.decorator';
 import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { TokenResponse } from './interfaces/token-response.interface';
 import { Public } from './decorators/public.decorator';
-import { AuthGuard } from '@nestjs/passport';
-import { Player } from 'src/player/decorators/player.decorator';
 import { RegisterDto } from './dto/register.dto';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshAuthGuard } from './guards/refresh-auth.guard';
+import { TokenResponse } from './interfaces/token-response.interface';
 
 @Public()
 @Controller('auth')
@@ -30,18 +29,18 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
-    @Get('google')
-    @UseGuards(AuthGuard('google'))
-    async googleAuth() {
-        return { message: 'Redirecting to Google...' };
+    @Public()
+    @UseGuards(GoogleAuthGuard)
+    @Get('google/login')
+    async googleLogin() {
     }
 
-    // @Get('google/redirect')
-    // @UseGuards(AuthGuard(GoogleOauth))
-    // async googleAuthRedirect(@Player() player: PlayerPublic) {
-    //     // return this.authService.login(player);
-    //     console.log(player);
-    // }
+    @Get('google/callback')
+    @UseGuards(GoogleAuthGuard)
+    async googleCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
+        const response = await this.authService.login(player);
+        res.redirect(`http://localhost:3000?token=${response.accessToken}&refreshToken=${response.refreshToken}`);
+    }
 
     @UseGuards(RefreshAuthGuard)
     @Post('refresh')
