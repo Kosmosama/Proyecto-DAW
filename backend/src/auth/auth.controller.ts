@@ -8,6 +8,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 import { TokenResponse } from './interfaces/token-response.interface';
+import { GithubAuthGuard } from './guards/github-auth.guard';
 
 @Public()
 @Controller('auth')
@@ -39,7 +40,21 @@ export class AuthController {
     @UseGuards(GoogleAuthGuard)
     async googleCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
         const response = await this.authService.login(player);
-        res.redirect(`http://localhost:3000?token=${response.accessToken}&refreshToken=${response.refreshToken}`);
+        res.redirect(`http://localhost:3000?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
+    }
+
+    @Public()
+    @UseGuards(GithubAuthGuard)
+    @Get('github/login')
+    async githubLogin() {
+    }
+
+    @Public()
+    @UseGuards(GithubAuthGuard)
+    @Get('github/callback')
+    async githubCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
+        const response = await this.authService.login(player);
+        res.redirect(`http://localhost:3000?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
     }
 
     @UseGuards(RefreshAuthGuard)

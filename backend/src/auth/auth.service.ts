@@ -79,6 +79,25 @@ export class AuthService {
         return { id: player.id, username: player.username, email: player.email };
     }
 
+    async validateGithubUser(profile: any): Promise<PlayerPublic> {
+        const { id, username, emails } = profile;
+        const email = emails?.[0]?.value;
+
+        if (!email) throw new Error("Google account has no email");
+        
+        let player = await this.playerRepository.findOneBy({ username: id });
+    
+        if (!player) {
+            player = this.playerRepository.create({
+                username: username,
+                password: "",
+                email: email,
+            });
+            await this.playerRepository.save(player);
+        }
+    
+        return { id: player.id, username: player.username, email: player.email };
+    }
 
     async validateRefreshToken(playerId: number, refreshToken: string): Promise<PlayerPublic> {
         const player = await this.playerRepository.findOneBy({ id: playerId });
