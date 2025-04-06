@@ -40,7 +40,10 @@ export class AuthService {
     async login(player: PlayerPublic): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
-        // #TODO Save refresh token in the database | should refreshToken be returned?
+        // #TODO Save refresh token in the database
+        // const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        // await this.playerRepository.update(player.id, { refreshToken: hashedRefreshToken });
+        // Or something like that, also return hashed refresh token
 
         return { accessToken, refreshToken };
     }
@@ -48,30 +51,34 @@ export class AuthService {
     async refreshToken(player: Player): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
-        // #TODO Save refresh token in the database | should refreshToken be returned?
+        // #TODO Save refresh token in the database
+        // const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        // await this.playerRepository.update(player.id, { refreshToken: hashedRefreshToken });
+        // Or something like that, also return hashed refresh token
 
         return { accessToken, refreshToken };
     }
 
-    /**
-     * Validates a Google user and creates a new player if they don't exist.
-     * @param {any} profile The Google user profile.
-     * @returns {Promise<PlayerPublic>} The player's ID and username.
-     */
-    async validateGoogleUser(profile: any): Promise<PlayerPublic> {
+    async validateGoogleUser(profile: any): Promise<PlayerPublic> { // #TODO Use GoogleUser interface
         const { id, displayName, emails } = profile;
-        let player = await this.playerRepository.findOneBy({ username: id });
+        const email = emails?.[0]?.value;
 
-        if (!player) { //#TODO This might need to be changed
+        if (!email) throw new Error("Google account has no email");
+
+        let player = await this.playerRepository.findOneBy({ email });
+
+        if (!player) {
             player = this.playerRepository.create({
-                username: id,
-                password: id,
+                username: displayName,
+                email: email,
+                password: '',
             });
             await this.playerRepository.save(player);
         }
 
-        return { id: player.id, username: player.username };
+        return { id: player.id, username: player.username, email: player.email };
     }
+
 
     async validateRefreshToken(playerId: number, refreshToken: string): Promise<PlayerPublic> {
         const player = await this.playerRepository.findOneBy({ id: playerId });
