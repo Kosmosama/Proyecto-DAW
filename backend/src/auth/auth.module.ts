@@ -7,6 +7,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PlayerService } from 'src/player/player.service';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
+import { RefreshJwtStrategy } from './strategies/refresh.strategy';
 
 @Module({
     imports: [
@@ -20,7 +22,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
             }),
         }),
     ],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, PlayerService],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, PlayerService, LocalStrategy, RefreshJwtStrategy],
     controllers: [AuthController],
     exports: [AuthService, JwtModule],
 })

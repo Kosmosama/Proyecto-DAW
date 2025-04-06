@@ -37,10 +37,10 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
     providers: [
         AppService, 
         ChatGateway,
-        {
-            provide: 'APP_GUARD',
-            useClass: JwtGuard,
-        },
+        // {
+        //     provide: 'APP_GUARD',
+        //     useClass: JwtGuard,
+        // },
         JwtStrategy,
     ],
 })
