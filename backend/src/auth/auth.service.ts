@@ -32,6 +32,11 @@ export class AuthService {
         return { id: newPlayer.id, username: newPlayer.username };
     }
 
+    /**
+     * Logs in a player and generates JWT tokens.
+     * @param {PlayerPublic} player The player object containing ID and username.
+     * @returns {TokenResponse} Object containing access and refresh tokens.
+     */
     async login(player: PlayerPublic): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
@@ -40,6 +45,11 @@ export class AuthService {
         return { accessToken, refreshToken: hashedRefreshToken };
     }
 
+    /**
+     * Refreshes the JWT tokens for a player.
+     * @param {Player} player The player object containing ID and username.
+     * @returns {TokenResponse} Object containing new access and refresh tokens.
+     */
     async refreshToken(player: Player): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
@@ -48,6 +58,12 @@ export class AuthService {
         return { accessToken, refreshToken: hashedRefreshToken };
     }
 
+    /**
+     * Validates a Google user and retrieves or creates a player.
+     * @param {any} profile The Google profile object.
+     * @returns {PlayerPublic} The player's ID, username, and email.
+     * @throws {Error} If the Google account has no email.
+     */
     async validateGoogleUser(profile: any): Promise<PlayerPublic> { // #TODO Use GoogleUser interface
         const { displayName, emails } = profile;
         const email = emails?.[0]?.value;
@@ -67,6 +83,12 @@ export class AuthService {
         return { id: player.id, username: player.username, email };
     }
 
+    /**
+     * Validates a GitHub user and retrieves or creates a player.
+     * @param {any} profile The GitHub profile object.
+     * @returns {PlayerPublic} The player's ID, username, and email.
+     * @throws {Error} If the GitHub account has no email.
+     */
     async validateGithubUser(profile: any): Promise<PlayerPublic> {
         const { id, username, emails } = profile;
         const email = emails?.[0]?.value;
@@ -86,6 +108,13 @@ export class AuthService {
         return { id: player.id, username: player.username, email };
     }
 
+    /**
+     * Validates a refresh token and retrieves player information.
+     * @param {number} playerId The player's ID.
+     * @param {string} refreshToken The refresh token to validate.
+     * @returns {PlayerPublic} The player's public information.
+     * @throws {UnauthorizedException} If the refresh token is invalid or expired.
+     */
     async validateRefreshToken(playerId: number, refreshToken: string): Promise<PlayerPublic> {
         const isValid = await this.playerService.validateRefreshToken(playerId, refreshToken);
         if (!isValid) throw new UnauthorizedException('Invalid or expired refresh token.');
@@ -94,6 +123,12 @@ export class AuthService {
         return { id: player.id, username: player.username, email: player.email };
     }
 
+    /**
+     * Validates a player's credentials.
+     * @param {LoginDto} login The login data transfer object containing email and password.
+     * @returns {PlayerPublic} The player's public information.
+     * @throws {UnauthorizedException} If the credentials are invalid.
+     */
     async validatePlayer(login: LoginDto): Promise<PlayerPublic> {
         const player = await this.playerService.findOneBy({ email: login.email }, true, ['id', 'username', 'password']);
         const isMatch = await bcrypt.compare(login.password, player.password);
@@ -105,6 +140,11 @@ export class AuthService {
         return { id: player.id, username: player.username };
     }
 
+    /**
+     * Generates JWT tokens for a player.
+     * @param {number} playerId The player's ID.
+     * @returns {Promise<TokenResponse>} Object containing access and refresh tokens.
+     */
     private async generateTokens(playerId: number): Promise<TokenResponse> {
         const payload: JwtPayload = { id: playerId };
 
