@@ -27,6 +27,7 @@
     "@popperjs/core": "^2.11.8",
     "@smogon/calc": "^0.10.0",
     "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.11.3",
     "dotenv": "^16.4.7",
     "express": "^4.18.2",
     "rxjs": "~7.8.0",

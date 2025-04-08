@@ -1,7 +1,7 @@
 export interface Player {
     id?: number;
     email: string;
-    name: string;
+    username: string;
     password: string;
     photo?: string;
 }

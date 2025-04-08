@@ -45,7 +45,7 @@ export class RegisterComponent implements CanComponentDeactivate {
       email: ['', [Validators.required, Validators.email]],
       email2: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(4)]],
-      avatar: ['', [Validators.required]],
+      avatar: [''],
     },
     { validators: matchEmail('email', 'email2') }
   );
@@ -58,10 +58,10 @@ export class RegisterComponent implements CanComponentDeactivate {
     const rawValue = this.registerForm.getRawValue();
 
     const player: Player = {
-      name: rawValue.name,
+      username: rawValue.name,
       email: rawValue.email,
       password: rawValue.password,
-      photo: this.imageBase64
+      photo: this.imageBase64 || ''
     };
 
     this.#authService
@@ -76,10 +76,8 @@ export class RegisterComponent implements CanComponentDeactivate {
           this.errors.set(error.status);
           window.scrollTo(0, 0);
         }
-
       });
   }
-
   handleAvatarChange(base64Image: string) {
     this.imageBase64 = base64Image;
     const img = document.getElementById('imgPreview') as HTMLImageElement;

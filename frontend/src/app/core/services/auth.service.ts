@@ -8,12 +8,12 @@ import { LoginResponse, Player, SinglePlayerResponse } from '../interfaces/playe
     providedIn: 'root',
 })
 export class AuthService {
-    private apiUrl = `${environment.API_URL}`;
+    private apiUrl = `${environment.apiUrl}`;
     private http = inject(HttpClient);
 
     register(playerData: Player): Observable<Player> {
         return this.http
-            .post<SinglePlayerResponse>(`${this.apiUrl}/auth/register`, playerData)
+            .post<SinglePlayerResponse>(`auth/register`, playerData)
             .pipe(map((resp: SinglePlayerResponse) => resp.data));
     }
 
