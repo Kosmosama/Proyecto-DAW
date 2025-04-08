@@ -15,6 +15,9 @@ export class Player {
     @Column({ name: 'password_hash', length: 255 })
     password: string;
 
+    @Column({ name: 'refresh_token_hash', length: 255, nullable: true })
+    refreshToken?: string;
+
     @Column({ length: 255, nullable: true })
     photo: string;
 
@@ -25,9 +28,13 @@ export class Player {
     online: boolean;
 
     @BeforeInsert()
-    async hashPassword() {
+    async hashSensitiveData() {
         if (this.password) {
             this.password = await bcrypt.hash(this.password, 12);
+        }
+
+        if (this.refreshToken) {
+            this.refreshToken = await bcrypt.hash(this.refreshToken, 12);
         }
     }
 }
