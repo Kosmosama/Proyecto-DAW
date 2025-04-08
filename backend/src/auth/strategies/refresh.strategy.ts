@@ -12,8 +12,8 @@ export class RefreshJwtStrategy extends PassportStrategy(
     'refresh-jwt',
 ) {
     constructor(
+        private readonly authService: AuthService,
         private readonly configService: ConfigService,
-        private authService: AuthService,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

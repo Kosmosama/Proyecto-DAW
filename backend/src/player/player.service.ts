@@ -135,7 +135,7 @@ export class PlayerService {
      * @returns {Promise<boolean>} True if a matching user is found.
      */
     async userExistsBy(conditions: FindOptionsWhere<Player>): Promise<boolean> {
-        return !!(await this.playerRepository.findOneBy(conditions));
+        return !!(await this.findOneBy(conditions, false));
     }
 
     /**

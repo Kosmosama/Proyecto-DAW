@@ -9,12 +9,12 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenResponse } from './interfaces/token-response.interface';
+import { PlayerService } from 'src/player/player.service';
 
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(Player)
-        private readonly playerRepository: Repository<Player>,
+        private readonly playerService: PlayerService,
         private readonly jwtService: JwtService
     ) { }
 
@@ -25,100 +25,84 @@ export class AuthService {
      * @throws {ConflictException} If the username is already taken.
      */
     async register(registerDto: RegisterDto): Promise<PlayerPublic> {
-        const existingPlayer = await this.playerRepository.findOneBy({ username: registerDto.username });
-        if (existingPlayer) throw new ConflictException('Username already exists.');
+        const exists = await this.playerService.userExistsBy({ username: registerDto.username });
+        if (exists) throw new ConflictException('Username already exists.');
 
-        const newPlayer = this.playerRepository.create({
-            ...registerDto,
-        });
-
-        const savedPlayer = await this.playerRepository.save(newPlayer);
-
-        return { id: savedPlayer.id, username: savedPlayer.username };
+        const newPlayer = await this.playerService.createUser(registerDto);
+        return { id: newPlayer.id, username: newPlayer.username };
     }
 
     async login(player: PlayerPublic): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
-        // #TODO Save refresh token in the database
-        // const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-        // await this.playerRepository.update(player.id, { refreshToken: hashedRefreshToken });
-        // Or something like that, also return hashed refresh token
+        const hashedRefreshToken = await this.playerService.updateRefreshToken(player.id, refreshToken);
 
-        return { accessToken, refreshToken };
+        return { accessToken, refreshToken: hashedRefreshToken };
     }
 
     async refreshToken(player: Player): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
-        // #TODO Save refresh token in the database
-        // const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-        // await this.playerRepository.update(player.id, { refreshToken: hashedRefreshToken });
-        // Or something like that, also return hashed refresh token
+        const hashedRefreshToken = await this.playerService.updateRefreshToken(player.id, refreshToken);
 
-        return { accessToken, refreshToken };
+        return { accessToken, refreshToken: hashedRefreshToken };
     }
 
     async validateGoogleUser(profile: any): Promise<PlayerPublic> { // #TODO Use GoogleUser interface
-        const { id, displayName, emails } = profile;
+        const { displayName, emails } = profile;
         const email = emails?.[0]?.value;
-
         if (!email) throw new Error("Google account has no email");
 
-        let player = await this.playerRepository.findOneBy({ email });
-
-        if (!player) {
-            player = this.playerRepository.create({
+        let player: any;
+        try {
+            player = await this.playerService.findOneBy({ email });
+        } catch {
+            player = await this.playerService.createUser({
                 username: displayName,
-                email: email,
+                email,
                 password: '',
             });
-            await this.playerRepository.save(player);
         }
 
-        return { id: player.id, username: player.username, email: player.email };
+        return { id: player.id, username: player.username, email };
     }
 
     async validateGithubUser(profile: any): Promise<PlayerPublic> {
         const { id, username, emails } = profile;
         const email = emails?.[0]?.value;
+        if (!email) throw new Error("GitHub account has no email");
 
-        if (!email) throw new Error("Google account has no email");
-        
-        let player = await this.playerRepository.findOneBy({ username: id });
-    
-        if (!player) {
-            player = this.playerRepository.create({
-                username: username,
-                password: "",
-                email: email,
+        let player: any;
+        try {
+            player = await this.playerService.findOneBy({ username: id });
+        } catch {
+            player = await this.playerService.createUser({
+                username,
+                email,
+                password: '',
             });
-            await this.playerRepository.save(player);
         }
-    
-        return { id: player.id, username: player.username, email: player.email };
+
+        return { id: player.id, username: player.username, email };
     }
 
     async validateRefreshToken(playerId: number, refreshToken: string): Promise<PlayerPublic> {
-        const player = await this.playerRepository.findOneBy({ id: playerId });
-        if (!player) throw new UnauthorizedException('Player not found!');
+        const isValid = await this.playerService.validateRefreshToken(playerId, refreshToken);
+        if (!isValid) throw new UnauthorizedException('Invalid or expired refresh token.');
 
-        // #TODO Check if refresh token is valid in db
-
-        return { id: player.id, username: player.username, email: player.email }; // #TODO Should we return something?
+        const player = await this.playerService.findOneBy({ id: playerId }, true, ['id', 'username', 'email']);
+        return { id: player.id, username: player.username, email: player.email };
     }
 
     async validatePlayer(login: LoginDto): Promise<PlayerPublic> {
-        const player = await this.playerRepository.findOneBy({ email: login.email });
-        if (!player) throw new UnauthorizedException('Player not found!');
+        const player = await this.playerService.findOneBy({ email: login.email }, true, ['id', 'username', 'password']);
+        const isMatch = await bcrypt.compare(login.password, player.password);
 
-        console.log("Validated player: " + player.email);
-
-        if (player && await bcrypt.compare(login.password, player.password)) {
-            return { id: player.id, username: player.username };
-        } else {
+        if (!isMatch) {
             throw new UnauthorizedException('Invalid credentials.');
         }
+
+        return { id: player.id, username: player.username };
     }
 
     private async generateTokens(playerId: number): Promise<TokenResponse> {
@@ -129,6 +113,6 @@ export class AuthService {
             this.jwtService.signAsync(payload, { expiresIn: '7d' }),
         ]);
 
-        return { accessToken, refreshToken } as TokenResponse;
+        return { accessToken, refreshToken };
     }
 }
