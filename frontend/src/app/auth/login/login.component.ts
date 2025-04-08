@@ -54,7 +54,7 @@ export class LoginComponent implements CanComponentDeactivate {
       .pipe(
         map(() => {
           this.#saved = true;
-          this.#router.navigate(['/friendList']);
+          this.#router.navigate(['player/friendList']);
         })
       )
       .subscribe({
@@ -63,21 +63,6 @@ export class LoginComponent implements CanComponentDeactivate {
         },
       });
   }
-
-  // googleUserLogin(resp: google.accounts.id.CredentialResponse): void {
-  //   const userData: GoogleFbLogin = {
-  //     token: resp.credential,
-  //     lat: 0,
-  //     lng: 0,
-  //   };
-
-  //   this.#authService
-  //     .googleFbLogin(userData)
-  //     .pipe(takeUntilDestroyed(this.#destroyRef))
-  //     .subscribe(() => {
-  //       this.#router.navigate(['/events']);
-  //     });
-  // }
 
 
   loginForm = this.#fb.group({
@@ -96,5 +81,19 @@ export class LoginComponent implements CanComponentDeactivate {
   }
 }
 
-//TODO Google & Facebook login
-//TODO show login/register buttons only when user is not logged
+// googleUserLogin(resp: google.accounts.id.CredentialResponse): void {
+//   const userData: GoogleFbLogin = {
+//     token: resp.credential,
+//     lat: 0,
+//     lng: 0,
+//   };
+
+//   this.#authService
+//     .googleFbLogin(userData)
+//     .pipe(takeUntilDestroyed(this.#destroyRef))
+//     .subscribe(() => {
+//       this.#router.navigate(['/events']);
+//     });
+// }
+
+

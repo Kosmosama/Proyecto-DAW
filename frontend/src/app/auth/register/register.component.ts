@@ -55,24 +55,27 @@ export class RegisterComponent implements CanComponentDeactivate {
 
   addPlayer() {
     const rawValue = this.registerForm.getRawValue();
-
+  
     const player: Player = {
       username: rawValue.name,
       email: rawValue.email,
       password: rawValue.password,
       photo: this.imageBase64 || ''
     };
-
+  
     this.#authService
       .register(player)
       .pipe(takeUntilDestroyed(this.#destroyRef))
       .subscribe({
         next: () => {
           this.#saved = true;
-          this.#router.navigate(['login']);
           const modalRef = this.#modal.open(CatModalComponent);
           modalRef.componentInstance.message = 'Registration successful!';
           modalRef.componentInstance.catImageUrl = 'https://http.cat/200';
+  
+          modalRef.result.then(
+            () => this.#router.navigate(['auth/login']),
+          );
         },
         error: (error) => {
           this.errors.set(error.status);
@@ -83,7 +86,6 @@ export class RegisterComponent implements CanComponentDeactivate {
         }
       });
   }
-
   handleAvatarChange(base64Image: string) {
     this.imageBase64 = base64Image;
     const img = document.getElementById('imgPreview') as HTMLImageElement;

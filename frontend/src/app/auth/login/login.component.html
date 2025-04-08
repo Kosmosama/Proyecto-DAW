@@ -34,19 +34,6 @@
         }
     </div>
 
-    <div class="form-row d-none">
-        <div class="mb-3 col">
-            <label for="lat">Latitude:</label>
-            <input type="text" class="form-control" id="lat" formControlName="lat" placeholder="Geolocating..."
-                readonly />
-        </div>
-        <div class="mb-3 col">
-            <label for="lng">Longitude:</label>
-            <input type="text" class="form-control" id="lng" formControlName="lng" placeholder="Geolocating..."
-                readonly />
-        </div>
-    </div>
-
     <p class="text-danger"></p>
     <button type="submit" class="btn btn-primary" [disabled]="loginForm.invalid">Login</button>
 

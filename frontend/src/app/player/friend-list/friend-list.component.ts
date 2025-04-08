@@ -23,10 +23,6 @@ export class FriendListComponent implements OnInit {
       (friends) => {
         this.friends = friends;
         this.loading = false;
-      },
-      (error) => {
-        this.errorMessage = 'Error al cargar amigos.';
-        this.loading = false;
       }
     );
   }

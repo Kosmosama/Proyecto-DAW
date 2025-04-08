@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
     providedIn: 'root',
 })
 export class AuthService {
-    private apiUrl = `${environment.apiUrl}`;
+    // private apiUrl = `${environment.apiUrl}`;
     private http = inject(HttpClient);
     private logged: WritableSignal<boolean> = signal(false);
     private router = inject(Router);
@@ -36,10 +36,10 @@ export class AuthService {
      */
     login(playerData: PlayerLogin): Observable<string> {
         return this.http
-            .post<LoginResponse>(`${this.apiUrl}/auth/login`, playerData)
+            .post<LoginResponse>(`auth/login`, playerData)
             .pipe(
                 map((resp: LoginResponse) => {
-                    localStorage.setItem('access_token', resp.accessToken);
+                    localStorage.setItem('authToken', resp.accessToken);
                     return resp.accessToken;
                 })
             );
@@ -52,13 +52,13 @@ export class AuthService {
      * @memberof AuthService
      */
     getLoggedPlayer(): Observable<Player> {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('authToken');
         if (!token) {
             throw new Error('No access token found');
         }
 
         return this.http
-            .get<SinglePlayerResponse>(`${this.apiUrl}/player/`, {
+            .get<SinglePlayerResponse>(`player/`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
             .pipe(map((resp: SinglePlayerResponse) => resp.data));

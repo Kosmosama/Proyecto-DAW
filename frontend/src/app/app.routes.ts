@@ -1,22 +1,22 @@
 import { Routes } from "@angular/router";
 
 export const routes: Routes = [
-    { 
-        path: "", 
-        redirectTo: "/auth/register", 
-        pathMatch: "full" 
-
-    },
     {   
         path: "auth", 
-        loadChildren: () => import("./auth/auth.routes").then(r => r.routes) 
+        loadChildren: () => import("./auth/auth.routes").then(r => r.authRoutes) 
     },
     {   
         path: "player", 
-        loadChildren: () => import("./player/player.routes").then(r => r.routes) 
+        loadChildren: () => import("./player/player.routes").then(r => r.playerRoutes) 
+    },
+    { 
+        path: '', 
+        redirectTo: "/player/friendList", 
+        pathMatch: "full" 
+
     },
     { 
         path: "**", 
-        redirectTo: "error" 
+        redirectTo: "/auth/login" 
     }
 ];

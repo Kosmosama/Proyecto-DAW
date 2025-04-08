@@ -3,7 +3,7 @@ import { PreloadAllModules, provideRouter, withComponentInputBinding, withPreloa
 
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { routes } from './app.routes';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { baseUrlInterceptor } from './core/interceptors/base-url.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 
@@ -11,7 +11,7 @@ export const appConfig: ApplicationConfig = {
     providers: [
         provideExperimentalZonelessChangeDetection(),
         provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
-        provideHttpClient(withInterceptors([baseUrlInterceptor, authInterceptor])), 
+        provideHttpClient(withFetch(), withInterceptors([baseUrlInterceptor, authInterceptor])), 
         // provideGoogleId(process.env.GOOGLE_CLIENT_ID!),
         provideClientHydration(withEventReplay())
     ]

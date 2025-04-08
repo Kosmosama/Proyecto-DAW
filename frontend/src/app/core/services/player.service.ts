@@ -3,12 +3,12 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 // import { environment } from '../../../environments/environment';
 import { Player } from '../interfaces/player.interface';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
     providedIn: 'root',
 })
 export class PlayerService {
-    private apiUrl = process.env['API_URL']!;
     private http = inject(HttpClient);
 
     /**
@@ -18,13 +18,13 @@ export class PlayerService {
      * @memberof PlayerService
      */
     getFriends(): Observable<Player[]> {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('authToken');
         if (!token) {
             throw new Error('No access token found');
         }
 
         return this.http
-            .get<Player[]>(`${this.apiUrl}/player/friends`, {
+            .get<Player[]>(`player/friends`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
     }
