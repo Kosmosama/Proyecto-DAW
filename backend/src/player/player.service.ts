@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { RegisterDto } from 'src/auth/dto/register.dto';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { Friendship, FriendshipStatus } from './entities/friendship.entity';
 import { Player } from './entities/player.entity';
@@ -15,6 +17,16 @@ export class PlayerService {
         @InjectRepository(Player)
         private readonly playerRepository: Repository<Player>,
     ) { }
+
+    /**
+     * Register a new player.
+     * @param {RegisterDto} dto Registration data (username, email, password, optional photo).
+     * @returns {Promise<Player>} Created player entity.
+     */
+    async createUser(dto: RegisterDto): Promise<Player> {
+        const player = this.playerRepository.create(dto);
+        return await this.playerRepository.save(player); // triggers hashing
+    }
 
     /**
      * Retrieve all players' basic information.
@@ -33,12 +45,7 @@ export class PlayerService {
      * @throws {NotFoundException} if player doesn't exist.
      */
     async findOne(id: number): Promise<PlayerPublic> {
-        const player = await this.playerRepository.findOne({
-            where: { id },
-            select: ['id', 'username'],
-        });
-        if (!player) throw new NotFoundException("Player not found.");
-        return player;
+        return await this.findOneBy({ id }, true, ['id', 'username']);
     }
 
     /**
@@ -66,12 +73,69 @@ export class PlayerService {
     }
 
     /**
-     * Check if a player exists by username.
-     * @param {string} username Player username to check.
-     * @returns {Promise<boolean>} True if the player exists, false otherwise.
+     * Find a single player by given conditions.
+     * @param {FindOptionsWhere<Player>} where Conditions to match.
+     * @param {boolean} throwIfNotFound Whether to throw if not found (default: true).
+     * @param {Array<keyof Player>} select Optional list of fields to select.
+     * @returns {Promise<Player>} Player entity or throws NotFoundException.
      */
-    async playerExists(username: string): Promise<boolean> {
-        return (await this.playerRepository.count({ where: { username } })) > 0;
+    async findOneBy(where: FindOptionsWhere<Player>, throwIfNotFound = true, select?: Array<keyof Player>): Promise<Player> {
+        const player = await this.playerRepository.findOne({
+            where,
+            select,
+        });
+    
+        if (!player && throwIfNotFound) {
+            throw new NotFoundException('Player not found.');
+        }
+
+        return player!;
+    }
+
+    /**
+     * Update and hash a player's refresh token.
+     * @param {number} playerId Player ID.
+     * @param {string} refreshToken Raw refresh token to be hashed.
+     * @returns {Promise<string>} Hashed refresh token.
+     * @throws {NotFoundException} If player is not found.
+     */
+    async updateRefreshToken(playerId: number, refreshToken: string): Promise<string> {
+        const player = await this.findOneBy({ id: playerId });
+    
+        player.refreshToken = refreshToken;
+        await this.playerRepository.save(player); // triggers hashSensitiveData
+        return player.refreshToken!;
+    }
+
+    /**
+     * Get hashed refresh token for a player.
+     * @param {number} playerId Player ID.
+     * @returns {Promise<string | null>} Hashed token or null if not found.
+     */
+    async getRefreshTokenHash(playerId: number): Promise<string | null> {
+        const player = await this.findOneBy({ id: playerId }, false, ['refreshToken']);
+        return player?.refreshToken ?? null;
+    }
+
+    /**
+     * Validate a refresh token by comparing with the stored hash.
+     * @param {number} playerId Player ID.
+     * @param {string} refreshToken Unhashed token to validate.
+     * @returns {Promise<boolean>} True if token is valid.
+     */
+    async validateRefreshToken(playerId: number, refreshToken: string): Promise<boolean> {
+        const hashed = await this.getRefreshTokenHash(playerId);
+        if (!hashed) return false;
+        return await bcrypt.compare(refreshToken, hashed);
+    }
+
+    /**
+     * Check if a user exists by partial conditions.
+     * @param {FindOptionsWhere<Player>} conditions Partial Player fields to match.
+     * @returns {Promise<boolean>} True if a matching user is found.
+     */
+    async userExistsBy(conditions: FindOptionsWhere<Player>): Promise<boolean> {
+        return !!(await this.playerRepository.findOneBy(conditions));
     }
 
     /**
@@ -145,29 +209,12 @@ export class PlayerService {
      * @returns {Promise<Friend[]>} List of friends with their details.
      */
     async getFriends(playerId: number): Promise<Friend[]> {
-        // SELECT friendship."createdAt",
-        //     sender.id AS "sender_id", sender.username AS "sender_username", sender.photo AS "sender_photo", 
-        //     sender.online AS "sender_online", sender."lastLogin" AS "sender_lastLogin",
-        //     receiver.id AS "receiver_id", receiver.username AS "receiver_username", receiver.photo AS "receiver_photo", 
-        //     receiver.online AS "receiver_online", receiver."lastLogin" AS "receiver_lastLogin"
-        // FROM "friendship"
-        // LEFT JOIN "player" AS sender ON sender.id = friendship."senderId"
-        // LEFT JOIN "player" AS receiver ON receiver.id = friendship."receiverId"
-        // WHERE (friendship."senderId" = :playerId OR friendship."receiverId" = :playerId)
-        //     AND friendship.status = :status;
-
-        const friendships = await this.friendshipRepository.createQueryBuilder('friendship')
-            .leftJoin('friendship.sender', 'sender')
-            .leftJoin('friendship.receiver', 'receiver')
-            .select([
-                'friendship.createdAt',
-                'sender.id', 'sender.username', 'sender.photo', 'sender.online', 'sender.lastLogin',
-                'receiver.id', 'receiver.username', 'receiver.photo', 'receiver.online', 'receiver.lastLogin',
-            ])
-            .where(
-                '(friendship.senderId = :playerId OR friendship.receiverId = :playerId) AND friendship.status = :status',
-                { playerId, status: FriendshipStatus.ACCEPTED }
-            )
+        const friendships = await this.friendshipRepository
+            .createQueryBuilder('f')
+            .innerJoinAndSelect('f.sender', 'sender')
+            .innerJoinAndSelect('f.receiver', 'receiver')
+            .where('f.status = :status', { status: FriendshipStatus.ACCEPTED })
+            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId })
             .getMany();
 
         return friendships.map(({ sender, receiver, createdAt }) => {
