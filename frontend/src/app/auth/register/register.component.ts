@@ -11,6 +11,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
+import { CatModalComponent } from '../../shared/components/modals/cat-modal/cat-modal.component'; // Importa CatModalComponent
 import { EncodeBase64Directive } from '../../shared/directives/encode-base64.directive';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
 import { matchEmail } from '../../shared/validators/match-email.validator';
@@ -50,9 +51,7 @@ export class RegisterComponent implements CanComponentDeactivate {
     { validators: matchEmail('email', 'email2') }
   );
 
-  constructor() {
-
-  }
+  constructor() { }
 
   addPlayer() {
     const rawValue = this.registerForm.getRawValue();
@@ -71,13 +70,22 @@ export class RegisterComponent implements CanComponentDeactivate {
         next: () => {
           this.#saved = true;
           this.#router.navigate(['login']);
+          // Abre la modal de éxito (200)
+          const modalRef = this.#modal.open(CatModalComponent);
+          modalRef.componentInstance.message = 'Registration successful!';
+          modalRef.componentInstance.catImageUrl = 'https://http.cat/200';  // Gato feliz para éxito
         },
         error: (error) => {
           this.errors.set(error.status);
           window.scrollTo(0, 0);
+          // Abre la modal de error con el código HTTP correspondiente
+          const modalRef = this.#modal.open(CatModalComponent);
+          modalRef.componentInstance.message = `Error ${error.status}: ${error.message}`;
+          modalRef.componentInstance.catImageUrl = `https://http.cat/${error.status}`;
         }
       });
   }
+
   handleAvatarChange(base64Image: string) {
     this.imageBase64 = base64Image;
     const img = document.getElementById('imgPreview') as HTMLImageElement;
