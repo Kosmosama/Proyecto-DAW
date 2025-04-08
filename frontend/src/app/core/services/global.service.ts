@@ -9,6 +9,13 @@ import { catchError } from 'rxjs/operators';
 export class HttpStatusService {
   constructor(private http: HttpClient) {}
 
+  /**
+   *
+   *
+   * @param {string} url
+   * @return {*}  {Observable<any>}
+   * @memberof HttpStatusService
+   */
   getData(url: string): Observable<any> {
     return this.http.get(url).pipe(
       catchError((error: HttpErrorResponse) => {

@@ -70,15 +70,13 @@ export class RegisterComponent implements CanComponentDeactivate {
         next: () => {
           this.#saved = true;
           this.#router.navigate(['login']);
-          // Abre la modal de éxito (200)
           const modalRef = this.#modal.open(CatModalComponent);
           modalRef.componentInstance.message = 'Registration successful!';
-          modalRef.componentInstance.catImageUrl = 'https://http.cat/200';  // Gato feliz para éxito
+          modalRef.componentInstance.catImageUrl = 'https://http.cat/200';
         },
         error: (error) => {
           this.errors.set(error.status);
           window.scrollTo(0, 0);
-          // Abre la modal de error con el código HTTP correspondiente
           const modalRef = this.#modal.open(CatModalComponent);
           modalRef.componentInstance.message = `Error ${error.status}: ${error.message}`;
           modalRef.componentInstance.catImageUrl = `https://http.cat/${error.status}`;

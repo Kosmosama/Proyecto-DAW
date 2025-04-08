@@ -6,6 +6,11 @@ export interface Player {
     photo?: string;
 }
 
+export interface PlayerLogin {
+    email: string;
+    password: string;
+}
+
 export interface SinglePlayerResponse {
     data: Player;
 }

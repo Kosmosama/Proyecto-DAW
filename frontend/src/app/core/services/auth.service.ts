@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { inject, Injectable, signal, WritableSignal } from '@angular/core';
+import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginResponse, Player, SinglePlayerResponse } from '../interfaces/player.interface';
+import { LoginResponse, Player, PlayerLogin, SinglePlayerResponse } from '../interfaces/player.interface';
+import { Router } from '@angular/router';
 
 @Injectable({
     providedIn: 'root',
@@ -10,14 +11,30 @@ import { LoginResponse, Player, SinglePlayerResponse } from '../interfaces/playe
 export class AuthService {
     private apiUrl = `${environment.apiUrl}`;
     private http = inject(HttpClient);
+    private logged: WritableSignal<boolean> = signal(false);
+    private router = inject(Router);
 
+    /**
+     *
+     *
+     * @param {Player} playerData
+     * @return {*}  {Observable<Player>}
+     * @memberof AuthService
+     */
     register(playerData: Player): Observable<Player> {
         return this.http
             .post<SinglePlayerResponse>(`auth/register`, playerData)
             .pipe(map((resp: SinglePlayerResponse) => resp.data));
     }
 
-    login(playerData: Player): Observable<string> {
+    /**
+     *
+     *
+     * @param {PlayerLogin} playerData
+     * @return {*}  {Observable<string>}
+     * @memberof AuthService
+     */
+    login(playerData: PlayerLogin): Observable<string> {
         return this.http
             .post<LoginResponse>(`${this.apiUrl}/auth/login`, playerData)
             .pipe(
@@ -28,6 +45,12 @@ export class AuthService {
             );
     }
 
+    /**
+     *
+     *
+     * @return {*}  {Observable<Player>}
+     * @memberof AuthService
+     */
     getLoggedPlayer(): Observable<Player> {
         const token = localStorage.getItem('access_token');
         if (!token) {
@@ -39,6 +62,41 @@ export class AuthService {
                 headers: { Authorization: `Bearer ${token}` }
             })
             .pipe(map((resp: SinglePlayerResponse) => resp.data));
+    }
+
+    /**
+     *
+     *
+     * @return {*}  {Observable<boolean>}
+     * @memberof AuthService
+     */
+    validateToken(): Observable<boolean> {
+        return this.http.get('auth/validate').pipe(
+            map(() => {
+                this.logged.set(true);
+                return true;
+            }),
+            catchError(() => {
+                localStorage.removeItem('authToken');
+                this.logged.set(false);
+                return of(false);
+            })
+        );
+    }
+
+    /**
+     *
+     *
+     * @return {*}  {Observable<boolean>}
+     * @memberof AuthService
+     */
+    isLogged(): Observable<boolean> {
+        const token = localStorage.getItem('authToken');
+
+        if (!token) return of(false);
+        if (this.logged()) return of(true);
+
+        return this.validateToken();
     }
 
 }

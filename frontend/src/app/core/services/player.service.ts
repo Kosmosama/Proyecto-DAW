@@ -11,6 +11,12 @@ export class PlayerService {
     private apiUrl = process.env['API_URL']!;
     private http = inject(HttpClient);
 
+    /**
+     *
+     *
+     * @return {*}  {Observable<Player[]>}
+     * @memberof PlayerService
+     */
     getFriends(): Observable<Player[]> {
         const token = localStorage.getItem('access_token');
         if (!token) {
