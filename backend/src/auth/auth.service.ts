@@ -1,15 +1,13 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Player } from 'src/player/entities/player.entity';
 import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
-import { Repository } from 'typeorm';
+import { PlayerService } from 'src/player/player.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenResponse } from './interfaces/token-response.interface';
-import { PlayerService } from 'src/player/player.service';
 
 @Injectable()
 export class AuthService {
@@ -25,9 +23,6 @@ export class AuthService {
      * @throws {ConflictException} If the username is already taken.
      */
     async register(registerDto: RegisterDto): Promise<PlayerPublic> {
-        const exists = await this.playerService.userExistsBy({ username: registerDto.username });
-        if (exists) throw new ConflictException('Username already exists.');
-
         const newPlayer = await this.playerService.createUser(registerDto);
         return { id: newPlayer.id, username: newPlayer.username };
     }
