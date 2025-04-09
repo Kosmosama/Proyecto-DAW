@@ -1,77 +1,83 @@
-@if(errors() === 400) {
-    <div class="alert alert-danger">Email is already registered</div>
-  }
-  
-  
-  <form class="mt-4" method="POST" [formGroup]="registerForm" (ngSubmit)="addPlayer()">
-    <legend>Create an account</legend>
-  
-    <div class="mb-3">
-      <label for="name">Name:</label>
-      <input type="text" class="form-control" id="name" formControlName="name" placeholder="Name"
-        [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
-      @let nameErrors = registerForm.get('name')?.errors;
-      @if (nameErrors?.['required']) {
-      <div class="invalid-feedback">Name cannot be empty</div>
+<div class="d-flex justify-content-center align-items-center vh-100" style="background: url('/images/backgrounds/register_bg.jpg') no-repeat center center; background-size: cover;">
+  <div class="card shadow-lg" style="width: 35rem; background-color: white; border-radius: 1rem;">
+    <div class="card-body">
+      <h2 class="card-title text-center text-danger mb-4">Create your account</h2>
+
+      @if(errors() === 400) {
+      <div class="alert alert-danger">Email is already registered</div>
       }
+
+      <form class="mt-4" method="POST" [formGroup]="registerForm" (ngSubmit)="addPlayer()">
+        <div class="mb-3">
+          <label for="name">Name:</label>
+          <input type="text" class="form-control" id="name" formControlName="name" placeholder="Name"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          @let nameErrors = registerForm.get('name')?.errors;
+          @if (nameErrors?.['required']) {
+          <div class="invalid-feedback">Name cannot be empty</div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label for="email">Email:</label>
+          <input type="email" class="form-control" id="email" formControlName="email" placeholder="Email"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          @let emailErrors = registerForm.get('email')?.errors;
+          @if (emailErrors?.['required']) {
+          <div class="invalid-feedback">Email cannot be empty</div>
+          }
+          @if (emailErrors?.['email']) {
+          <div class="invalid-feedback">Must be email type</div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label for="email2">Repeat Email:</label>
+          <input type="email" class="form-control" id="email2" formControlName="email2" placeholder="Repeat Email"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          @let email2Errors = registerForm.get('email2')?.errors;
+          @if (email2Errors?.['required']) {
+          <div class="invalid-feedback">Email cannot be empty</div>
+          }
+          @if (email2Errors?.['email']) {
+          <div class="invalid-feedback">Must be email type</div>
+          }
+        </div>
+
+        @if (registerForm.errors?.['matchEmail']) {
+        <div class="invalid-feedback">Emails must match!</div>
+        }
+
+        <div class="mb-3">
+          <label for="password">Password:</label>
+          <input type="password" class="form-control" id="password" formControlName="password" placeholder="Password"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          @let pwErrors = registerForm.get('password')?.errors;
+          @if (pwErrors?.['required']) {
+          <div class="invalid-feedback">Password cannot be empty</div>
+          }
+          @if (pwErrors?.['minlength']) {
+          <div class="invalid-feedback">Must be at least 4 characters long</div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label for="avatar">Avatar image:</label>
+          <input type="file" class="form-control" id="avatar" encodeBase64 formControlName="avatar"
+            (encoded)="handleAvatarChange($event)" [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          @let avatarErrors = registerForm.get('avatar')?.errors;
+          @if (avatarErrors?.['required']) {
+          <div class="invalid-feedback">Avatar cannot be empty</div>
+          }
+        </div>
+
+        <img src="" alt="Preview" id="imgPreview" class="img-thumbnail d-none mb-3" />
+
+        <div class="d-flex justify-content-between">
+          <a class="btn btn-secondary" href="login.html" role="button">Go back</a>
+          <button type="submit" class="btn btn-danger" [disabled]="registerForm.invalid">Create account</button>
+        </div>
+      </form>
     </div>
-  
-    <div class="mb-3">
-      <label for="email">Email:</label>
-      <input type="email" class="form-control" id="email" formControlName="email" placeholder="Email"
-        [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
-      @let emailErrors = registerForm.get('email')?.errors;
-      @if (emailErrors?.['required']) {
-      <div class="invalid-feedback">Email cannot be empty</div>
-      }
-      @if (emailErrors?.['email']) {
-      <div class="invalid-feedback">Must be email type</div>
-      }
-    </div>
-  
-    <div class="mb-3">
-      <label for="email2">Repeat Email:</label>
-      <input type="email" class="form-control" id="email2" formControlName="email2" placeholder="Repeat Email"
-        [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
-      @let email2Errors = registerForm.get('email2')?.errors;
-      @if (email2Errors?.['required']) {
-      <div class="invalid-feedback">Email cannot be empty</div>
-      }
-      @if (email2Errors?.['email']) {
-      <div class="invalid-feedback">Must be email type</div>
-      }
-    </div>
-  
-    @if (registerForm.errors?.['matchEmail']) {
-    <div class="invalid-feedback">Emails must match!</div>
-    }
-  
-    <div class="mb-3">
-      <label for="password">Password:</label>
-      <input type="password" class="form-control" id="password" formControlName="password" placeholder="Password"
-        [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
-      @let pwErrors = registerForm.get('password')?.errors;
-      @if (pwErrors?.['required']) {
-      <div class="invalid-feedback">Password cannot be empty</div>
-      }
-      @if (pwErrors?.['minlength']) {
-      <div class="invalid-feedback">Must be at least 4 characters long</div>
-      }
-    </div>
-  
-    <div class="mb-3">
-      <label for="avatar">Avatar image:</label>
-      <input type="file" class="form-control" id="avatar" encodeBase64 formControlName="avatar"
-      (encoded)="handleAvatarChange($event)" [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
-      @let avatarErrors = registerForm.get('avatar')?.errors;
-      @if (avatarErrors?.['required']) {
-      <div class="invalid-feedback">Avatar cannot be empty</div>
-      }
-    </div>
-  
-    <img src="" alt="Preview" id="imgPreview" class="img-thumbnail d-none" />
-  
-    <p class="text-danger" id="errorInfo"></p>
-    <a class="btn btn-secondary" href="login.html" role="button">Go back</a>
-    <button type="submit" class="btn btn-primary" [disabled]="registerForm.invalid">Create account</button>
-  </form>
+  </div>
+</div>

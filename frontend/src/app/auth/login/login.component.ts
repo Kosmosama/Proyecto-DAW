@@ -6,7 +6,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
 import { AuthService } from '../../core/services/auth.service';
@@ -27,6 +27,7 @@ import { PlayerLogin } from '../../core/interfaces/player.interface';
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
+  providers: [RouterLink],
 })
 export class LoginComponent implements CanComponentDeactivate {
   #router = inject(Router);

@@ -1,4 +1,3 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # Compiled output
 /dist
@@ -42,4 +41,5 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Angular specific
 /src/environments

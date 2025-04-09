@@ -11,7 +11,7 @@ export const routes: Routes = [
     },
     { 
         path: '', 
-        redirectTo: "/player/friendList", 
+        redirectTo: "/auth/login", 
         pathMatch: "full" 
 
     },
