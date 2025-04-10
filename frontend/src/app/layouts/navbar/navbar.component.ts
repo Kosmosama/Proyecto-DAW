@@ -14,15 +14,6 @@ export class NavbarComponent {
   private router = inject(Router);
 
   logout() {
-    this.authService.logout().subscribe({
-      next: () => {
-        console.log('Logged out successfully');
-        this.router.navigate(['auth/login']);
-      },
-      error: (err: any) => {
-        console.error('Error logging out:', err);
-      }
-    });
-
+    this.authService.logout()
   }
 }

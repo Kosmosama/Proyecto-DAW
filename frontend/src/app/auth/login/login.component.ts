@@ -70,7 +70,7 @@ export class LoginComponent implements CanComponentDeactivate {
       .pipe(
         map(() => {
           this.#saved = true;
-          this.#router.navigate(['player/friendList']);
+          this.#router.navigate(['pages/home']);
         })
       )
       .subscribe({

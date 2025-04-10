@@ -121,13 +121,10 @@ export class AuthService {
         return this.validateToken();
     }
 
-    logout(): Observable<void> {
-        return this.http.post<void>(`auth/logout`, {}).pipe(
-            map(() => {
-                localStorage.removeItem('accessToken');
-                this.logged.set(false);
-                this.router.navigate(['auth/login']);
-            })
-        );
+    logout() {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        this.logged.set(false);
+        this.router.navigate(['auth/login']);
     }
 }

@@ -12,6 +12,11 @@ export const routes: Routes = [
         component: LayoutComponent,
         children: [
             {
+                path: 'pages',
+                loadChildren: () =>
+                    import('./pages/pages.routes').then((r) => r.pagesRoutes),
+            },
+            {
                 path: 'player',
                 loadChildren: () =>
                     import('./player/player.routes').then((r) => r.playerRoutes),
