@@ -95,16 +95,17 @@ export class PlayerService {
     /**
      * Update and hash a player's refresh token.
      * @param {number} playerId Player ID.
-     * @param {string} refreshToken Raw refresh token to be hashed.
+     * @param {string | null} refreshToken Raw refresh token to be hashed.
      * @returns {Promise<string>} Hashed refresh token.
      * @throws {NotFoundException} If player is not found.
      */
-    async updateRefreshToken(playerId: number, refreshToken: string): Promise<string> {
+    async updateRefreshToken(playerId: number, refreshToken: string | null): Promise<string | null> {
         const player = await this.findOneBy({ id: playerId });
     
         player.refreshToken = refreshToken;
         await this.playerRepository.save(player); // triggers hashSensitiveData
-        return player.refreshToken!;
+    
+        return player.refreshToken ?? null;
     }
 
     /**

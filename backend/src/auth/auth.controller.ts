@@ -30,6 +30,12 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
+    @HttpCode(HttpStatus.OK)
+    @Post('logout')
+    logout(@Player() player: PlayerPublic): Promise<void> {
+        return this.authService.logout(player);
+    }
+    
     @Public()
     @UseGuards(GoogleAuthGuard)
     @Get('google/login')

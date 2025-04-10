@@ -35,9 +35,18 @@ export class AuthService {
     async login(player: PlayerPublic): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
-        const hashedRefreshToken = await this.playerService.updateRefreshToken(player.id, refreshToken);
+        const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
 
-        return { accessToken, refreshToken: hashedRefreshToken };
+        return { accessToken, refreshToken: hashedRefreshToken! };
+    }
+
+    /**
+     * Logs out a player by clearing their refresh token.
+     * @param {PlayerPublic} player The player object containing ID and username.
+     * @returns {Promise<void>} No return value.
+     */
+    async logout(player: PlayerPublic): Promise<void> {
+        await this.clearRefreshToken(player.id);
     }
 
     /**
@@ -48,9 +57,9 @@ export class AuthService {
     async refreshToken(player: Player): Promise<TokenResponse> {
         const { accessToken, refreshToken } = await this.generateTokens(player.id);
 
-        const hashedRefreshToken = await this.playerService.updateRefreshToken(player.id, refreshToken);
+        const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
 
-        return { accessToken, refreshToken: hashedRefreshToken };
+        return { accessToken, refreshToken: hashedRefreshToken! };
     }
 
     /**
@@ -149,5 +158,24 @@ export class AuthService {
         ]);
 
         return { accessToken, refreshToken };
+    }
+
+    /**
+     * Sets a new refresh token for a player.
+     * @param {number} playerId The player's ID.
+     * @param {string} refreshToken The new refresh token to set.
+     * @returns {Promise<string>} The hashed refresh token.
+     */
+    private async setRefreshToken(playerId: number, refreshToken: string): Promise<string> {
+        return (await this.playerService.updateRefreshToken(playerId, refreshToken))!;
+    }
+    
+    /**
+     * Clears the refresh token for a player.
+     * @param {number} playerId The player's ID.
+     * @returns {Promise<void>} No return value.
+     */
+    private async clearRefreshToken(playerId: number): Promise<void> {
+        await this.playerService.updateRefreshToken(playerId, null);
     }
 }
