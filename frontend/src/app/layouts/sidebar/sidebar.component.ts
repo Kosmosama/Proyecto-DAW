@@ -12,10 +12,8 @@ export class SidebarComponent implements OnInit {
   isSidebarVisible = signal<boolean>(true);
 
   sidebarItems: { label: string, link: string, icon: string }[] = [
-    { label: 'Home', link: '#', icon: 'bi bi-house-door' },
-    { label: 'Battle', link: '#battle', icon: 'bi bi-controller' },
-    { label: 'Ranking', link: '#ranking', icon: 'bi bi-trophy' },
-    { label: 'About', link: '#about', icon: 'bi bi-info-circle' },
+    { label: 'Home', link: 'pages/home', icon: 'bi bi-house-door' },
+    { label: 'Friends', link: 'player/friendList', icon: 'bi bi-controller' },
   ];
 
   constructor() { }
