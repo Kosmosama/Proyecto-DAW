@@ -39,7 +39,7 @@ export class AuthService {
             .post<LoginResponse>(`auth/login`, playerData)
             .pipe(
                 map((resp: LoginResponse) => {
-                    localStorage.setItem('authToken', resp.accessToken);
+                    localStorage.setItem('accessToken', resp.accessToken);
                     return resp.accessToken;
                 })
             );
@@ -52,7 +52,7 @@ export class AuthService {
      * @memberof AuthService
      */
     getLoggedPlayer(): Observable<Player> {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('accessToken');
         if (!token) {
             throw new Error('No access token found');
         }
@@ -77,7 +77,7 @@ export class AuthService {
                 return true;
             }),
             catchError(() => {
-                localStorage.removeItem('authToken');
+                localStorage.removeItem('accessToken');
                 this.logged.set(false);
                 return of(false);
             })
@@ -91,7 +91,7 @@ export class AuthService {
      * @memberof AuthService
      */
     isLogged(): Observable<boolean> {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('accessToken');
 
         if (!token) return of(false);
         if (this.logged()) return of(true);

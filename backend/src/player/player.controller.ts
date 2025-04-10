@@ -16,11 +16,6 @@ export class PlayerController {
         return this.playerService.findAll();
     }
 
-    @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number): Promise<PlayerPublic> {
-        return this.playerService.findOne(id);
-    }
-
     @Get('profile')
     getProfile(@Player() player: PlayerPublic): Promise<PlayerPublic> {
         return this.playerService.findOne(player.id);
@@ -33,12 +28,6 @@ export class PlayerController {
         @Body() updatePlayerDto: UpdatePlayerDto
     ): Promise<PlayerPublic> {
         return this.playerService.update(player.id, updatePlayerDto);
-    }
-
-    //#TODO Protect for admin only
-    @Delete(':id')
-    remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-        return this.playerService.remove(id);
     }
 
     @Get('friends')
@@ -72,4 +61,16 @@ export class PlayerController {
     ): Promise<void> {
         return this.playerService.declineFriendRequest(player.id, friendId);
     }
+
+    @Get(':id')
+    findOne(@Param('id', ParseIntPipe) id: number): Promise<PlayerPublic> {
+        return this.playerService.findOne(id);
+    }
+
+    //#TODO Protect for admin only
+    @Delete(':id')
+    remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+        return this.playerService.remove(id);
+    }
+
 }

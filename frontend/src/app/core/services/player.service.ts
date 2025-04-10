@@ -16,7 +16,7 @@ export class PlayerService {
      * @memberof PlayerService
      */
     getFriends(): Observable<Player[]> {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('accessToken');
         if (!token) {
             throw new Error('No access token found');
         }
