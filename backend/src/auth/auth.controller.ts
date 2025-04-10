@@ -9,6 +9,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 import { TokenResponse } from './interfaces/token-response.interface';
 import { GithubAuthGuard } from './guards/github-auth.guard';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Public()
 @Controller('auth')
@@ -21,17 +22,25 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(LocalAuthGuard)
     @Post('login')
+    @ApiOperation({ summary: 'Login with username and password' })
+    @ApiResponse({ status: 200, description: 'Login successful, returns access and refresh tokens.' })
+    @ApiResponse({ status: 401, description: 'Invalid credentials.' })
     login(@Player() player: PlayerPublic): Promise<TokenResponse> {
         return this.authService.login(player);
     }
 
     @Post('register')
+    @ApiOperation({ summary: 'Register a new player' })
+    @ApiResponse({ status: 201, description: 'Player successfully registered.' })
+    @ApiResponse({ status: 400, description: 'Invalid registration data.' })
     register(@Body() registerDto: RegisterDto): Promise<PlayerPublic> {
         return this.authService.register(registerDto);
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('logout')
+    @ApiOperation({ summary: 'Logout the current player' })
+    @ApiResponse({ status: 200, description: 'Logout successful.' })
     logout(@Player() player: PlayerPublic): Promise<void> {
         return this.authService.logout(player);
     }
@@ -39,11 +48,17 @@ export class AuthController {
     @Public()
     @UseGuards(GoogleAuthGuard)
     @Get('google/login')
+    @ApiOperation({ summary: 'Start Google OAuth login flow' })
+    @ApiResponse({ status: 200, description: 'Redirect to Google OAuth login.' })
     async googleLogin() {
+        // Everything is handled by the GoogleAuthGuard
     }
 
-    @Get('google/callback')
     @UseGuards(GoogleAuthGuard)
+    @Get('google/callback')
+    @ApiOperation({ summary: 'Callback after Google OAuth login' })
+    @ApiResponse({ status: 200, description: 'Redirect to frontend with tokens.' })
+    @ApiResponse({ status: 400, description: 'Error with Google login callback.' })
     async googleCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
         const response = await this.authService.login(player);
         res.redirect(`http://localhost:3000?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
@@ -52,12 +67,18 @@ export class AuthController {
     @Public()
     @UseGuards(GithubAuthGuard)
     @Get('github/login')
+    @ApiOperation({ summary: 'Start GitHub OAuth login flow' })
+    @ApiResponse({ status: 200, description: 'Redirect to GitHub OAuth login.' })
     async githubLogin() {
+        // Everything is handled by the GithubAuthGuard
     }
 
     @Public()
     @UseGuards(GithubAuthGuard)
     @Get('github/callback')
+    @ApiOperation({ summary: 'Callback after GitHub OAuth login' })
+    @ApiResponse({ status: 200, description: 'Redirect to frontend with tokens.' })
+    @ApiResponse({ status: 400, description: 'Error with GitHub login callback.' })
     async githubCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
         const response = await this.authService.login(player);
         res.redirect(`http://localhost:3000?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
@@ -65,6 +86,9 @@ export class AuthController {
 
     @UseGuards(RefreshAuthGuard)
     @Post('refresh')
+    @ApiOperation({ summary: 'Refresh access token using refresh token' })
+    @ApiResponse({ status: 200, description: 'Refresh successful, returns new tokens.' })
+    @ApiResponse({ status: 401, description: 'Invalid or expired refresh token.' })
     refresh(@Player() player): Promise<TokenResponse> {
         return this.authService.refreshToken(player);
     }

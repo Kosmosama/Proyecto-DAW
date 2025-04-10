@@ -15,7 +15,7 @@ export class Player {
     @Column({ name: 'password_hash', length: 255 })
     password: string;
 
-    @Column({ name: 'refresh_token_hash', length: 255, nullable: true })
+    @Column({ name: 'refresh_token_hash', type: 'varchar', length: 255, nullable: true })
     refreshToken: string | null;
 
     @Column({ length: 255, nullable: true })
