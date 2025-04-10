@@ -4,6 +4,7 @@ import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginResponse, Player, PlayerLogin, SinglePlayerResponse } from '../interfaces/player.interface';
 import { Router } from '@angular/router';
+import { TokenResponse } from '../interfaces/responses.interface';
 
 @Injectable({
     providedIn: 'root',
@@ -43,6 +44,27 @@ export class AuthService {
                     return resp.accessToken;
                 })
             );
+    }
+
+    /**
+     *
+     *
+     * @param {string} token
+     * @return {*}  {Observable<void>}
+     * @memberof AuthService
+     */
+    googleLogin(token: string): Observable<void> {
+        return this.http.post<TokenResponse>(`auth/google`, token).pipe(
+            map((response: TokenResponse) => {
+                localStorage.setItem('accessToken', response.accessToken);
+            }),
+            catchError((error) => {
+                const errorMessage = Array.isArray(error.error);
+                alert(errorMessage);
+
+                return of();
+            })
+        );
     }
 
     /**
@@ -99,4 +121,13 @@ export class AuthService {
         return this.validateToken();
     }
 
+    logout(): Observable<void> {
+        return this.http.post<void>(`auth/logout`, {}).pipe(
+            map(() => {
+                localStorage.removeItem('accessToken');
+                this.logged.set(false);
+                this.router.navigate(['auth/login']);
+            })
+        );
+    }
 }

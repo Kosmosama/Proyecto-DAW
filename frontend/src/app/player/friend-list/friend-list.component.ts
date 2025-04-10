@@ -5,7 +5,7 @@ import { Player } from '../../core/interfaces/player.interface';
 @Component({
   selector: 'app-friends-list',
   templateUrl: './friend-list.component.html',
-  styleUrls: ['./friend-list.component.css']
+  styleUrls: ['./friend-list.component.scss']
 })
 export class FriendListComponent implements OnInit {
   loading: boolean = true;

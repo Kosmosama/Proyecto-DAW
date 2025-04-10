@@ -1,0 +1,31 @@
+/* layouts/sidebar/sidebar.component.css */
+
+/* Sidebar estilo */
+#wrapper {
+    display: flex;
+  }
+  
+  #sidebar {
+    width: 250px;
+    height: 100vh;
+    transition: all 0.3s;
+  }
+  
+  .sidebar-visible {
+    width: 0;
+    overflow: hidden;
+  }
+  
+  #page-content-wrapper {
+    flex: 1;
+    padding: 20px;
+    background-color: #f8f9fa;
+  }
+  
+  #menu-toggle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+  }
+  

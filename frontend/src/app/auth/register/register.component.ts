@@ -27,7 +27,7 @@ import { Player } from '../../core/interfaces/player.interface';
     ValidationClassesDirective,
   ],
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css'],
+  styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent implements CanComponentDeactivate {
   #fb = inject(NonNullableFormBuilder);

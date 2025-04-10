@@ -7,7 +7,7 @@ import { NgbActiveModal, NgbModal } from '@ng-bootstrap/ng-bootstrap';
   standalone: true,
   imports: [],
   templateUrl: './confirm-modal.component.html',
-  styleUrls: ['./confirm-modal.component.css'],
+  styleUrls: ['./confirm-modal.component.scss'],
 })
 export class ConfirmModalComponent {
   title = ''; 

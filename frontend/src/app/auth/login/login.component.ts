@@ -8,13 +8,14 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
-import { AuthService } from '../../core/services/auth.service';
-import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
-import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
-// import { GoogleLoginDirective } from '../google-login/google-login.directive';
 import { map } from 'rxjs';
+import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
 import { PlayerLogin } from '../../core/interfaces/player.interface';
+import { AuthService } from '../../core/services/auth.service';
+import { LoadGoogleApiService } from '../../core/services/load-google-api.service';
+import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
+import { GoogleLoginDirective } from '../../shared/directives/google-login.directive';
+import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
 
 @Component({
   standalone: true,
@@ -23,11 +24,11 @@ import { PlayerLogin } from '../../core/interfaces/player.interface';
     FormsModule,
     ReactiveFormsModule,
     ValidationClassesDirective,
-    // GoogleLoginDirective,
+    GoogleLoginDirective,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
-  providers: [RouterLink],
+  providers: [RouterLink, ReactiveFormsModule, LoadGoogleApiService,],
 })
 export class LoginComponent implements CanComponentDeactivate {
   #router = inject(Router);
@@ -39,6 +40,20 @@ export class LoginComponent implements CanComponentDeactivate {
   errors = signal<number>(0);
 
   constructor() {
+  }
+
+  loggedGoogle(resp: google.accounts.id.CredentialResponse) {
+    const token = resp.credential;
+    this.#authService.googleLogin(token).pipe(
+      takeUntilDestroyed(this.#destroyRef)
+    ).subscribe({
+      next: () => {
+        this.#router.navigate(['player/friendList']);
+      },
+      error: (err) => {
+        console.error('Error al iniciar sesión con Google:', err);
+      }
+    });
   }
 
   showError(error: string) {
