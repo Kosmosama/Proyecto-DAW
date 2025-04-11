@@ -47,13 +47,14 @@ export class LoginComponent implements CanComponentDeactivate {
     this.#authService.googleLogin(token).pipe(
       takeUntilDestroyed(this.#destroyRef)
     ).subscribe({
-      next: () => {
-        this.#router.navigate(['player/friendList']);
+      next: (res) => {
+        this.#router.navigate(['defaultRoute']);
       },
       error: (err) => {
         console.error('Error al iniciar sesión con Google:', err);
       }
     });
+    
   }
 
   showError(error: string) {

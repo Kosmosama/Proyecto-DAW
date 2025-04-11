@@ -67,6 +67,11 @@ export class AuthService {
         );
     }
 
+    googleRedirectToLogin(): void {
+        window.location.href = `${environment.apiUrl}/auth/google/login`;
+    }
+
+
     /**
      *
      *

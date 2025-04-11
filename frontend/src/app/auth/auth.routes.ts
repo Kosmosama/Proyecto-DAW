@@ -11,4 +11,8 @@ export const authRoutes: Routes = [
         loadComponent: () => import("./login/login.component").then((c) => c.LoginComponent),
         title: "Login | ShowDAW"
     },
+    {
+        path: "oauth-callback",
+        loadComponent: () => import("./oauth-callback/oauth-callback.component").then((c) => c.OAuthCallbackComponent),
+    },
 ];
