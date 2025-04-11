@@ -13,7 +13,7 @@ export class SidebarComponent implements OnInit {
 
   sidebarItems: { label: string, link: string, icon: string }[] = [
     { label: 'Home', link: 'pages/home', icon: 'bi bi-house-door' },
-    { label: 'Friends', link: 'player/friendList', icon: 'bi bi-controller' },
+    { label: 'Friends', link: 'player/friends', icon: 'bi bi-controller' },
   ];
 
   constructor() { }

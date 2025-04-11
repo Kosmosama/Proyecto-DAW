@@ -11,4 +11,9 @@ export const playerRoutes: Routes = [
         loadComponent: () => import("./friends/friends.component").then((c) => c.FriendsComponent),
         title: "Friends | ShowDAW"
     },
+    {
+        path: "friendSearch",
+        loadComponent: () => import("../shared/components/friend-search/friend-search.component").then((c) => c.FriendSearchComponent),
+        title: "Friends | ShowDAW"
+    },
 ];

@@ -47,4 +47,22 @@ export class PlayerService {
 
     }
 
+    /**
+     *
+     *
+     * @param {string} id
+     * @return {*}  {Observable<any>}
+     * @memberof PlayerService
+     */
+    sendFriendRequest(id: number): Observable<any> {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+        return this.http
+            .post<any>(`player/friend-request/${id}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+    }
+
 }
