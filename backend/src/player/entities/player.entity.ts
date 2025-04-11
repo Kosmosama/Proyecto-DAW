@@ -24,9 +24,6 @@ export class Player {
     @Column({ name: 'last_login', type: 'timestamp', nullable: true })
     lastLogin: Date;
 
-    @Column({ default: false })
-    online: boolean;
-
     @BeforeInsert()
     @BeforeUpdate()
     async hashSensitiveData() {

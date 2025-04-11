@@ -184,7 +184,7 @@ export class PlayerService {
     async acceptFriendRequest(senderId: number, receiverId: number): Promise<void> {
         const result = await this.friendshipRepository.update(
             { senderId, receiverId },
-            { status: FriendshipStatus.ACCEPTED }
+            { status: FriendshipStatus.ACCEPTED },
         );
 
         if (result.affected === 0) throw new NotFoundException('Friend request not found.');
@@ -205,29 +205,59 @@ export class PlayerService {
     }
 
     /**
-     * Get the list of accepted friends for a given player.
+     * Get the list of friends for a given player.
      * @param {number} playerId Player id to fetch friends for.
-     * @returns {Promise<Friend[]>} List of friends with their details.
+     * @returns {Promise<Friend[]>} List of friends.
      */
     async getFriends(playerId: number): Promise<Friend[]> {
-        const friendships = await this.friendshipRepository
-            .createQueryBuilder('f')
-            .innerJoinAndSelect('f.sender', 'sender')
-            .innerJoinAndSelect('f.receiver', 'receiver')
-            .where('f.status = :status', { status: FriendshipStatus.ACCEPTED })
-            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId })
-            .getMany();
-
-        return friendships.map(({ sender, receiver, createdAt }) => {
+        const friendships = await this.getFriendshipsByStatus(playerId, FriendshipStatus.ACCEPTED);
+    
+        return friendships.map(({ sender, receiver, updatedAt }) => {
             const friend = sender.id === playerId ? receiver : sender;
             return {
                 id: friend.id,
                 username: friend.username,
                 photo: friend.photo,
-                online: friend.online,
+                since: updatedAt,
                 lastLogin: friend.lastLogin,
-                friendsSince: createdAt,
             };
         });
+    }
+    
+    /**
+     * Get the list of incoming friend requests for a given player.
+     * @param {number} playerId Player id to fetch incoming requests for.
+     * @returns {Promise<Friend[]>} List of incoming friendships.
+     */
+    async getIncomingFriendRequests(playerId: number): Promise<Friend[]> {
+        const friendships = await this.getFriendshipsByStatus(playerId, FriendshipStatus.PENDING);
+    
+        return friendships
+            .filter(f => f.receiverId === playerId)
+            .map(({ sender, updatedAt }) => ({
+                id: sender.id,
+                username: sender.username,
+                photo: sender.photo,
+                since: updatedAt,
+            }));
+    }    
+    
+    /**
+     * Get the list of outgoing friend requests for a given player.
+     * @param {number} playerId Player id to fetch outgoing requests for.
+     * @returns {Promise<Friend[]>} List of outgoing friendships.
+     * */
+    private async getFriendshipsByStatus(playerId: number, status: FriendshipStatus): Promise<Friendship[]> {
+        const friendships = await this.friendshipRepository
+            .createQueryBuilder('f')
+            .innerJoinAndSelect('f.sender', 'sender')
+            .innerJoinAndSelect('f.receiver', 'receiver')
+            .where('f.status = :status', { status })
+            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId })
+            .getMany();
+    
+        if (!friendships.length) throw new NotFoundException(`No ${status} friendships found.`);
+    
+        return friendships;
     }
 }

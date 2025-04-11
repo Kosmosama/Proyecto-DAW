@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Player } from './player.entity';
 
 export enum FriendshipStatus {
@@ -24,8 +24,14 @@ export class Friendship {
     receiver: Player;
     
 	@CreateDateColumn({ name: "created_at" })
-    createdAt: Date;
+    updatedAt: Date;
 
     @Column({ type: "enum", enum: FriendshipStatus })
     status: FriendshipStatus;
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    async updateDate() {
+        this.updatedAt = new Date();
+    }
 }

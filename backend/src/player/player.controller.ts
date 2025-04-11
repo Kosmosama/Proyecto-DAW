@@ -45,6 +45,8 @@ export class PlayerController {
         return this.playerService.getFriends(player.id);
     }
 
+    
+
     @ApiOperation({ summary: 'Get a player by their ID' })
     @ApiResponse({ status: 200, description: 'Returns a player by their ID.' })
     @ApiResponse({ status: 404, description: 'Player not found.' })
