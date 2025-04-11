@@ -38,6 +38,13 @@ export class PlayerController {
         return this.playerService.update(player.id, updatePlayerDto);
     }
 
+    @ApiOperation({ summary: 'Get friends of the current logged-in player' })
+    @ApiResponse({ status: 200, description: 'List of the current player\'s friends.' })
+    @Get('friends')
+    getFriends(@Player() player: PlayerPublic): Promise<Friend[]> {
+        return this.playerService.getFriends(player.id);
+    }
+
     @ApiOperation({ summary: 'Get a player by their ID' })
     @ApiResponse({ status: 200, description: 'Returns a player by their ID.' })
     @ApiResponse({ status: 404, description: 'Player not found.' })
@@ -45,7 +52,7 @@ export class PlayerController {
     findOne(@Param('id', ParseIntPipe) id: number): Promise<PlayerPublic> {
         return this.playerService.findOne(id);
     }
-
+D
     // #TODO Protect for admin only
     @ApiOperation({ summary: 'Delete a player by their ID' })
     @ApiResponse({ status: 200, description: 'Player deleted successfully.' })
@@ -54,13 +61,6 @@ export class PlayerController {
     @Delete(':id')
     remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         return this.playerService.remove(id);
-    }
-
-    @ApiOperation({ summary: 'Get friends of the current logged-in player' })
-    @ApiResponse({ status: 200, description: 'List of the current player\'s friends.' })
-    @Get('friends')
-    getFriends(@Player() player: PlayerPublic): Promise<Friend[]> {
-        return this.playerService.getFriends(player.id);
     }
 
     @ApiOperation({ summary: 'Send a friend request to another player' })
