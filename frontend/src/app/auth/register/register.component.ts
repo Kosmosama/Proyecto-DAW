@@ -30,17 +30,17 @@ import { Player } from '../../core/interfaces/player.interface';
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent implements CanComponentDeactivate {
-  #fb = inject(NonNullableFormBuilder);
-  #authService = inject(AuthService);
-  #destroyRef = inject(DestroyRef);
-  #router = inject(Router);
-  #modal = inject(NgbModal);
-  #saved = false;
+  private fb = inject(NonNullableFormBuilder);
+  private authService = inject(AuthService);
+  private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
+  private modal = inject(NgbModal);
+  private saved = false;
   imageBase64 = '';
 
   errors = signal<number>(0);
 
-  registerForm = this.#fb.group(
+  registerForm = this.fb.group(
     {
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
@@ -63,24 +63,24 @@ export class RegisterComponent implements CanComponentDeactivate {
       photo: this.imageBase64 || ''
     };
   
-    this.#authService
+    this.authService
       .register(player)
-      .pipe(takeUntilDestroyed(this.#destroyRef))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.#saved = true;
-          const modalRef = this.#modal.open(CatModalComponent);
+          this.saved = true;
+          const modalRef = this.modal.open(CatModalComponent);
           modalRef.componentInstance.message = 'Registration successful!';
           modalRef.componentInstance.catImageUrl = 'https://http.cat/200';
   
           modalRef.result.then(
-            () => this.#router.navigate(['auth/login']),
+            () => this.router.navigate(['auth/login']),
           );
         },
         error: (error) => {
           this.errors.set(error.status);
           window.scrollTo(0, 0);
-          const modalRef = this.#modal.open(CatModalComponent);
+          const modalRef = this.modal.open(CatModalComponent);
           modalRef.componentInstance.message = `Error ${error.status}: ${error.message}`;
           modalRef.componentInstance.catImageUrl = `https://http.cat/${error.status}`;
         }
@@ -96,10 +96,10 @@ export class RegisterComponent implements CanComponentDeactivate {
   }
 
   canDeactivate() {
-    if (this.#saved || this.registerForm.pristine) {
+    if (this.saved || this.registerForm.pristine) {
       return true;
     }
-    const modalRef = this.#modal.open(ConfirmModalComponent);
+    const modalRef = this.modal.open(ConfirmModalComponent);
     modalRef.componentInstance.title = 'Changes not saved';
     modalRef.componentInstance.body = 'Do you want to leave the page?';
     return modalRef.result.catch(() => false);

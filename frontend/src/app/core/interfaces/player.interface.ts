@@ -3,6 +3,7 @@ export interface Player {
     email: string;
     username: string;
     password: string;
+    online?: boolean;
     photo?: string;
 }
 

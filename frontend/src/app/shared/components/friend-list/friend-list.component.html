@@ -1,0 +1,28 @@
+<div class="friends-card container">
+    <div class="card text-center">
+        <div class="card-header">
+            <h2>Lista de Amigos</h2>
+        </div>
+        <div class="card-body">
+            <div class="friends-list">
+                @for (friend of friends(); track $index) {
+                <div class="friend-card d-flex justify-content-between align-items-center mb-3 border p-3 rounded">
+                    <div class="friend-info">
+                        <h5 class="friend-name">{{ friend.username }}</h5>
+                        <span class="friend-status"
+                            [ngClass]="{'text-success': friend.online, 'text-danger': !friend.online}">
+                            {{ friend.online ? 'En línea' : 'Desconectado' }}
+                        </span>
+                    </div>
+                    @if(friend.photo) {
+                    <div class="friend-photo">
+                        <img [src]="friend.photo" alt="{{ friend.username }}'s photo" class="img-fluid rounded-circle"
+                            style="width: 40px; height: 40px; object-fit: cover;" />
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
