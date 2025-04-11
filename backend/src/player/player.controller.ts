@@ -66,34 +66,34 @@ D
     @ApiOperation({ summary: 'Send a friend request to another player' })
     @ApiResponse({ status: 200, description: 'Friend request sent successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid friend ID or request already sent.' })
-    @Post('friend-request/:friendId')
+    @Post('friend-request/:recieverId')
     sendFriendRequest(
         @Player() player: PlayerPublic,
-        @Param('friendId', ParseIntPipe) friendId: number
+        @Param('recieverId', ParseIntPipe) recieverId: number
     ): Promise<void> {
-        if (player.id === friendId) throw new BadRequestException('You cannot send a friend request to yourself.');
-        return this.playerService.sendFriendRequest(player.id, friendId);
+        if (player.id === recieverId) throw new BadRequestException('You cannot send a friend request to yourself.');
+        return this.playerService.sendFriendRequest(player.id, recieverId);
     }
 
     @ApiOperation({ summary: 'Accept a friend request from another player' })
     @ApiResponse({ status: 200, description: 'Friend request accepted successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid friend ID or request not found.' })
-    @Patch('friend-accept/:friendId')
+    @Patch('friend-accept/:senderId')
     acceptFriendRequest(
         @Player() player: PlayerPublic,
-        @Param('friendId', ParseIntPipe) friendId: number
+        @Param('senderId', ParseIntPipe) senderId: number
     ): Promise<void> {
-        return this.playerService.acceptFriendRequest(player.id, friendId);
+        return this.playerService.acceptFriendRequest(senderId, player.id);
     }
 
     @ApiOperation({ summary: 'Decline a friend request from another player' })
     @ApiResponse({ status: 200, description: 'Friend request declined successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid friend ID or request not found.' })
-    @Patch('friend-decline/:friendId')
+    @Patch('friend-decline/:senderId')
     declineFriendRequest(
         @Player() player: PlayerPublic,
-        @Param('friendId', ParseIntPipe) friendId: number
+        @Param('senderId', ParseIntPipe) senderId: number
     ): Promise<void> {
-        return this.playerService.declineFriendRequest(player.id, friendId);
+        return this.playerService.declineFriendRequest(senderId, player.id);
     }
 }
