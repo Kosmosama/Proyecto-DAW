@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './friend-list.component.html',
   styleUrls: ['./friend-list.component.scss'],
   imports: [CommonModule],
+  standalone: true,
 })
 export class FriendListComponent implements OnInit {
   friends = signal<Player[]>([]);

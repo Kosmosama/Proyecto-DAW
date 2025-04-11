@@ -1,74 +1,100 @@
-import { Component, OnInit } from '@angular/core';
-import { signal } from '@angular/core'; // Asegúrate de importar signal
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { Player } from '../../../core/interfaces/player.interface';
 import { PlayerService } from '../../../core/services/player.service';
 
 @Component({
   selector: 'app-friend-search',
   templateUrl: './friend-search.component.html',
-  styleUrls: ['./friend-search.component.css']
+  styleUrls: ['./friend-search.component.scss'],
+  imports: [FormsModule],
+  standalone: true,
 })
 export class FriendSearchComponent implements OnInit {
-  allPlayers = signal<Player[]>([]);      // Todos los jugadores (signal)
-  friends = signal<Player[]>([]);         // Amigos del usuario (signal)
-  filteredPlayers = signal<Player[]>([]); // Jugadores filtrados que no son amigos (signal)
-  searchTerm = signal<string>('');        // Término de búsqueda para filtrar jugadores (signal)
+  allPlayers = signal<Player[]>([]);
+  friends = signal<Player[]>([]);
+  filteredPlayers = signal<Player[]>([]);
+  searchTerm = '';
+  private destroyRef = inject(DestroyRef);
+  private playerService = inject(PlayerService)
 
   constructor(
-    private playerService: PlayerService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadPlayers();
     this.loadFriends();
   }
 
-  // Cargar todos los jugadores
   loadPlayers(): void {
-    this.playerService.getPlayers().subscribe(
-      (data) => {
-        this.allPlayers.set(data);
-        this.filterPlayers();
-      },
-      (error) => {
-        console.error('Error al cargar los jugadores:', error);
-      }
-    );
+    this.playerService.getPlayers()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.allPlayers.set(data);
+          this.filterPlayers();
+        },
+        error: (error) => {
+          console.error('Error al cargar los jugadores:', error);
+        }
+      });
   }
 
   loadFriends(): void {
-    this.playerService.getFriends().subscribe(
-      (data) => {
-        this.friends.set(data);
-        this.filterPlayers();
-      },
-      (error) => {
-        console.error('Error al cargar los amigos:', error);
-      }
-    );
+    this.playerService.getFriends()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.friends.set(data);
+          this.filterPlayers();
+        },
+        error: (error) => {
+          console.error('Error al cargar los amigos:', error);
+        }
+      });
   }
 
-  // Filtrar jugadores que no son amigos
   filterPlayers(): void {
-    const filtered = this.allPlayers().filter(player => 
+    const filtered = this.allPlayers().filter(player =>
       !this.friends().some(friend => friend.id === player.id)
     );
-    this.filteredPlayers.set(filtered);  // Actualiza los jugadores filtrados con signal.set()
-    this.applySearchFilter();            // Aplica el filtro de búsqueda al filtrar jugadores
+    this.filteredPlayers.set(filtered);
   }
 
-  // Filtro por término de búsqueda
   applySearchFilter(): void {
-    const term = this.searchTerm().toLowerCase();
-    if (term.trim() !== '') {
-      const filtered = this.filteredPlayers().filter(player =>
+    const nonFriendPlayers = this.allPlayers().filter(player =>
+      !this.friends().some(friend => friend.id === player.id)
+    );
+
+    const term = this.searchTerm.toLowerCase().trim();
+
+    if (term !== '') {
+      const filtered = nonFriendPlayers.filter(player =>
         player.username.toLowerCase().includes(term)
       );
-      this.filteredPlayers.set(filtered);  // Aplica el filtro de búsqueda
+      this.filteredPlayers.set(filtered);
+    } else {
+      this.filteredPlayers.set(nonFriendPlayers);
     }
   }
 
-  // Método que se invoca cuando cambia el término de búsqueda
+  addFriend(player: Player): void {
+    this.playerService.sendFriendRequest(player.id!)
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: () => {
+          console.log("Request sent successfully to: ", player.username);
+          this.loadFriends();
+          this.loadPlayers();
+        },
+        error: (error) => {
+          console.error('Error sending friend request:', error);
+        }
+      });
+  }
+
+
   onSearchTermChange(): void {
-    this.applySearchFilter();  // Aplica el filtro cuando el término de búsqueda cambie
+    this.applySearchFilter();
   }
 }

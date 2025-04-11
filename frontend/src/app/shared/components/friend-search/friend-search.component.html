@@ -1,1 +1,24 @@
-<p>friend-search works!</p>
+<div class="friend-search container">
+    <div class="card">
+        <div class="card-header">
+            <h2>Buscar Amigos</h2>
+            <input type="text" class="form-control" placeholder="Buscar por nombre" [(ngModel)]="searchTerm"
+                (ngModelChange)="onSearchTermChange()" />
+        </div>
+        <div class="card-body">
+            @if(filteredPlayers().length === 0) {
+            <div>
+                <p>No hay jugadores disponibles para agregar como amigos.</p>
+            </div>
+            }
+            <ul class="list-group">
+                @for(player of filteredPlayers(); track $index) {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ player.username }}</span>
+                    <button class="btn btn-primary btn-sm" (click)="addFriend(player)">Agregar</button>
+                </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
