@@ -61,7 +61,7 @@ export class AuthController {
     @ApiResponse({ status: 400, description: 'Error with Google login callback.' })
     async googleCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
         const response = await this.authService.login(player);
-        res.redirect(`http://localhost:3000?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
+        res.redirect(`http://localhost:3000/auth/oauth-callback?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
     }
 
     @Public()
