@@ -8,6 +8,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenResponse } from './interfaces/token-response.interface';
+import { Role } from './enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -33,7 +34,7 @@ export class AuthService {
      * @returns {TokenResponse} Object containing access and refresh tokens.
      */
     async login(player: PlayerPublic): Promise<TokenResponse> {
-        const { accessToken, refreshToken } = await this.generateTokens(player.id);
+        const { accessToken, refreshToken } = await this.generateTokens(player.id, player.role!);
 
         const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
 
@@ -55,7 +56,7 @@ export class AuthService {
      * @returns {TokenResponse} Object containing new access and refresh tokens.
      */
     async refreshToken(player: Player): Promise<TokenResponse> {
-        const { accessToken, refreshToken } = await this.generateTokens(player.id);
+        const { accessToken, refreshToken } = await this.generateTokens(player.id, player.role);
 
         const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
 
@@ -149,8 +150,11 @@ export class AuthService {
      * @param {number} playerId The player's ID.
      * @returns {Promise<TokenResponse>} Object containing access and refresh tokens.
      */
-    private async generateTokens(playerId: number): Promise<TokenResponse> {
-        const payload: JwtPayload = { id: playerId };
+    private async generateTokens(playerId: number, playerRole: Role): Promise<TokenResponse> {
+        const payload: JwtPayload = { 
+            id: playerId,
+            role: playerRole,
+        };
 
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload, { expiresIn: '1h' }),

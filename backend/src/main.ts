@@ -23,3 +23,12 @@ async function bootstrap() {
     await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
+
+// #TODO Divide interfaces better to not expose private data
+// Friend request: id, username, photo, sentAt
+// Token: id, username, role
+// Public: id, username, photo
+// Private: id, username, email, photo
+// Friends: id, username, photo, lastLogin, friendsSince
+
+// !! KEEP AS PRIVATE AS POSSIBLE: refreshToken, password

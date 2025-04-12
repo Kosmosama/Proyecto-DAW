@@ -1,11 +1,6 @@
 import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Player } from './player.entity';
-
-export enum FriendshipStatus {
-    PENDING = "pending",
-    ACCEPTED = "accepted",
-    REJECTED = "rejected",
-}
+import { FriendshipStatus } from '../enums/friendship-status.enum';
 
 @Entity()
 export class Friendship {

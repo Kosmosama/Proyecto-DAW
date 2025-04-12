@@ -1,5 +1,6 @@
 import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { Role } from 'src/auth/enums/role.enum';
 
 @Entity()
 export class Player {
@@ -23,6 +24,9 @@ export class Player {
 
     @Column({ name: 'last_login', type: 'timestamp', nullable: true })
     lastLogin: Date;
+
+    @Column({ type: 'enum', enum: Role, default: Role.USER })
+    role: Role;
 
     @BeforeInsert()
     @BeforeUpdate()

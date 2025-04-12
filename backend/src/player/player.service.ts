@@ -4,10 +4,11 @@ import * as bcrypt from 'bcrypt';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { UpdatePlayerDto } from './dto/update-player.dto';
-import { Friendship, FriendshipStatus } from './entities/friendship.entity';
+import { Friendship } from './entities/friendship.entity';
 import { Player } from './entities/player.entity';
 import { Friend } from './interfaces/friend.interface';
 import { PlayerPublic } from './interfaces/player-public.interface';
+import { FriendshipStatus } from './enums/friendship-status.enum';
 
 @Injectable()
 export class PlayerService {
@@ -45,7 +46,7 @@ export class PlayerService {
      * @throws {NotFoundException} if player doesn't exist.
      */
     async findOne(id: number): Promise<PlayerPublic> {
-        return await this.findOneBy({ id }, true, ['id', 'username']);
+        return await this.findOneBy({ id }, true, ['id', 'username', 'role']);
     }
 
     /**
