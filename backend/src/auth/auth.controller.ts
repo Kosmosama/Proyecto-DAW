@@ -1,15 +1,15 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Player } from 'src/player/decorators/player.decorator';
 import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { RegisterDto } from './dto/register.dto';
+import { GithubAuthGuard } from './guards/github-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 import { TokenResponse } from './interfaces/token-response.interface';
-import { GithubAuthGuard } from './guards/github-auth.guard';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Public()
 @Controller('auth')
@@ -73,7 +73,6 @@ export class AuthController {
         // Everything is handled by the GithubAuthGuard
     }
 
-    @Public()
     @UseGuards(GithubAuthGuard)
     @Get('github/callback')
     @ApiOperation({ summary: 'Callback after GitHub OAuth login' })

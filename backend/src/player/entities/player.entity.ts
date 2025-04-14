@@ -1,6 +1,7 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/auth/enums/role.enum';
+import { AuthProvider } from '../../auth/entities/auth-provider.entity';
 
 @Entity()
 export class Player {
@@ -27,6 +28,9 @@ export class Player {
 
     @Column({ type: 'enum', enum: Role, default: Role.USER })
     role: Role;
+
+    @OneToMany(() => AuthProvider, (authProvider) => authProvider.player)
+    authProviders: AuthProvider[];
 
     @BeforeInsert()
     @BeforeUpdate()
