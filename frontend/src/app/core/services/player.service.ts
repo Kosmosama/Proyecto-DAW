@@ -65,4 +65,72 @@ export class PlayerService {
             });
     }
 
+    /**
+     *
+     *
+     * @param {number} id
+     * @return {*}  {Observable<any>}
+     * @memberof PlayerService
+     */
+    acceptFriendRequest(id: number): Observable<any> {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+        return this.http.patch<any>(`player/friend-accept/${id}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    }
+
+    /**
+     *
+     *
+     * @param {number} id
+     * @return {*}  {Observable<any>}
+     * @memberof PlayerService
+     */
+    declineFriendRequest(id: number): Observable<any> {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+        return this.http.patch<any>(`player/friend-decline/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    }
+
+    /**
+     *
+     *
+     * @return {*}  {Observable<any[]>}
+     * @memberof PlayerService
+     */
+    fetchIncomingRequests(): Observable<any[]> {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+        return this.http
+            .get<any[]>(`player/friend-requests/incoming`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+    }
+
+    /**
+     *
+     *
+     * @return {*}  {Observable<any[]>}
+     * @memberof PlayerService
+     */
+    fetchOutgoingRequests(): Observable<any[]> {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+        return this.http
+            .get<any[]>(`player/friend-requests/outgoing`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+    }
+
 }

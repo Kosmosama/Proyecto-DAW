@@ -46,18 +46,19 @@ export class AuthService {
             );
     }
 
+    
     /**
      *
      *
-     * @param {string} token
-     * @return {*}  {Observable<void>}
      * @memberof AuthService
      */
     googleLogin(): void {
         window.location.href = `${environment.apiUrl}/auth/google/login`;
     }
 
-
+    githubLogin(): void {
+        window.location.href = `${environment.apiUrl}/auth/github/login`;
+    }
 
     /**
      *

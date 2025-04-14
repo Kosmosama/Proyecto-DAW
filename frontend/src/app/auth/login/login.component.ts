@@ -42,10 +42,12 @@ export class LoginComponent implements CanComponentDeactivate {
   constructor() {
   }
 
-  loggedGoogle(resp: google.accounts.id.CredentialResponse) {
-    const token = resp.credential;
+  loggedGoogle() {
     this.#authService.googleLogin();
+  }
 
+  loggedGithub() {
+    this.#authService.githubLogin();
   }
 
   showError(error: string) {
