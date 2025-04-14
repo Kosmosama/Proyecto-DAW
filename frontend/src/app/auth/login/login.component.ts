@@ -44,17 +44,8 @@ export class LoginComponent implements CanComponentDeactivate {
 
   loggedGoogle(resp: google.accounts.id.CredentialResponse) {
     const token = resp.credential;
-    this.#authService.googleLogin(token).pipe(
-      takeUntilDestroyed(this.#destroyRef)
-    ).subscribe({
-      next: (res) => {
-        this.#router.navigate(['defaultRoute']);
-      },
-      error: (err) => {
-        console.error('Error al iniciar sesión con Google:', err);
-      }
-    });
-    
+    this.#authService.googleLogin();
+
   }
 
   showError(error: string) {

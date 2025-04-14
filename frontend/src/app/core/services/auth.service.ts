@@ -53,23 +53,10 @@ export class AuthService {
      * @return {*}  {Observable<void>}
      * @memberof AuthService
      */
-    googleLogin(token: string): Observable<void> {
-        return this.http.post<TokenResponse>(`auth/google`, token).pipe(
-            map((response: TokenResponse) => {
-                localStorage.setItem('accessToken', response.accessToken);
-            }),
-            catchError((error) => {
-                const errorMessage = Array.isArray(error.error);
-                alert(errorMessage);
-
-                return of();
-            })
-        );
-    }
-
-    googleRedirectToLogin(): void {
+    googleLogin(): void {
         window.location.href = `${environment.apiUrl}/auth/google/login`;
     }
+
 
 
     /**
