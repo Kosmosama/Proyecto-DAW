@@ -101,7 +101,7 @@ export class AuthService {
 
         let player: any;
         try {
-            player = await this.playerService.findOneBy({ username: id });
+            player = await this.playerService.findOneBy({ email});
         } catch {
             player = await this.playerService.createUser({
                 username,

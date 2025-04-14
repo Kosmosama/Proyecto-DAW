@@ -9,6 +9,7 @@ import { PlayerService } from 'src/player/player.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
 
 @Module({
     imports: [
@@ -22,7 +23,7 @@ import { RefreshJwtStrategy } from './strategies/refresh.strategy';
             }),
         }),
     ],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, PlayerService, LocalStrategy, RefreshJwtStrategy],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, PlayerService, LocalStrategy, RefreshJwtStrategy],
     controllers: [AuthController],
     exports: [AuthService, JwtModule],
 })
