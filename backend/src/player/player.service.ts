@@ -222,7 +222,7 @@ export class PlayerService {
      * @param {number} limit Number of friends per page (default: 10).
      * @returns {Promise<Friend[]>} List of friends.
      */
-    async getFriends(playerId: number, page = 1, limit = 10): Promise<Friend[]> {
+    async getFriends(playerId: number, page = 1, limit?: number): Promise<Friend[]> {
         const friendships = await this.getFriendshipsByStatus(playerId, FriendshipStatus.ACCEPTED, page, limit);
     
         return friendships.map(({ sender, receiver, updatedAt }) => {
@@ -235,7 +235,7 @@ export class PlayerService {
                 lastLogin: friend.lastLogin,
             };
         });
-    }
+    }    
     
     /**
      * Get the list of incoming friend requests for a given player.
@@ -308,20 +308,18 @@ export class PlayerService {
      * @param {number} limit Number of requests per page (default: 10).
      * @returns {Promise<Friend[]>} List of outgoing friendships.
      */
-    private async getFriendshipsByStatus(playerId: number, status: FriendshipStatus, page = 1, limit = 10): Promise<Friendship[]> {
+    private async getFriendshipsByStatus(playerId: number, status: FriendshipStatus, page = 1, limit?: number): Promise<Friendship[]> {
         const query = this.friendshipRepository
             .createQueryBuilder('f')
             .innerJoinAndSelect('f.sender', 'sender')
             .innerJoinAndSelect('f.receiver', 'receiver')
             .where('f.status = :status', { status })
-            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId })
-            .skip((page - 1) * limit)
-            .take(limit);
+            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId });
     
-        const friendships = await query.getMany();
+        if (limit) {
+            query.skip((page - 1) * limit).take(limit);
+        }
     
-        if (!friendships.length) throw new NotFoundException(`No ${status} friendships found.`);
-    
-        return friendships;
+        return await query.getMany();
     }
 }

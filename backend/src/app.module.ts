@@ -5,10 +5,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PlayerModule } from './player/player.module';
-import { ChatGateway } from './websockets/chat/chat.gateway';
-import { ChatModule } from './websockets/chat/chat.module';
 import { JwtGuard } from './auth/guards/jwt-auth.guard';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
+import { StatusModule } from './status/status.module';
+import { StatusGateway } from './status/status.gateway';
 
 @Module({
     imports: [
@@ -30,13 +30,13 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
             }),
         }),
         PlayerModule,
-        ChatModule,
+        StatusModule,
         AuthModule,
     ],
     controllers: [AppController],
     providers: [
         AppService, 
-        ChatGateway,
+        StatusGateway,
         {
             provide: 'APP_GUARD',
             useClass: JwtGuard,
