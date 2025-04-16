@@ -1,62 +1,105 @@
-import { UseGuards } from "@nestjs/common";
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { JwtWsGuard } from "src/auth/guards/jwt-ws-auth.guard";
-import { SocketWithUser } from "./interfaces/socket-with-user.interface";
-import { PlayerWs } from "src/player/decorators/player-ws.decorator";
-import { PlayerPublic } from "src/player/interfaces/player-public.interface";
-import { Server } from "socket.io";
-import { StatusService } from "./status.service";
+import { Logger } from '@nestjs/common';
+import {
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    WebSocketGateway,
+    WebSocketServer
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { PlayerService } from 'src/player/player.service';
 
-
-@WebSocketGateway({
-    cors: {
-        origin: '*', // adjust as needed
-    },
-})
-@UseGuards(JwtWsGuard)
+@WebSocketGateway()
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
 
-    constructor(
-        private readonly statusService: StatusService
-    ) { }
+    private readonly logger = new Logger(StatusGateway.name);
 
-    async handleConnection(client: SocketWithUser) {
-        const player = client.user;
-        await this.statusService.setOnline(player.id, client.id);
-        this.server.emit('status:update', {
-            playerId: player.id,
-            status: 'online',
-        });
-    }
+    // In-memory "sets"
+    private onlinePlayers: Set<number> = new Set(); // Set of player IDs
+    private playerSockets: Map<number, Set<string>> = new Map(); // Map<playerId, Set<socketId>>
+    private playerFriends: Map<number, number[]> = new Map(); // Map<playerId, friendIds[]>
+    private socketToPlayer: Map<string, number> = new Map(); // Map<socketId, playerId>
 
-    async handleDisconnect(client: SocketWithUser) {
-        const player = client.user;
-        const stillOnline = await this.statusService.setOffline(player.id, client.id);
+    constructor(private readonly playerService: PlayerService) { }
 
-        if (!stillOnline) {
-            this.server.emit('status:update', {
-                playerId: player.id,
-                status: 'offline',
-            });
+    async handleConnection(client: Socket) {
+        const playerId = this.extractPlayerId(client);
+        if (!playerId) {
+            client.disconnect();
+            return;
+        }
+
+        this.logger.debug(`Player ${playerId} connected with socket ${client.id}`);
+        this.socketToPlayer.set(client.id, playerId);
+
+        const sockets = this.playerSockets.get(playerId) ?? new Set();
+        sockets.add(client.id);
+        this.playerSockets.set(playerId, sockets);
+
+        if (!this.onlinePlayers.has(playerId)) {
+            this.onlinePlayers.add(playerId);
+            await this.notifyOnline(playerId);
         }
     }
 
-    @SubscribeMessage('status:whois')
-    async handleStatusRequest(
-        @MessageBody() playerIds: string[],
-        @ConnectedSocket() client: SocketWithUser,
-    ) {
-        const result = await this.statusService.getStatusBulk(playerIds);
-        client.emit('status:bulk', result);
+    async handleDisconnect(client: Socket) {
+        const playerId = this.socketToPlayer.get(client.id);
+        if (!playerId) return;
+
+        this.logger.debug(`Player ${playerId} disconnected socket ${client.id}`);
+        this.socketToPlayer.delete(client.id);
+
+        const sockets = this.playerSockets.get(playerId);
+        if (!sockets) return;
+
+        sockets.delete(client.id);
+        if (sockets.size === 0) {
+            this.playerSockets.delete(playerId);
+            this.onlinePlayers.delete(playerId);
+            await this.notifyOffline(playerId);
+        } else {
+            this.playerSockets.set(playerId, sockets);
+        }
     }
 
-    @SubscribeMessage('status:me')
-    async handleMe(@PlayerWs() player: PlayerPublic, @ConnectedSocket() client: SocketWithUser) {
-        client.emit('status:me', {
-            playerId: player.id,
-            status: await this.statusService.getStatus(player.id),
+    private async notifyOnline(playerId: number) {
+        const friends = await this.playerService.getFriends(playerId);
+        const friendIds = friends.map((f) => f.id);
+        this.playerFriends.set(playerId, friendIds);
+
+        const onlineFriends = friendIds.filter((id) => this.onlinePlayers.has(id));
+        this.emitToPlayer(playerId, 'friends:online', onlineFriends);
+
+        friendIds.forEach((friendId) => {
+            if (this.onlinePlayers.has(friendId)) {
+                this.emitToPlayer(friendId, 'friend:online', playerId);
+            }
         });
+    }
+
+    private async notifyOffline(playerId: number) {
+        const friendIds = this.playerFriends.get(playerId) ?? [];
+        this.playerFriends.delete(playerId);
+
+        friendIds.forEach((friendId) => {
+            if (this.onlinePlayers.has(friendId)) {
+                this.emitToPlayer(friendId, 'friend:offline', playerId);
+            }
+        });
+    }
+
+    private emitToPlayer(playerId: number, event: string, data: any) {
+        const sockets = this.playerSockets.get(playerId);
+        if (!sockets) return;
+
+        for (const socketId of sockets) {
+            this.server.to(socketId).emit(event, data);
+        }
+    }
+
+    private extractPlayerId(client: Socket): number | null {
+        const id = client.handshake.query?.playerId;
+        return typeof id === 'string' ? parseInt(id, 10) : null;
     }
 }
