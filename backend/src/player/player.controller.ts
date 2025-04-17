@@ -20,6 +20,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { PlayerService } from './player.service';
+import { FriendRequest } from './interfaces/friend-request.interface';
 
 @ApiTags('player')
 @Controller('player')
@@ -73,7 +74,7 @@ export class PlayerController {
         @Player() player: PlayerPublic,
         @Query('page') page = 1,
         @Query('limit') limit = 10
-    ): Promise<Friend[]> {
+    ): Promise<FriendRequest[]> {
         return this.playerService.getIncomingFriendRequests(player.id, Number(page), Number(limit));
     }
 
@@ -85,7 +86,7 @@ export class PlayerController {
         @Player() player: PlayerPublic,
         @Query('page') page = 1,
         @Query('limit') limit = 10
-    ): Promise<Friend[]> {
+    ): Promise<FriendRequest[]> {
         return this.playerService.getPendingOutgoing(player.id, Number(page), Number(limit));
     }
 

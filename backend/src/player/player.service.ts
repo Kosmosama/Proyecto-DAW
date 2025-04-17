@@ -6,123 +6,121 @@ import { FindOptionsWhere, Repository } from 'typeorm';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { Friendship } from './entities/friendship.entity';
 import { Player } from './entities/player.entity';
+import { FriendshipStatus } from './enums/friendship-status.enum';
+import { FriendRequest } from './interfaces/friend-request.interface';
 import { Friend } from './interfaces/friend.interface';
 import { PlayerPublic } from './interfaces/player-public.interface';
-import { FriendshipStatus } from './enums/friendship-status.enum';
 
 @Injectable()
 export class PlayerService {
     constructor(
-        @InjectRepository(Friendship)
-        private readonly friendshipRepository: Repository<Friendship>,
         @InjectRepository(Player)
         private readonly playerRepository: Repository<Player>,
-    ) { }
+        @InjectRepository(Friendship)
+        private readonly friendshipRepository: Repository<Friendship>
+    ) {}
 
     /**
-     * Register a new player.
-     * @param {RegisterDto} dto Registration data (username, email, password, optional photo).
-     * @returns {Promise<Player>} Created player entity.
+     * Creates a new player in the database.
+     * @param {RegisterDto} dto The registration data transfer object.
+     * @returns {Promise<Player>} The created player entity.
      */
     async createUser(dto: RegisterDto): Promise<Player> {
         const player = this.playerRepository.create(dto);
-        return await this.playerRepository.save(player); // triggers hashing
+        return await this.playerRepository.save(player);
     }
 
     /**
-     * Retrieve all players with optional pagination and search.
-     * @param {number} page Page number for pagination (default: 1).
-     * @param {number} limit Number of players per page (default: 10).
-     * @param {string?} search Optional search term for filtering by username.
-     * @returns {Promise<PlayerPublic[]>} List of players with public info.
+     * Retrieves a paginated list of public player data with optional search.
+     * @param {number} page The page number.
+     * @param {number} limit The number of items per page.
+     * @param {string} [search] Optional search keyword for filtering by username.
+     * @returns {Promise<PlayerPublic[]>} A list of public player data.
      */
     async findAll(page = 1, limit = 10, search?: string): Promise<PlayerPublic[]> {
         const query = this.playerRepository.createQueryBuilder('player')
-            .select(['player.id', 'player.username'])
+            .select(['player.id', 'player.username', 'player.photo'])
             .skip((page - 1) * limit)
             .take(limit);
-    
+
         if (search) {
-            query.where('LOWER(player.username) LIKE :search', { search: `%${search.toLowerCase()}%` });
+            query.where('LOWER(player.username) LIKE :search', {
+                search: `%${search.toLowerCase()}%`,
+            });
         }
-    
+
         return await query.getMany();
     }
 
     /**
-     * Retrieve a single player by id.
-     * @param {number} id Player id to search for.
-     * @returns {Promise<PlayerPublic>} Player details.
-     * @throws {NotFoundException} if player doesn't exist.
+     * Retrieves public data for a single player by ID.
+     * @param {number} id The player's ID.
+     * @returns {Promise<PlayerPublic>} The player's public information.
+     * @throws {NotFoundException} If the player is not found.
      */
     async findOne(id: number): Promise<PlayerPublic> {
-        return await this.findOneBy({ id }, true, ['id', 'username', 'role']);
+        return await this.findOneBy({ id }, true, ['id', 'username', 'photo']);
     }
 
     /**
-     * Update player details.
-     * @param {number} id Player id to update.
-     * @param {UpdatePlayerDto} updatePlayerDto Data to update player.
-     * @returns {Promise<PlayerPublic>} Updated player data.
-     * @throws {NotFoundException} if player doesn't exist.
+     * Updates a player's data.
+     * @param {number} id The player's ID.
+     * @param {UpdatePlayerDto} dto The data transfer object with updated fields.
+     * @returns {Promise<PlayerPublic>} The updated player's public information.
+     * @throws {NotFoundException} If the player is not found.
      */
-    async update(id: number, updatePlayerDto: UpdatePlayerDto): Promise<PlayerPublic> {
-        const result = await this.playerRepository.update(id, updatePlayerDto);
-        if (result.affected === 0) throw new NotFoundException("Player not found.");
+    async update(id: number, dto: UpdatePlayerDto): Promise<PlayerPublic> {
+        const result = await this.playerRepository.update(id, dto);
+        if (!result.affected) throw new NotFoundException('Player not found.');
         return this.findOne(id);
     }
 
     /**
-     * Delete a player by id.
-     * @param {number} id Player id to delete.
-     * @returns {Promise<void>} Promise that resolves when the player is deleted.
-     * @throws {NotFoundException} if player doesn't exist.
+     * Deletes a player by ID.
+     * @param {number} id The player's ID.
+     * @returns {Promise<void>} A void promise.
+     * @throws {NotFoundException} If the player is not found.
      */
     async remove(id: number): Promise<void> {
-        const deleteResult = await this.playerRepository.delete(id);
-        if (deleteResult.affected === 0) throw new NotFoundException("Player not found.");
+        const result = await this.playerRepository.delete(id);
+        if (!result.affected) throw new NotFoundException('Player not found.');
     }
 
     /**
-     * Find a single player by given conditions.
-     * @param {FindOptionsWhere<Player>} where Conditions to match.
-     * @param {boolean} throwIfNotFound Whether to throw if not found (default: true).
-     * @param {Array<keyof Player>} select Optional list of fields to select.
-     * @returns {Promise<Player>} Player entity or throws NotFoundException.
+     * Finds a player based on given condition.
+     * @param {FindOptionsWhere<Player>} where The filter criteria.
+     * @param {boolean} [throwIfNotFound=true] Whether to throw if not found.
+     * @param {Array<keyof Player>} [select] Optional fields to select.
+     * @returns {Promise<Player>} The found player entity.
+     * @throws {NotFoundException} If not found and throwIfNotFound is true.
      */
-    async findOneBy(where: FindOptionsWhere<Player>, throwIfNotFound = true, select?: Array<keyof Player>): Promise<Player> {
-        const player = await this.playerRepository.findOne({
-            where,
-            select,
-        });
-    
-        if (!player && throwIfNotFound) {
-            throw new NotFoundException('Player not found.');
-        }
-
+    async findOneBy(
+        where: FindOptionsWhere<Player>,
+        throwIfNotFound = true,
+        select?: (keyof Player)[]
+    ): Promise<Player> {
+        const player = await this.playerRepository.findOne({ where, select });
+        if (!player && throwIfNotFound) throw new NotFoundException('Player not found.');
         return player!;
     }
 
     /**
-     * Update and hash a player's refresh token.
-     * @param {number} playerId Player ID.
-     * @param {string | null} refreshToken Raw refresh token to be hashed.
-     * @returns {Promise<string>} Hashed refresh token.
-     * @throws {NotFoundException} If player is not found.
+     * Updates a player's refresh token.
+     * @param {number} playerId The player's ID.
+     * @param {string | null} refreshToken The new refresh token or null to clear.
+     * @returns {Promise<string | null>} The updated refresh token.
      */
     async updateRefreshToken(playerId: number, refreshToken: string | null): Promise<string | null> {
         const player = await this.findOneBy({ id: playerId });
-    
         player.refreshToken = refreshToken;
-        await this.playerRepository.save(player); // triggers hashSensitiveData
-    
-        return player.refreshToken ?? null;
+        await this.playerRepository.save(player);
+        return player.refreshToken;
     }
 
     /**
-     * Get hashed refresh token for a player.
-     * @param {number} playerId Player ID.
-     * @returns {Promise<string | null>} Hashed token or null if not found.
+     * Retrieves a player's stored refresh token hash.
+     * @param {number} playerId The player's ID.
+     * @returns {Promise<string | null>} The hashed refresh token or null.
      */
     async getRefreshTokenHash(playerId: number): Promise<string | null> {
         const player = await this.findOneBy({ id: playerId }, false, ['refreshToken']);
@@ -130,196 +128,195 @@ export class PlayerService {
     }
 
     /**
-     * Validate a refresh token by comparing with the stored hash.
-     * @param {number} playerId Player ID.
-     * @param {string} refreshToken Unhashed token to validate.
-     * @returns {Promise<boolean>} True if token is valid.
+     * Compares a given refresh token with the stored hash.
+     * @param {number} playerId The player's ID.
+     * @param {string} token The refresh token to validate.
+     * @returns {Promise<boolean>} True if valid, false otherwise.
      */
-    async validateRefreshToken(playerId: number, refreshToken: string): Promise<boolean> {
-        const hashed = await this.getRefreshTokenHash(playerId);
-        if (!hashed) return false;
-        return await bcrypt.compare(refreshToken, hashed);
+    async validateRefreshToken(playerId: number, token: string): Promise<boolean> {
+        const hash = await this.getRefreshTokenHash(playerId);
+        return hash ? bcrypt.compare(token, hash) : false;
     }
 
     /**
-     * Check if a user exists by partial conditions.
-     * @param {FindOptionsWhere<Player>} conditions Partial Player fields to match.
-     * @returns {Promise<boolean>} True if a matching user is found.
+     * Checks if a player exists based on given condition.
+     * @param {FindOptionsWhere<Player>} where The filter criteria.
+     * @returns {Promise<boolean>} True if a player exists, false otherwise.
      */
-    async userExistsBy(conditions: FindOptionsWhere<Player>): Promise<boolean> {
-        return !!(await this.findOneBy(conditions, false));
+    async userExistsBy(where: FindOptionsWhere<Player>): Promise<boolean> {
+        return !!(await this.findOneBy(where, false));
     }
 
     /**
-     * Find friendship between two players.
-     * @param {number} playerId Sender player id.
-     * @param {number} friendId Receiver player id.
-     * @returns {Promise<Friendship | null>} Object if it exists.
+     * Retrieves an existing friendship between two players.
+     * @param {number} playerId The ID of the first player.
+     * @param {number} friendId The ID of the second player.
+     * @returns {Promise<Friendship | null>} The friendship if it exists, otherwise null.
      */
     private async findFriendship(playerId: number, friendId: number): Promise<Friendship | null> {
         return await this.friendshipRepository.findOne({
             where: [
                 { senderId: playerId, receiverId: friendId },
-                { senderId: friendId, receiverId: playerId }
+                { senderId: friendId, receiverId: playerId },
             ],
         });
     }
 
     /**
-     * Send a friend request from one player to another.
-     * @param {number} senderId Sender player id.
-     * @param {number} receiverId Receiver player id.
-     * @returns {Promise<void>} Promise that resolves when the request is sent.
-     * @throws {ConflictException} if a friend request already exists.
+     * Sends a friend request from one player to another.
+     * @param {number} senderId The sender's player ID.
+     * @param {number} receiverId The receiver's player ID.
+     * @returns {Promise<void>} A void promise.
+     * @throws {ConflictException} If a request already exists.
      */
     async sendFriendRequest(senderId: number, receiverId: number): Promise<void> {
-        const existingFriendship = await this.findFriendship(senderId, receiverId);
-        if (existingFriendship) throw new ConflictException(`Friend request already exists with status: ${existingFriendship.status}`);
+        const existing = await this.findFriendship(senderId, receiverId);
+        if (existing)
+            throw new ConflictException(
+                `Friend request already exists with status: ${existing.status}`
+            );
 
-        const friendship = this.friendshipRepository.create({
+        const request = this.friendshipRepository.create({
             senderId,
             receiverId,
             status: FriendshipStatus.PENDING,
         });
 
-        await this.friendshipRepository.save(friendship);
+        await this.friendshipRepository.save(request);
     }
 
     /**
-     * Accept a pending friend request.
-     * @param {number} senderId Sender player id.
-     * @param {number} receiverId Receiver player id.
-     * @returns {Promise<void>} Promise that resolves when the request is accepted.
-     * @throws {NotFoundException} if the friendship isn't found.
+     * Accepts a friend request.
+     * @param {number} senderId The sender's player ID.
+     * @param {number} receiverId The receiver's player ID.
+     * @returns {Promise<void>} A void promise.
+     * @throws {NotFoundException} If the request is not found.
      */
     async acceptFriendRequest(senderId: number, receiverId: number): Promise<void> {
         const result = await this.friendshipRepository.update(
             { senderId, receiverId },
-            { status: FriendshipStatus.ACCEPTED },
+            { status: FriendshipStatus.ACCEPTED }
         );
 
-        if (result.affected === 0) throw new NotFoundException('Friend request not found.');
+        if (!result.affected) throw new NotFoundException('Friend request not found.');
     }
 
     /**
-     * Decline (remove) a pending friend request.
-     * @param {number} senderId Sender player id.
-     * @param {number} receiverId Receiver player id.
-     * @returns {Promise<void>} Promise that resolves when the request is declined.
-     * @throws {NotFoundException} if the friendship isn't found.
+     * Declines and deletes a friend request.
+     * @param {number} senderId The sender's player ID.
+     * @param {number} receiverId The receiver's player ID.
+     * @returns {Promise<void>} A void promise.
+     * @throws {NotFoundException} If the request is not found.
      */
     async declineFriendRequest(senderId: number, receiverId: number): Promise<void> {
         const friendship = await this.findFriendship(senderId, receiverId);
         if (!friendship) throw new NotFoundException('Friend request not found.');
 
-        await this.friendshipRepository.delete({ senderId: friendship.senderId, receiverId: friendship.receiverId });
+        await this.friendshipRepository.delete({
+            senderId: friendship.senderId,
+            receiverId: friendship.receiverId,
+        });
     }
 
     /**
-     * Get the list of friends for a given player.
-     * @param {number} playerId Player id to fetch friends for.
-     * @param {number} page Page number for pagination (default: 1).
-     * @param {number} limit Number of friends per page (default: 10).
-     * @returns {Promise<Friend[]>} List of friends.
+     * Gets a paginated list of a player's friends.
+     * @param {number} playerId The player's ID.
+     * @param {number} page The page number.
+     * @param {number} limit The number of items per page.
+     * @returns {Promise<Friend[]>} A list of friends.
      */
-    async getFriends(playerId: number, page = 1, limit?: number): Promise<Friend[]> {
-        const friendships = await this.getFriendshipsByStatus(playerId, FriendshipStatus.ACCEPTED, page, limit);
-    
+    async getFriends(playerId: number, page = 1, limit = 10): Promise<Friend[]> {
+        const friendships = await this.getFriendshipsByStatus(
+            playerId,
+            FriendshipStatus.ACCEPTED,
+            page,
+            limit
+        );
+
         return friendships.map(({ sender, receiver, updatedAt }) => {
             const friend = sender.id === playerId ? receiver : sender;
             return {
                 id: friend.id,
                 username: friend.username,
                 photo: friend.photo,
-                since: updatedAt,
-                lastLogin: friend.lastLogin,
+                friendsSince: updatedAt,
+                lastLogin: friend.lastLogin ?? null,
             };
         });
-    }    
-    
+    }
+
     /**
-     * Get the list of incoming friend requests for a given player.
-     * @param {number} playerId Player id to fetch incoming requests for.
-     * @param {number} page Page number for pagination (default: 1).
-     * @param {number} limit Number of requests per page (default: 10).
-     * @returns {Promise<Friend[]>} List of incoming friendships.
+     * Retrieves incoming pending friend requests.
+     * @param {number} playerId The player's ID.
+     * @param {number} page The page number.
+     * @param {number} limit The number of items per page.
+     * @returns {Promise<FriendRequest[]>} A list of incoming friend requests.
      */
-    async getIncomingFriendRequests(playerId: number, page = 1, limit = 10): Promise<Friend[]> {
-        const friendships = await this.getFriendshipsByStatus(playerId, FriendshipStatus.PENDING, page, limit);
-    
+    async getIncomingFriendRequests(playerId: number, page = 1, limit = 10): Promise<FriendRequest[]> {
+        const friendships = await this.getFriendshipsByStatus(
+            playerId,
+            FriendshipStatus.PENDING,
+            page,
+            limit
+        );
+
         return friendships
-            .filter(f => f.receiverId === playerId)
+            .filter((f) => f.receiverId === playerId)
             .map(({ sender, updatedAt }) => ({
                 id: sender.id,
                 username: sender.username,
                 photo: sender.photo,
-                since: updatedAt,
+                sentAt: updatedAt,
             }));
     }
 
     /**
-     * Get the list of outgoing friend requests for a given player.
-     * @param {number} playerId Player id to fetch outgoing requests for.
-     * @param {number} page Page number for pagination (default: 1).
-     * @param {number} limit Number of requests per page (default: 10).
-     * @returns {Promise<Friend[]>} List of outgoing friendships.
+     * Retrieves outgoing pending friend requests.
+     * @param {number} playerId The player's ID.
+     * @param {number} page The page number.
+     * @param {number} limit The number of items per page.
+     * @returns {Promise<FriendRequest[]>} A list of sent friend requests.
      */
-    async getPendingOutgoing(playerId: number, page = 1, limit = 10): Promise<Friend[]> {
-        const friendships = await this.getFriendshipsByStatus(playerId, FriendshipStatus.PENDING, page, limit);
-    
+    async getPendingOutgoing(playerId: number, page = 1, limit = 10): Promise<FriendRequest[]> {
+        const friendships = await this.getFriendshipsByStatus(
+            playerId,
+            FriendshipStatus.PENDING,
+            page,
+            limit
+        );
+
         return friendships
-            .filter(f => f.senderId === playerId)
+            .filter((f) => f.senderId === playerId)
             .map(({ receiver, updatedAt }) => ({
                 id: receiver.id,
                 username: receiver.username,
                 photo: receiver.photo,
-                since: updatedAt,
+                sentAt: updatedAt,
             }));
     }
 
     /**
-     * Get the list of outgoing friend requests for a given player.
-     * @param {number} playerId Player id to fetch outgoing requests for.
-     * @param {number} page Page number for pagination (default: 1).
-     * @param {number} limit Number of requests per page (default: 10).
-     * @returns {Promise<Friend[]>} List of outgoing friendships.
+     * Retrieves friendships by status with pagination.
+     * @param {number} playerId The player's ID.
+     * @param {FriendshipStatus} status The friendship status to filter by.
+     * @param {number} page The page number.
+     * @param {number} limit The number of items per page.
+     * @returns {Promise<Friendship[]>} A list of friendships.
      */
-    private async getOutgoingPendingFriendRequests(playerId: number, page = 1, limit = 10): Promise<Friendship[]> {
-        const query = this.friendshipRepository
-            .createQueryBuilder('f')
-            .innerJoinAndSelect('f.sender', 'sender')
-            .innerJoinAndSelect('f.receiver', 'receiver')
-            .where('f.status = :status', { status: FriendshipStatus.PENDING })
-            .andWhere('f.senderId = :playerId', { playerId })
-            .skip((page - 1) * limit)
-            .take(limit);
-    
-        const friendships = await query.getMany();
-    
-        if (!friendships.length) throw new NotFoundException('No outgoing pending friend requests found.');
-    
-        return friendships;
-    }
-    
-    /**
-     * Get the list of outgoing friend requests for a given player.
-     * @param {number} playerId Player id to fetch outgoing requests for.
-     * @param {number} page Page number for pagination (default: 1).
-     * @param {number} limit Number of requests per page (default: 10).
-     * @returns {Promise<Friend[]>} List of outgoing friendships.
-     */
-    private async getFriendshipsByStatus(playerId: number, status: FriendshipStatus, page = 1, limit?: number): Promise<Friendship[]> {
-        const query = this.friendshipRepository
+    private async getFriendshipsByStatus(
+        playerId: number,
+        status: FriendshipStatus,
+        page = 1,
+        limit = 10
+    ): Promise<Friendship[]> {
+        return await this.friendshipRepository
             .createQueryBuilder('f')
             .innerJoinAndSelect('f.sender', 'sender')
             .innerJoinAndSelect('f.receiver', 'receiver')
             .where('f.status = :status', { status })
-            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId });
-    
-        if (limit) {
-            query.skip((page - 1) * limit).take(limit);
-        }
-    
-        return await query.getMany();
+            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId })
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getMany();
     }
 }

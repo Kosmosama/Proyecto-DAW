@@ -2,6 +2,6 @@ export interface Friend {
     id: number;
     username: string;
     photo: string;
-    since: Date;
+    friendsSince: Date;
     lastLogin?: Date | null;
 }
