@@ -44,7 +44,7 @@ export class AuthController {
     logout(@Player() player: PlayerPublic): Promise<void> {
         return this.authService.logout(player);
     }
-    
+
     @Public()
     @UseGuards(GoogleAuthGuard)
     @Get('google/login')
@@ -88,7 +88,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Refresh access token using refresh token' })
     @ApiResponse({ status: 200, description: 'Refresh successful, returns new tokens.' })
     @ApiResponse({ status: 401, description: 'Invalid or expired refresh token.' })
-    refresh(@Player() player): Promise<TokenResponse> {
+    refresh(@Player() player: PlayerPublic): Promise<TokenResponse> {
         return this.authService.refreshToken(player);
     }
 }

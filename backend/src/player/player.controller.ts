@@ -1,16 +1,4 @@
-import {
-    BadRequestException,
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    ParseIntPipe,
-    Patch,
-    Post,
-    Query,
-    UseGuards,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards, } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Player } from './decorators/player.decorator';
 import { UpdatePlayerDto } from './dto/update-player.dto';
@@ -21,6 +9,7 @@ import { Role } from 'src/auth/enums/role.enum';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { PlayerService } from './player.service';
 import { FriendRequest } from './interfaces/friend-request.interface';
+import { PlayerPrivate } from './interfaces/player-private.interface';
 
 @ApiTags('player')
 @Controller('player')
@@ -41,8 +30,8 @@ export class PlayerController {
     @Get('profile')
     @ApiOperation({ summary: 'Get the profile of the current logged-in player' })
     @ApiResponse({ status: 200, description: 'Returns the current player profile.' })
-    getProfile(@Player() player: PlayerPublic): Promise<PlayerPublic> {
-        return this.playerService.findOne(player.id);
+    getProfile(@Player() player: PlayerPublic): Promise<PlayerPrivate> {
+        return this.playerService.findOnePrivate(player.id);
     }
 
     @Patch('profile')
@@ -95,7 +84,7 @@ export class PlayerController {
     @ApiResponse({ status: 200, description: 'Returns a player by their ID.' })
     @ApiResponse({ status: 404, description: 'Player not found.' })
     findOne(@Param('id', ParseIntPipe) id: number): Promise<PlayerPublic> {
-        return this.playerService.findOne(id);
+        return this.playerService.findOnePublic(id);
     }
 
     @Roles(Role.ADMIN)

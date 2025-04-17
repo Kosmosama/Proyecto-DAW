@@ -1,14 +1,13 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { Player } from 'src/player/entities/player.entity';
 import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { PlayerService } from 'src/player/player.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { Role } from './enums/role.enum';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenResponse } from './interfaces/token-response.interface';
-import { Role } from './enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -34,7 +33,9 @@ export class AuthService {
      * @returns {TokenResponse} Object containing access and refresh tokens.
      */
     async login(player: PlayerPublic): Promise<TokenResponse> {
-        const { accessToken, refreshToken } = await this.generateTokens(player.id, player.role!);
+        const playerPrivateInfo = await this.playerService.findOnePrivate(player.id);
+
+        const { accessToken, refreshToken } = await this.generateTokens(player.id, playerPrivateInfo.role);
 
         const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
 
@@ -52,11 +53,13 @@ export class AuthService {
 
     /**
      * Refreshes the JWT tokens for a player.
-     * @param {Player} player The player object containing ID and username.
+     * @param {PlayerPublic} player The player object containing ID and username.
      * @returns {TokenResponse} Object containing new access and refresh tokens.
      */
-    async refreshToken(player: Player): Promise<TokenResponse> {
-        const { accessToken, refreshToken } = await this.generateTokens(player.id, player.role);
+    async refreshToken(player: PlayerPublic): Promise<TokenResponse> {
+        const playerPrivateInfo = await this.playerService.findOnePrivate(player.id);
+
+        const { accessToken, refreshToken } = await this.generateTokens(player.id, playerPrivateInfo.role);
 
         const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
 
@@ -85,7 +88,7 @@ export class AuthService {
             });
         }
 
-        return { id: player.id, username: player.username, email };
+        return { id: player.id, username: player.username };
     }
 
     /**
@@ -101,7 +104,7 @@ export class AuthService {
 
         let player: any;
         try {
-            player = await this.playerService.findOneBy({ email});
+            player = await this.playerService.findOneBy({ email });
         } catch {
             player = await this.playerService.createUser({
                 username,
@@ -110,7 +113,7 @@ export class AuthService {
             });
         }
 
-        return { id: player.id, username: player.username, email };
+        return { id: player.id, username: player.username };
     }
 
     /**
@@ -125,7 +128,7 @@ export class AuthService {
         if (!isValid) throw new UnauthorizedException('Invalid or expired refresh token.');
 
         const player = await this.playerService.findOneBy({ id: playerId }, true, ['id', 'username', 'email']);
-        return { id: player.id, username: player.username, email: player.email };
+        return { id: player.id, username: player.username };
     }
 
     /**
@@ -151,7 +154,7 @@ export class AuthService {
      * @returns {Promise<TokenResponse>} Object containing access and refresh tokens.
      */
     private async generateTokens(playerId: number, playerRole: Role): Promise<TokenResponse> {
-        const payload: JwtPayload = { 
+        const payload: JwtPayload = {
             id: playerId,
             role: playerRole,
         };
@@ -173,7 +176,7 @@ export class AuthService {
     private async setRefreshToken(playerId: number, refreshToken: string): Promise<string> {
         return (await this.playerService.updateRefreshToken(playerId, refreshToken))!;
     }
-    
+
     /**
      * Clears the refresh token for a player.
      * @param {number} playerId The player's ID.

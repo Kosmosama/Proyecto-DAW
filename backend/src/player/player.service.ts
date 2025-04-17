@@ -10,6 +10,7 @@ import { FriendshipStatus } from './enums/friendship-status.enum';
 import { FriendRequest } from './interfaces/friend-request.interface';
 import { Friend } from './interfaces/friend.interface';
 import { PlayerPublic } from './interfaces/player-public.interface';
+import { PlayerPrivate } from './interfaces/player-private.interface';
 
 @Injectable()
 export class PlayerService {
@@ -58,8 +59,18 @@ export class PlayerService {
      * @returns {Promise<PlayerPublic>} The player's public information.
      * @throws {NotFoundException} If the player is not found.
      */
-    async findOne(id: number): Promise<PlayerPublic> {
+    async findOnePublic(id: number): Promise<PlayerPublic> {
         return await this.findOneBy({ id }, true, ['id', 'username', 'photo']);
+    }
+
+    /**
+     * Retrieves private data for a single player by ID.
+     * @param {number} id The player's ID.
+     * @returns {Promise<PlayerPrivate>} The player's private information.
+     * @throws {NotFoundException} If the player is not found.
+     */
+    async findOnePrivate(id: number): Promise<PlayerPrivate> {
+        return await this.findOneBy({ id }, true, ['id', 'username', 'email', 'photo', 'role']);
     }
 
     /**
@@ -72,7 +83,7 @@ export class PlayerService {
     async update(id: number, dto: UpdatePlayerDto): Promise<PlayerPublic> {
         const result = await this.playerRepository.update(id, dto);
         if (!result.affected) throw new NotFoundException('Player not found.');
-        return this.findOne(id);
+        return this.findOnePublic(id);
     }
 
     /**
