@@ -1,15 +1,20 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/auth/enums/role.enum';
 import { AuthProvider } from '../../auth/entities/auth-provider.entity';
+import { BadRequestException } from '@nestjs/common';
 
 @Entity()
+@Unique(['username', 'tag'])
 export class Player {
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column({ length: 255 })
     username: string;
+
+    @Column({ length: 5 })
+    tag: string;
 
     @Column({ length: 255, unique: true })
     email: string;
@@ -35,6 +40,10 @@ export class Player {
     @BeforeInsert()
     @BeforeUpdate()
     async hashSensitiveData() {
+        if (!this.tag || !/^[a-zA-Z0-9]+$/.test(this.tag)) {
+            throw new BadRequestException('Tag must exist and contain only alphanumeric characters.');
+        }
+
         if (this.password && !this.password.startsWith('$2b$')) {
             this.password = await bcrypt.hash(this.password, 12);
         }

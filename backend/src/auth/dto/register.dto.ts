@@ -19,7 +19,7 @@ export class RegisterDto {
     @IsNotEmpty()
     @IsString()
     @Length(1, 255)
-    @ApiProperty({ description: 'assword for the player account', example: 'password123' })
+    @ApiProperty({ description: 'Password for the player account', example: 'password123' })
     password: string;
 
     @IsOptional()

@@ -19,15 +19,16 @@ export class PlayerService {
         private readonly playerRepository: Repository<Player>,
         @InjectRepository(Friendship)
         private readonly friendshipRepository: Repository<Friendship>
-    ) {}
+    ) { }
 
     /**
-     * Creates a new player in the database.
-     * @param {RegisterDto} dto The registration data transfer object.
-     * @returns {Promise<Player>} The created player entity.
+     * Creates a new player and generates a unique tag.
+     * @param {RegisterDto} registerDto The data transfer object containing username and password.
+     * @returns {Promise<Player>} The created player entity with a unique tag.
      */
-    async createUser(dto: RegisterDto): Promise<Player> {
-        const player = this.playerRepository.create(dto);
+    async createUser(registerDto: RegisterDto): Promise<Player> {
+        const player = this.playerRepository.create(registerDto);
+        player.tag = await this.generateUniqueTag(registerDto.username);
         return await this.playerRepository.save(player);
     }
 
@@ -329,5 +330,42 @@ export class PlayerService {
             .skip((page - 1) * limit)
             .take(limit)
             .getMany();
+    }
+
+    /**
+     * Generates a unique tag for a player based on their username.
+     * @param {string} username The player's username.
+     * @param {number} maxRetries The maximum number of attempts to generate a unique tag.
+     * @returns {Promise<string>} A unique tag.
+     * @throws {ConflictException} If unable to generate a unique tag after max retries.
+     */
+    private generateRandomTag(length = 5): string {
+        const TAG_CHARSET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+        const chars = TAG_CHARSET;
+        const tagLength = Math.floor(Math.random() * length) + 1;
+        let tag = '';
+        for (let i = 0; i < tagLength; i++) {
+            tag += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return tag;
+    }
+
+    /**
+     * Generates a unique tag for a player.
+     * @param {string} username The player's username.
+     * @param {number} maxRetries The maximum number of attempts to generate a unique tag.
+     * @returns {Promise<string>} A unique tag.
+     * @throws {ConflictException} If unable to generate a unique tag after max retries.
+     */
+    private async generateUniqueTag(username: string, maxRetries = 5): Promise<string> {
+        for (let i = 0; i < maxRetries; i++) {
+            const tag = this.generateRandomTag();
+            const existing = await this.playerRepository.findOne({
+                where: { username, tag },
+            });
+            if (!existing) return tag;
+        }
+        throw new ConflictException('Could not generate a unique tag. Please try again.');
     }
 }
