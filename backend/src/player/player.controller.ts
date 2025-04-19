@@ -30,7 +30,7 @@ export class PlayerController {
     @Get('profile')
     @ApiOperation({ summary: 'Get the profile of the current logged-in player' })
     @ApiResponse({ status: 200, description: 'Returns the current player profile.' })
-    getProfile(@Player() player: PlayerPublic): Promise<PlayerPrivate> {
+    getProfile(@Player() player: PlayerPrivate): Promise<PlayerPrivate> {
         return this.playerService.findOnePrivate(player.id);
     }
 
@@ -39,7 +39,7 @@ export class PlayerController {
     @ApiResponse({ status: 200, description: 'Returns updated player profile.' })
     @ApiResponse({ status: 400, description: 'Invalid input data.' })
     updateProfile(
-        @Player() player: PlayerPublic,
+        @Player() player: PlayerPrivate,
         @Body() updatePlayerDto: UpdatePlayerDto
     ): Promise<PlayerPublic> {
         return this.playerService.update(player.id, updatePlayerDto);
@@ -49,7 +49,7 @@ export class PlayerController {
     @ApiOperation({ summary: 'Get friends of the current logged-in player' })
     @ApiResponse({ status: 200, description: 'List of the current player\'s friends.' })
     getFriends(
-        @Player() player: PlayerPublic,
+        @Player() player: PlayerPrivate,
         @Query('page') page = 1,
         @Query('limit') limit = 10
     ): Promise<Friend[]> {
@@ -60,7 +60,7 @@ export class PlayerController {
     @ApiOperation({ summary: 'Get incoming friend requests' })
     @ApiResponse({ status: 200, description: 'List of incoming friend requests.' })
     getIncomingRequests(
-        @Player() player: PlayerPublic,
+        @Player() player: PlayerPrivate,
         @Query('page') page = 1,
         @Query('limit') limit = 10
     ): Promise<FriendRequest[]> {
@@ -72,7 +72,7 @@ export class PlayerController {
     @ApiResponse({ status: 200, description: 'List of sent friend requests.' })
     @ApiResponse({ status: 404, description: 'No outgoing friend requests found.' })
     getOutgoingFriendRequests(
-        @Player() player: PlayerPublic,
+        @Player() player: PlayerPrivate,
         @Query('page') page = 1,
         @Query('limit') limit = 10
     ): Promise<FriendRequest[]> {
@@ -103,7 +103,7 @@ export class PlayerController {
     @ApiResponse({ status: 200, description: 'Friend request sent successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid friend ID or request already sent.' })
     sendFriendRequest(
-        @Player() player: PlayerPublic,
+        @Player() player: PlayerPrivate,
         @Param('recieverId', ParseIntPipe) recieverId: number
     ): Promise<void> {
         if (player.id === recieverId) throw new BadRequestException('You cannot send a friend request to yourself.');
@@ -115,7 +115,7 @@ export class PlayerController {
     @ApiResponse({ status: 200, description: 'Friend request accepted successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid friend ID or request not found.' })
     acceptFriendRequest(
-        @Player() player: PlayerPublic,
+        @Player() player: PlayerPrivate,
         @Param('senderId', ParseIntPipe) senderId: number
     ): Promise<void> {
         return this.playerService.acceptFriendRequest(senderId, player.id);
@@ -126,7 +126,7 @@ export class PlayerController {
     @ApiResponse({ status: 200, description: 'Friend request declined successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid friend ID or request not found.' })
     declineFriendRequest(
-        @Player() player: PlayerPublic,
+        @Player() player: PlayerPrivate,
         @Param('senderId', ParseIntPipe) senderId: number
     ): Promise<void> {
         return this.playerService.declineFriendRequest(senderId, player.id);

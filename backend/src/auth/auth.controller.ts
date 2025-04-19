@@ -10,6 +10,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 import { TokenResponse } from './interfaces/token-response.interface';
+import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 
 @Public()
 @Controller('auth')
@@ -25,7 +26,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Login with username and password' })
     @ApiResponse({ status: 200, description: 'Login successful, returns access and refresh tokens.' })
     @ApiResponse({ status: 401, description: 'Invalid credentials.' })
-    login(@Player() player: PlayerPublic): Promise<TokenResponse> {
+    login(@Player() player: PlayerPrivate): Promise<TokenResponse> {
         return this.authService.login(player);
     }
 
@@ -41,7 +42,7 @@ export class AuthController {
     @Post('logout')
     @ApiOperation({ summary: 'Logout the current player' })
     @ApiResponse({ status: 200, description: 'Logout successful.' })
-    logout(@Player() player: PlayerPublic): Promise<void> {
+    logout(@Player() player: PlayerPrivate): Promise<void> {
         return this.authService.logout(player);
     }
 
@@ -59,7 +60,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Callback after Google OAuth login' })
     @ApiResponse({ status: 200, description: 'Redirect to frontend with tokens.' })
     @ApiResponse({ status: 400, description: 'Error with Google login callback.' })
-    async googleCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
+    async googleCallback(@Player() player: PlayerPrivate, @Res() res): Promise<void> {
         const response = await this.authService.login(player);
         res.redirect(`http://localhost:4200/auth/oauth-callback?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
     }
@@ -78,7 +79,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Callback after GitHub OAuth login' })
     @ApiResponse({ status: 200, description: 'Redirect to frontend with tokens.' })
     @ApiResponse({ status: 400, description: 'Error with GitHub login callback.' })
-    async githubCallback(@Player() player: PlayerPublic, @Res() res): Promise<void> {
+    async githubCallback(@Player() player: PlayerPrivate, @Res() res): Promise<void> {
         const response = await this.authService.login(player);
         res.redirect(`http://localhost:4200/auth/oauth-callback?token=${response.accessToken}&refreshToken=${response.refreshToken}`); // Redirect to frontend page with tokens
     }
@@ -88,7 +89,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Refresh access token using refresh token' })
     @ApiResponse({ status: 200, description: 'Refresh successful, returns new tokens.' })
     @ApiResponse({ status: 401, description: 'Invalid or expired refresh token.' })
-    refresh(@Player() player: PlayerPublic): Promise<TokenResponse> {
+    refresh(@Player() player: PlayerPrivate): Promise<TokenResponse> {
         return this.authService.refreshToken(player);
     }
 }
