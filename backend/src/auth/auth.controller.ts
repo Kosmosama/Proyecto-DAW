@@ -30,6 +30,7 @@ export class AuthController {
         return this.authService.login(player);
     }
 
+    @Public()
     @Post('register')
     @ApiOperation({ summary: 'Register a new player' })
     @ApiResponse({ status: 201, description: 'Player successfully registered.' })

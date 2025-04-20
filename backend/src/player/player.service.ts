@@ -99,24 +99,6 @@ export class PlayerService {
     }
 
     /**
-     * Finds a player based on given condition.
-     * @param {FindOptionsWhere<Player>} where The filter criteria.
-     * @param {boolean} [throwIfNotFound=true] Whether to throw if not found.
-     * @param {Array<keyof Player>} [select] Optional fields to select.
-     * @returns {Promise<Player>} The found player entity.
-     * @throws {NotFoundException} If not found and throwIfNotFound is true.
-     */
-    async findOneBy(
-        where: FindOptionsWhere<Player>,
-        throwIfNotFound = true,
-        select?: (keyof Player)[]
-    ): Promise<Player> {
-        const player = await this.playerRepository.findOne({ where, select });
-        if (!player && throwIfNotFound) throw new NotFoundException('Player not found.');
-        return player!;
-    }
-
-    /**
      * Updates a player's refresh token.
      * @param {number} playerId The player's ID.
      * @param {string | null} refreshToken The new refresh token or null to clear.
@@ -148,30 +130,6 @@ export class PlayerService {
     async validateRefreshToken(playerId: number, token: string): Promise<boolean> {
         const hash = await this.getRefreshTokenHash(playerId);
         return hash ? bcrypt.compare(token, hash) : false;
-    }
-
-    /**
-     * Checks if a player exists based on given condition.
-     * @param {FindOptionsWhere<Player>} where The filter criteria.
-     * @returns {Promise<boolean>} True if a player exists, false otherwise.
-     */
-    async userExistsBy(where: FindOptionsWhere<Player>): Promise<boolean> {
-        return !!(await this.findOneBy(where, false));
-    }
-
-    /**
-     * Retrieves an existing friendship between two players.
-     * @param {number} playerId The ID of the first player.
-     * @param {number} friendId The ID of the second player.
-     * @returns {Promise<Friendship | null>} The friendship if it exists, otherwise null.
-     */
-    private async findFriendship(playerId: number, friendId: number): Promise<Friendship | null> {
-        return await this.friendshipRepository.findOne({
-            where: [
-                { senderId: playerId, receiverId: friendId },
-                { senderId: friendId, receiverId: playerId },
-            ],
-        });
     }
 
     /**
@@ -308,6 +266,33 @@ export class PlayerService {
     }
 
     /**
+     * Checks if a player exists based on given condition.
+     * @param {FindOptionsWhere<Player>} where The filter criteria.
+     * @returns {Promise<boolean>} True if a player exists, false otherwise.
+     */
+    async userExistsBy(where: FindOptionsWhere<Player>): Promise<boolean> {
+        return !!(await this.findOneBy(where, false));
+    }
+
+    /**
+     * Finds a player based on given condition.
+     * @param {FindOptionsWhere<Player>} where The filter criteria.
+     * @param {boolean} [throwIfNotFound=true] Whether to throw if not found.
+     * @param {Array<keyof Player>} [select] Optional fields to select.
+     * @returns {Promise<Player>} The found player entity.
+     * @throws {NotFoundException} If not found and throwIfNotFound is true.
+     */
+    async findOneBy(
+        where: FindOptionsWhere<Player>,
+        throwIfNotFound = true,
+        select?: (keyof Player)[]
+    ): Promise<Player> {
+        const player = await this.playerRepository.findOne({ where, select });
+        if (!player && throwIfNotFound) throw new NotFoundException('Player not found.');
+        return player!;
+    }
+
+    /**
      * Retrieves friendships by status with pagination.
      * @param {number} playerId The player's ID.
      * @param {FriendshipStatus} status The friendship status to filter by.
@@ -333,11 +318,24 @@ export class PlayerService {
     }
 
     /**
-     * Generates a unique tag for a player based on their username.
-     * @param {string} username The player's username.
-     * @param {number} maxRetries The maximum number of attempts to generate a unique tag.
-     * @returns {Promise<string>} A unique tag.
-     * @throws {ConflictException} If unable to generate a unique tag after max retries.
+     * Retrieves an existing friendship between two players.
+     * @param {number} playerId The ID of the first player.
+     * @param {number} friendId The ID of the second player.
+     * @returns {Promise<Friendship | null>} The friendship if it exists, otherwise null.
+     */
+    private async findFriendship(playerId: number, friendId: number): Promise<Friendship | null> {
+        return await this.friendshipRepository.findOne({
+            where: [
+                { senderId: playerId, receiverId: friendId },
+                { senderId: friendId, receiverId: playerId },
+            ],
+        });
+    }
+
+    /**
+     * Generates a random tag string.
+     * @param {number} length The maximum length of the tag.
+     * @returns {string} A random tag.
      */
     private generateRandomTag(length = 5): string {
         const TAG_CHARSET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

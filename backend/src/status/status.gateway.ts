@@ -8,7 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
 
-@WebSocketGateway()
+@WebSocketGateway({ namespace: 'status' })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
