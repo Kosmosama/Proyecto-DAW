@@ -34,7 +34,7 @@ export class Player {
     @Column({ type: 'enum', enum: Role, default: Role.USER })
     role: Role;
 
-    @OneToMany(() => AuthProvider, (authProvider) => authProvider.player)
+    @OneToMany(() => AuthProvider, (authProvider) => authProvider.player, { cascade: true })
     authProviders: AuthProvider[];
 
     @BeforeInsert()

@@ -1,13 +1,14 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Player } from "../../player/entities/player.entity";
+import { Provider } from "../enums/provider.enum";
 
 @Entity()
 export class AuthProvider {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
-    provider: 'google' | 'github' | 'local';
+    @Column({ type: 'enum', enum: Provider })
+    provider: Provider;
 
     @Column()
     providerId: string;
