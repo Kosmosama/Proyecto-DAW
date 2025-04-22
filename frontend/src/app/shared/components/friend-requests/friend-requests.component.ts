@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, inject, input, Signal, signal } from '@angular/core';
 import { PlayerService } from '../../../core/services/player.service';
+import { Player } from '../../../core/interfaces/player.interface';
 
 @Component({
   selector: 'app-friend-requests',
@@ -8,42 +8,18 @@ import { PlayerService } from '../../../core/services/player.service';
   styleUrls: ['./friend-requests.component.scss']
 })
 export class FriendRequestsComponent {
-  incomingRequests = signal<any>([]);
-  outgoingRequests = signal<any>([]);
+  incomingRequests = input.required<Player[]>();
+  outgoingRequests = input.required<Player[]>();
+  refreshIncomingRequests = input<() => void>();
+  refreshOutgoingRequests = input<() => void>();
   private playerService = inject(PlayerService);
 
-  constructor(){
-    this.fetchIncomingRequests();
-    this.fetchOutgoingRequests();
-  }
-
-  fetchIncomingRequests() {
-    this.playerService.fetchIncomingRequests().subscribe({
-      next: (requests) => {
-        this.incomingRequests.set(requests);
-      },
-      error: (err) => {
-        console.error('Error fetching incoming requests:', err);
-      }
-    });
-  }
-
-  fetchOutgoingRequests() {
-    this.playerService.fetchOutgoingRequests().subscribe({
-      next: (requests) => {
-        this.outgoingRequests.set(requests);
-      },
-      error: (err) => {
-        console.error('Error fetching outgoing requests:', err);
-      }
-    });
-  }
 
   acceptRequest(id: number) {
     this.playerService.acceptFriendRequest(id).subscribe({
       next: () => {
-        this.fetchIncomingRequests();
-        this.fetchOutgoingRequests();
+        this.refreshIncomingRequests();
+        this.refreshOutgoingRequests();
       },
       error: (err) => {
         console.error('Error accepting request:', err);
@@ -54,8 +30,8 @@ export class FriendRequestsComponent {
   declineRequest(id: number) {
     this.playerService.declineFriendRequest(id).subscribe({
       next: () => {
-        this.fetchIncomingRequests();
-        this.fetchOutgoingRequests();
+        this.refreshIncomingRequests();
+        this.refreshOutgoingRequests();
       },
       error: (err) => {
         console.error('Error declining request:', err);
@@ -76,5 +52,5 @@ export class FriendRequestsComponent {
   //     }
   //   });
   // }
-  
+
 }
