@@ -24,7 +24,7 @@ export class AuthService {
      */
     async register(registerDto: RegisterDto): Promise<PlayerPublic> {
         const newPlayer = await this.playerService.createUser(registerDto);
-        return { id: newPlayer.id, username: newPlayer.username };
+        return { id: newPlayer.id, username: newPlayer.username, tag: newPlayer.tag };
     }
 
     /**
@@ -34,11 +34,8 @@ export class AuthService {
      */
     async login(player: PlayerPublic): Promise<TokenResponse> {
         const playerPrivateInfo = await this.playerService.findOnePrivate(player.id);
-
         const { accessToken, refreshToken } = await this.generateTokens(player.id, playerPrivateInfo.role);
-
         const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
-
         return { accessToken, refreshToken: hashedRefreshToken! };
     }
 
@@ -58,11 +55,8 @@ export class AuthService {
      */
     async refreshToken(player: PlayerPublic): Promise<TokenResponse> {
         const playerPrivateInfo = await this.playerService.findOnePrivate(player.id);
-
         const { accessToken, refreshToken } = await this.generateTokens(player.id, playerPrivateInfo.role);
-
         const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
-
         return { accessToken, refreshToken: hashedRefreshToken! };
     }
 
@@ -72,7 +66,7 @@ export class AuthService {
      * @returns {PlayerPublic} The player's ID, username, and email.
      * @throws {Error} If the Google account has no email.
      */
-    async validateGoogleUser(profile: any): Promise<PlayerPublic> { // #TODO Use GoogleUser interface
+    async validateGoogleUser(profile: any): Promise<PlayerPublic> { // Google profile interface
         const { displayName, emails } = profile;
         const email = emails?.[0]?.value;
         if (!email) throw new Error("Google account has no email");
@@ -88,7 +82,7 @@ export class AuthService {
             });
         }
 
-        return { id: player.id, username: player.username };
+        return { id: player.id, username: player.username, tag: player.tag };
     }
 
     /**
@@ -98,7 +92,7 @@ export class AuthService {
      * @throws {Error} If the GitHub account has no email.
      */
     async validateGithubUser(profile: any): Promise<PlayerPublic> {
-        const { id, username, emails } = profile;
+        const { username, emails } = profile;
         const email = emails?.[0]?.value;
         if (!email) throw new Error("GitHub account has no email");
 
@@ -113,7 +107,7 @@ export class AuthService {
             });
         }
 
-        return { id: player.id, username: player.username };
+        return { id: player.id, username: player.username, tag: player.tag };
     }
 
     /**
@@ -127,8 +121,8 @@ export class AuthService {
         const isValid = await this.playerService.validateRefreshToken(playerId, refreshToken);
         if (!isValid) throw new UnauthorizedException('Invalid or expired refresh token.');
 
-        const player = await this.playerService.findOneBy({ id: playerId }, true, ['id', 'username', 'email']);
-        return { id: player.id, username: player.username };
+        const player = await this.playerService.findOneBy({ id: playerId }, true, ['id', 'username', 'tag', 'email']);
+        return { id: player.id, username: player.username, tag: player.tag };
     }
 
     /**
@@ -138,14 +132,14 @@ export class AuthService {
      * @throws {UnauthorizedException} If the credentials are invalid.
      */
     async validatePlayer(login: LoginDto): Promise<PlayerPublic> {
-        const player = await this.playerService.findOneBy({ email: login.email }, true, ['id', 'username', 'password']);
+        const player = await this.playerService.findOneBy({ email: login.email }, true, ['id', 'username', 'tag', 'password']);
         const isMatch = await bcrypt.compare(login.password, player.password);
 
         if (!isMatch) {
             throw new UnauthorizedException('Invalid credentials.');
         }
 
-        return { id: player.id, username: player.username };
+        return { id: player.id, username: player.username, tag: player.tag };
     }
 
     /**

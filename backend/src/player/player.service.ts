@@ -41,7 +41,7 @@ export class PlayerService {
      */
     async findAll(page = 1, limit = 10, search?: string): Promise<PlayerPublic[]> {
         const query = this.playerRepository.createQueryBuilder('player')
-            .select(['player.id', 'player.username', 'player.photo'])
+            .select(['player.id', 'player.username', 'player.tag', 'player.photo'])
             .skip((page - 1) * limit)
             .take(limit);
 
@@ -61,7 +61,7 @@ export class PlayerService {
      * @throws {NotFoundException} If the player is not found.
      */
     async findOnePublic(id: number): Promise<PlayerPublic> {
-        return await this.findOneBy({ id }, true, ['id', 'username', 'photo']);
+        return await this.findOneBy({ id }, true, ['id', 'username', 'tag', 'photo']);
     }
 
     /**
@@ -71,7 +71,7 @@ export class PlayerService {
      * @throws {NotFoundException} If the player is not found.
      */
     async findOnePrivate(id: number): Promise<PlayerPrivate> {
-        return await this.findOneBy({ id }, true, ['id', 'username', 'email', 'photo', 'role']);
+        return await this.findOneBy({ id }, true, ['id', 'username', 'tag', 'email', 'photo', 'role']);
     }
 
     /**
