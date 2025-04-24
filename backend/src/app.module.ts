@@ -11,6 +11,7 @@ import { StatusModule } from './status/status.module';
 import { StatusGateway } from './status/status.gateway';
 import { GameModule } from './game/game.module';
 import { GameGateway } from './game/game.gateway';
+import { TeamsModule } from './teams/teams.module';
 
 @Module({
     imports: [
@@ -35,6 +36,7 @@ import { GameGateway } from './game/game.gateway';
         StatusModule,
         GameModule,
         AuthModule,
+        TeamsModule,
     ],
     controllers: [AppController],
     providers: [

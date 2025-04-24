@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { Role } from 'src/auth/enums/role.enum';
 import { AuthProvider } from '../../auth/entities/auth-provider.entity';
 import { BadRequestException } from '@nestjs/common';
+import { Team } from 'src/teams/entities/team.entity';
 
 @Entity()
 @Unique(['username', 'tag'])
@@ -36,6 +37,9 @@ export class Player {
 
     @OneToMany(() => AuthProvider, (authProvider) => authProvider.player, { cascade: true })
     authProviders: AuthProvider[];
+
+    @OneToMany(() => Team, (team) => team.player)
+    teams: Team[];
 
     @BeforeInsert()
     @BeforeUpdate()
