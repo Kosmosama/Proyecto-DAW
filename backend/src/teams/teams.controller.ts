@@ -1,10 +1,15 @@
-import { Controller, Post, Get, Delete, Param, Body, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Param, Body, ParseIntPipe, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { TeamService } from './teams.service';
 import { Player } from 'src/player/decorators/player.decorator';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 import { CreateTeamDto } from './dto/create-team.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Role } from 'src/auth/enums/role.enum';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Controller('players/:playerId/teams')
+@UseGuards(RolesGuard)
+@Roles([Role.SELF, Role.ADMIN], { selfParam: 'playerId' })
 export class TeamController {
     constructor(
         private readonly teamService: TeamService

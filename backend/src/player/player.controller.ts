@@ -91,8 +91,8 @@ export class PlayerController {
     }
 
     @Delete(':id')
-    @Roles(Role.ADMIN)
     @UseGuards(RolesGuard)
+    @Roles([Role.ADMIN])
     @ApiOperation({ summary: 'Delete a player (Admin only)' })
     @ApiResponse({ status: 200, description: 'Player deleted successfully.' })
     @ApiResponse({ status: 403, description: 'User lacks admin privileges.' })
