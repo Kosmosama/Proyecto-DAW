@@ -48,6 +48,7 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (!playerId) return;
 
         this.logger.debug(`Player ${playerId} disconnected socket ${client.id}`);
+        this.playerService.updateLastLogin(playerId);
         this.socketToPlayer.delete(client.id);
 
         const sockets = this.playerSockets.get(playerId);

@@ -112,6 +112,17 @@ export class PlayerService {
     }
 
     /**
+     * Updates a player's last login time to the moment this function is called.
+     * @param playerId The player's ID.
+     * @returns {Promise<void>} A void promise.
+     */
+    async updateLastLogin(playerId: number): Promise<void> {
+        const player = await this.findOneBy({ id: playerId });
+        player.lastLogin = new Date();
+        await this.playerRepository.save(player);
+    }
+
+    /**
      * Retrieves a player's stored refresh token hash.
      * @param {number} playerId The player's ID.
      * @returns {Promise<string | null>} The hashed refresh token or null.
