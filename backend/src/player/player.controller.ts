@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards, } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Player } from './decorators/player.decorator';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { PlayerPublic } from './interfaces/player-public.interface';
@@ -39,6 +39,7 @@ export class PlayerController {
 
     @Patch('profile')
     @ApiOperation({ summary: 'Update current player profile' })
+    @ApiBody({ type: UpdatePlayerDto })
     @ApiResponse({ status: 200, description: 'Player profile updated successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid data provided in the request body.' })
     updateProfile(

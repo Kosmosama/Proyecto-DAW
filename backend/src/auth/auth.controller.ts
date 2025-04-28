@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Player } from 'src/player/decorators/player.decorator';
 import { PlayerPublic } from 'src/player/interfaces/player-public.interface';
 import { AuthService } from './auth.service';
@@ -29,10 +29,11 @@ export class AuthController {
     login(@Player() player: PlayerPrivate): Promise<TokenResponse> {
         return this.authService.login(player);
     }
-
+    
     @Public()
     @Post('register')
     @ApiOperation({ summary: 'Register a new player' })
+    @ApiBody({ type: RegisterDto })
     @ApiResponse({ status: 201, description: 'Player successfully registered.' })
     @ApiResponse({ status: 400, description: 'Invalid registration data.' })
     register(@Body() registerDto: RegisterDto): Promise<PlayerPublic> {
