@@ -27,7 +27,7 @@ export class PlayerController {
         @Query('limit') limit = 10,
         @Query('search') search?: string,
         @Query('excludeIds') excludeIds?: string[]
-    ): Promise<PlayerPublic[]> {
+    ): Promise<PaginatedResult<PlayerPublic>> {
         const parsedExcludeIds = excludeIds?.map(id => Number(id)) ?? [];
         return this.playerService.findAll(Number(page), Number(limit), search, parsedExcludeIds);
     }
@@ -58,7 +58,7 @@ export class PlayerController {
         @Player() player: PlayerPrivate,
         @Query('page') page = 1,
         @Query('limit') limit = 10
-    ): Promise<Friend[]> {
+    ): Promise<PaginatedResult<Friend>> {
         return this.playerService.getFriends(player.id, Number(page), Number(limit));
     }
 
@@ -69,7 +69,7 @@ export class PlayerController {
         @Player() player: PlayerPrivate,
         @Query('page') page = 1,
         @Query('limit') limit = 10
-    ): Promise<FriendRequest[]> {
+    ): Promise<PaginatedResult<FriendRequest>> {
         return this.playerService.getIncomingFriendRequests(player.id, Number(page), Number(limit));
     }
 
@@ -81,7 +81,7 @@ export class PlayerController {
         @Player() player: PlayerPrivate,
         @Query('page') page = 1,
         @Query('limit') limit = 10
-    ): Promise<FriendRequest[]> {
+    ): Promise<PaginatedResult<FriendRequest>> {
         return this.playerService.getPendingOutgoing(player.id, Number(page), Number(limit));
     }
 

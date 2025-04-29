@@ -33,22 +33,23 @@ export class PlayerService {
     }
 
     /**
-     * Retrieves a paginated list of public player data with optional search.
+     * Retrieves a paginated list of players with optional search and exclusion filters.
      * @param {number} page The page number.
      * @param {number} limit The number of items per page.
-     * @param {string} [search] Optional search keyword for filtering by username.
-     * @returns {Promise<PlayerPublic[]>} A list of public player data.
+     * @param {string} [search] Optional search term for filtering players by username.
+     * @param {number[]} [excludeIds] Optional array of player IDs to exclude from the results.
+     * @returns {Promise<PaginatedResult<PlayerPublic>>} A paginated result containing player public information.
      */
     async findAll(
         page = 1,
         limit = 10,
         search?: string,
         excludeIds: number[] = []
-    ): Promise<PlayerPublic[]> {
+    ): Promise<PaginatedResult<PlayerPublic>> {
         const query = this.playerRepository.createQueryBuilder('player')
             .select(['player.id', 'player.username', 'player.tag', 'player.photo'])
             .skip((page - 1) * limit)
-            .take(limit);
+            .take(limit + 1);
 
         if (search) {
             query.where('LOWER(player.username) LIKE :search', {
@@ -57,16 +58,18 @@ export class PlayerService {
         }
 
         if (excludeIds.length > 0) {
-            if (query.expressionMap.wheres.length > 0) {
-                query.andWhere('player.id NOT IN (:...excludeIds)', { excludeIds });
-            } else {
-                query.where('player.id NOT IN (:...excludeIds)', { excludeIds });
-            }
+            const whereExists = query.expressionMap.wheres.length > 0;
+            const method = whereExists ? 'andWhere' : 'where';
+            query[method]('player.id NOT IN (:...excludeIds)', { excludeIds });
         }
 
-        return await query.getMany();
-    }
+        const results = await query.getMany();
 
+        const more = results.length > limit;
+        const players = more ? results.slice(0, limit) : results;
+
+        return { result: players, more };
+    }
 
     /**
      * Retrieves public data for a single player by ID.
@@ -214,21 +217,24 @@ export class PlayerService {
     }
 
     /**
-     * Gets a paginated list of a player's friends.
+     * Retrieves a list of friends for a player with pagination.
      * @param {number} playerId The player's ID.
      * @param {number} page The page number.
      * @param {number} limit The number of items per page.
-     * @returns {Promise<Friend[]>} A list of friends.
+     * @returns {Promise<PaginatedResult<Friend>>} A paginated result containing friends' information.
      */
-    async getFriends(playerId: number, page = 1, limit = 10): Promise<Friend[]> {
+    async getFriends(playerId: number, page = 1, limit = 10): Promise<PaginatedResult<Friend>> {
         const friendships = await this.getFriendshipsByStatus(
             playerId,
             FriendshipStatus.ACCEPTED,
             page,
-            limit
+            limit + 1
         );
 
-        return friendships.map(({ sender, receiver, updatedAt }) => {
+        const hasMore = friendships.length > limit;
+        const trimmed = hasMore ? friendships.slice(0, limit) : friendships;
+
+        const result = trimmed.map(({ sender, receiver, updatedAt }) => {
             const friend = sender.id === playerId ? receiver : sender;
             return {
                 id: friend.id,
@@ -238,16 +244,22 @@ export class PlayerService {
                 lastLogin: friend.lastLogin ?? null,
             };
         });
+
+        return { result, more: hasMore };
     }
 
     /**
-     * Retrieves incoming pending friend requests.
+     * Retrieves incoming friend requests for a player with pagination.
      * @param {number} playerId The player's ID.
      * @param {number} page The page number.
      * @param {number} limit The number of items per page.
-     * @returns {Promise<FriendRequest[]>} A list of incoming friend requests.
+     * @returns {Promise<PaginatedResult<FriendRequest>>} A paginated result containing incoming friend requests.
      */
-    async getIncomingFriendRequests(playerId: number, page = 1, limit = 10): Promise<FriendRequest[]> {
+    async getIncomingFriendRequests(
+        playerId: number,
+        page = 1,
+        limit = 10
+    ): Promise<PaginatedResult<FriendRequest>> {
         const friendships = await this.getFriendshipsByStatus(
             playerId,
             FriendshipStatus.PENDING,
@@ -255,24 +267,32 @@ export class PlayerService {
             limit
         );
 
-        return friendships
-            .filter((f) => f.receiverId === playerId)
-            .map(({ sender, updatedAt }) => ({
-                id: sender.id,
-                username: sender.username,
-                photo: sender.photo,
-                sentAt: updatedAt,
-            }));
+        const filtered = friendships.filter(f => f.receiverId === playerId);
+        const hasMore = filtered.length > limit;
+        const trimmed = hasMore ? filtered.slice(0, limit) : filtered;
+
+        const result = trimmed.map(({ sender, updatedAt }) => ({
+            id: sender.id,
+            username: sender.username,
+            photo: sender.photo,
+            sentAt: updatedAt,
+        }));
+
+        return { result, more: hasMore };
     }
 
     /**
-     * Retrieves outgoing pending friend requests.
+     * Retrieves outgoing friend requests for a player with pagination.
      * @param {number} playerId The player's ID.
      * @param {number} page The page number.
      * @param {number} limit The number of items per page.
-     * @returns {Promise<FriendRequest[]>} A list of sent friend requests.
+     * @returns {Promise<PaginatedResult<FriendRequest>>} A paginated result containing outgoing friend requests.
      */
-    async getPendingOutgoing(playerId: number, page = 1, limit = 10): Promise<FriendRequest[]> {
+    async getPendingOutgoing(
+        playerId: number,
+        page = 1,
+        limit = 10
+    ): Promise<PaginatedResult<FriendRequest>> {
         const friendships = await this.getFriendshipsByStatus(
             playerId,
             FriendshipStatus.PENDING,
@@ -280,14 +300,43 @@ export class PlayerService {
             limit
         );
 
-        return friendships
-            .filter((f) => f.senderId === playerId)
-            .map(({ receiver, updatedAt }) => ({
-                id: receiver.id,
-                username: receiver.username,
-                photo: receiver.photo,
-                sentAt: updatedAt,
-            }));
+        const filtered = friendships.filter(f => f.senderId === playerId);
+        const hasMore = filtered.length > limit;
+        const trimmed = hasMore ? filtered.slice(0, limit) : filtered;
+
+        const result = trimmed.map(({ receiver, updatedAt }) => ({
+            id: receiver.id,
+            username: receiver.username,
+            photo: receiver.photo,
+            sentAt: updatedAt,
+        }));
+
+        return { result, more: hasMore };
+    }
+
+    /**
+     * Retrieves friendships by status with pagination.
+     * @param {number} playerId The player's ID.
+     * @param {FriendshipStatus} status The friendship status to filter by.
+     * @param {number} page The page number.
+     * @param {number} limit The number of items per page.
+     * @returns {Promise<Friendship[]>} A list of friendships with the specified status.
+     */
+    private async getFriendshipsByStatus(
+        playerId: number,
+        status: FriendshipStatus,
+        page = 1,
+        limit = 10
+    ): Promise<Friendship[]> {
+        return await this.friendshipRepository
+            .createQueryBuilder('f')
+            .innerJoinAndSelect('f.sender', 'sender')
+            .innerJoinAndSelect('f.receiver', 'receiver')
+            .where('f.status = :status', { status })
+            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId })
+            .skip((page - 1) * limit)
+            .take(limit + 1)
+            .getMany();
     }
 
     /**
@@ -315,31 +364,6 @@ export class PlayerService {
         const player = await this.playerRepository.findOne({ where, select });
         if (!player && throwIfNotFound) throw new NotFoundException('Player not found.');
         return player!;
-    }
-
-    /**
-     * Retrieves friendships by status with pagination.
-     * @param {number} playerId The player's ID.
-     * @param {FriendshipStatus} status The friendship status to filter by.
-     * @param {number} page The page number.
-     * @param {number} limit The number of items per page.
-     * @returns {Promise<Friendship[]>} A list of friendships.
-     */
-    private async getFriendshipsByStatus(
-        playerId: number,
-        status: FriendshipStatus,
-        page = 1,
-        limit = 10
-    ): Promise<Friendship[]> {
-        return await this.friendshipRepository
-            .createQueryBuilder('f')
-            .innerJoinAndSelect('f.sender', 'sender')
-            .innerJoinAndSelect('f.receiver', 'receiver')
-            .where('f.status = :status', { status })
-            .andWhere('(f.senderId = :playerId OR f.receiverId = :playerId)', { playerId })
-            .skip((page - 1) * limit)
-            .take(limit)
-            .getMany();
     }
 
     /**
