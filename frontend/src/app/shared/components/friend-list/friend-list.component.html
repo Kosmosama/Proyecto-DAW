@@ -11,7 +11,9 @@
                         <h5 class="friend-name">{{ friend.username }}</h5>
                         <span class="friend-status"
                             [ngClass]="{'text-success': friend.online, 'text-danger': !friend.online}">
-                            {{ friend.online ? 'En línea' : 'Desconectado' }}
+                            {{ friend.online ? 'En línea' : 'Desconectado, última vez: ' + friend.lastLogin }}
+
+
                         </span>
                     </div>
                     @if(friend.photo) {

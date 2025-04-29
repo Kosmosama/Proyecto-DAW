@@ -9,6 +9,17 @@ import { Player } from '../interfaces/player.interface';
 export class PlayerService {
     private http = inject(HttpClient);
 
+    getPlayer(): Observable<Player> {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+        return this.http
+            .get<Player>(`player/profile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+    }
+
     /**
      *
      *

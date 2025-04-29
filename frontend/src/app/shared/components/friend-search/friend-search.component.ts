@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Player } from '../../../core/interfaces/player.interface';
@@ -12,6 +12,8 @@ import { PlayerService } from '../../../core/services/player.service';
   standalone: true,
 })
 export class FriendSearchComponent implements OnInit {
+  incomingRequests = input.required<Player[]>();
+  outgoingRequests = input.required<Player[]>();
   allPlayers = signal<Player[]>([]);
   friends = signal<Player[]>([]);
   filteredPlayers = signal<Player[]>([]);
@@ -20,7 +22,10 @@ export class FriendSearchComponent implements OnInit {
   private playerService = inject(PlayerService)
 
   constructor(
-  ) { }
+  ) {
+    this.loadPlayers();
+    this.loadFriends();
+  }
 
   ngOnInit(): void {
     this.loadPlayers();
@@ -56,28 +61,44 @@ export class FriendSearchComponent implements OnInit {
   }
 
   filterPlayers(): void {
-    const filtered = this.allPlayers().filter(player =>
-      !this.friends().some(friend => friend.id === player.id)
-    );
-    this.filteredPlayers.set(filtered);
+    this.playerService.getPlayer().subscribe({
+      next: (currentPlayer) => {
+        const term = this.searchTerm.toLowerCase().trim();
+        const filtered = this.allPlayers().filter(player =>
+          player.id !== currentPlayer.id &&
+          !this.friends().some(friend => friend.id === player.id) &&
+          // !this.incomingRequests().some(request => request.id === player.id) &&
+          // !this.outgoingRequests().some(request => request.id === player.id) &&
+          (term === '' || player.username.toLowerCase().includes(term))
+        );
+        this.filteredPlayers.set(filtered);
+      },
+      error: (err) => {
+        console.error('Error fetching current player:', err);
+      }
+    });
   }
 
   applySearchFilter(): void {
-    const nonFriendPlayers = this.allPlayers().filter(player =>
-      !this.friends().some(friend => friend.id === player.id)
-    );
-
-    const term = this.searchTerm.toLowerCase().trim();
-
-    if (term !== '') {
-      const filtered = nonFriendPlayers.filter(player =>
-        player.username.toLowerCase().includes(term)
-      );
-      this.filteredPlayers.set(filtered);
-    } else {
-      this.filteredPlayers.set(nonFriendPlayers);
-    }
+    this.filterPlayers();
   }
+
+  // applySearchFilter(): void {
+  //   const nonFriendPlayers = this.allPlayers().filter(player =>
+  //     !this.friends().some(friend => friend.id === player.id)
+  //   );
+
+  //   const term = this.searchTerm.toLowerCase().trim();
+
+  //   if (term !== '') {
+  //     const filtered = nonFriendPlayers.filter(player =>
+  //       player.username.toLowerCase().includes(term)
+  //     );
+  //     this.filteredPlayers.set(filtered);
+  //   } else {
+  //     this.filteredPlayers.set(nonFriendPlayers);
+  //   }
+  // }
 
   addFriend(player: Player): void {
     this.playerService.sendFriendRequest(player.id!)

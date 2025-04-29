@@ -5,6 +5,7 @@ export interface Player {
     password: string;
     online?: boolean;
     photo?: string;
+    lastLogin?: Date;
 }
 
 export interface PlayerLogin {
