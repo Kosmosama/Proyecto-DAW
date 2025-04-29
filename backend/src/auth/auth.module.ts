@@ -23,7 +23,7 @@ import { GithubStrategy } from './strategies/github.strategy';
             }),
         }),
     ],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, PlayerService, LocalStrategy, RefreshJwtStrategy],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, LocalStrategy, RefreshJwtStrategy],
     controllers: [AuthController],
     exports: [AuthService, JwtModule],
 })
