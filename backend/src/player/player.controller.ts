@@ -25,9 +25,11 @@ export class PlayerController {
     findAll(
         @Query('page') page = 1,
         @Query('limit') limit = 10,
-        @Query('search') search?: string
+        @Query('search') search?: string,
+        @Query('excludeIds') excludeIds?: string[]
     ): Promise<PlayerPublic[]> {
-        return this.playerService.findAll(Number(page), Number(limit), search);
+        const parsedExcludeIds = excludeIds?.map(id => Number(id)) ?? [];
+        return this.playerService.findAll(Number(page), Number(limit), search, parsedExcludeIds);
     }
 
     @Get('profile')

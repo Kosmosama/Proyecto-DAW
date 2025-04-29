@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Player } from '../interfaces/player.interface';
@@ -39,24 +39,38 @@ export class PlayerService {
 
     }
 
+
     /**
      *
      *
+     * @param {{ search?: string; excludeIds?: number[] }} [params]
      * @return {*}  {Observable<Player[]>}
      * @memberof PlayerService
      */
-    getPlayers(): Observable<Player[]> {
-
+    getPlayers(params: { page?: number, search?: string; excludeIds?: number[] } = {}): Observable<Player[]> {
         const token = localStorage.getItem('accessToken');
         if (!token) {
             throw new Error('No access token found');
         }
-        return this.http
-            .get<Player[]>(`player`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
 
+        const queryParams = new HttpParams({
+            fromObject: {
+                ...(params.page ? { page: params.page.toString() } : {}),
+                ...(params.search ? { search: params.search } : {}),
+                ...(params.excludeIds ? params.excludeIds.reduce((acc, id) => {
+                    acc['excludeIds'] = [...(acc['excludeIds'] || []), id.toString()];
+                    return acc;
+                }, {} as any) : {})
+            }
+        });
+
+        return this.http.get<Player[]>(`player`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: queryParams
+        });
     }
+
+
 
     /**
      *

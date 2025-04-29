@@ -39,7 +39,12 @@ export class PlayerService {
      * @param {string} [search] Optional search keyword for filtering by username.
      * @returns {Promise<PlayerPublic[]>} A list of public player data.
      */
-    async findAll(page = 1, limit = 10, search?: string): Promise<PlayerPublic[]> {
+    async findAll(
+        page = 1,
+        limit = 10,
+        search?: string,
+        excludeIds: number[] = []
+    ): Promise<PlayerPublic[]> {
         const query = this.playerRepository.createQueryBuilder('player')
             .select(['player.id', 'player.username', 'player.tag', 'player.photo'])
             .skip((page - 1) * limit)
@@ -51,8 +56,17 @@ export class PlayerService {
             });
         }
 
+        if (excludeIds.length > 0) {
+            if (query.expressionMap.wheres.length > 0) {
+                query.andWhere('player.id NOT IN (:...excludeIds)', { excludeIds });
+            } else {
+                query.where('player.id NOT IN (:...excludeIds)', { excludeIds });
+            }
+        }
+
         return await query.getMany();
     }
+
 
     /**
      * Retrieves public data for a single player by ID.
