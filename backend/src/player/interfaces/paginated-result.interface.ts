@@ -1,4 +1,4 @@
 interface PaginatedResult<T> {
-    result: T[];
+    data: T[];
     more: boolean;
 }

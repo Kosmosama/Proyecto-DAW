@@ -68,7 +68,7 @@ export class PlayerService {
         const more = results.length > limit;
         const players = more ? results.slice(0, limit) : results;
 
-        return { result: players, more };
+        return { data: players, more };
     }
 
     /**
@@ -245,7 +245,7 @@ export class PlayerService {
             };
         });
 
-        return { result, more: hasMore };
+        return { data: result, more: hasMore };
     }
 
     /**
@@ -278,7 +278,7 @@ export class PlayerService {
             sentAt: updatedAt,
         }));
 
-        return { result, more: hasMore };
+        return { data: result, more: hasMore };
     }
 
     /**
@@ -311,7 +311,7 @@ export class PlayerService {
             sentAt: updatedAt,
         }));
 
-        return { result, more: hasMore };
+        return { data: result, more: hasMore };
     }
 
     /**

@@ -105,6 +105,8 @@ export class PlayerController {
     }
 
     @Post('friend-request/:recieverId')
+    @UseGuards(RolesGuard)
+    @Roles([Role.SELF, Role.ADMIN], { selfParam: 'recieverId' })
     @ApiOperation({ summary: 'Send a friend request' })
     @ApiResponse({ status: 200, description: 'Friend request sent successfully.' })
     @ApiResponse({ status: 400, description: 'Cannot send request to yourself or duplicate request.' })
@@ -112,9 +114,6 @@ export class PlayerController {
         @Player() player: PlayerPrivate,
         @Param('recieverId', ParseIntPipe) recieverId: number
     ): Promise<void> {
-        if (player.id === recieverId) {
-            throw new BadRequestException('You cannot send a friend request to yourself.');
-        }
         return this.playerService.sendFriendRequest(player.id, recieverId);
     }
 
