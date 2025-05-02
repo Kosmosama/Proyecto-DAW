@@ -9,9 +9,9 @@ import { JwtGuard } from './auth/guards/jwt-auth.guard';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
 import { StatusModule } from './status/status.module';
 import { StatusGateway } from './status/status.gateway';
-import { GameModule } from './game/game.module';
 import { GameGateway } from './game/game.gateway';
 import { TeamsModule } from './teams/teams.module';
+import { GameModule } from './game/game.module';
 
 @Module({
     imports: [

@@ -66,7 +66,7 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     private async notifyOnline(playerId: number) {
         const friends = await this.playerService.getFriends(playerId);
-        const friendIds = friends.result.map((f) => f.id);
+        const friendIds = friends.data.map((f) => f.id);
         this.playerFriends.set(playerId, friendIds);
 
         const onlineFriends = friendIds.filter((id) => this.onlinePlayers.has(id));
