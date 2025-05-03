@@ -8,6 +8,7 @@ import { RegisterDto } from './dto/register.dto';
 import { Role } from './enums/role.enum';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenResponse } from './interfaces/token-response.interface';
+import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 
 @Injectable()
 export class AuthService {
@@ -58,6 +59,25 @@ export class AuthService {
         const { accessToken, refreshToken } = await this.generateTokens(player.id, playerPrivateInfo.role);
         const hashedRefreshToken = await this.setRefreshToken(player.id, refreshToken);
         return { accessToken, refreshToken: hashedRefreshToken! };
+    }
+
+    /**
+     * Validates a raw JWT access token and returns the player.
+     * @param {string} token The JWT access token.
+     * @returns {Promise<PlayerPrivate>} The authenticated player's full private info.
+     * @throws {UnauthorizedException} If the token is invalid or expired.
+     */
+    async validateAccessToken(token: string): Promise<PlayerPrivate> {
+        try {
+            const payload = this.jwtService.verify<JwtPayload>(token, {
+                secret: process.env.JWT_SECRET, // #TODO Change for configService later
+            });
+            const player = await this.playerService.findOnePrivate(payload.id);
+            if (!player) throw new UnauthorizedException('Invalid token');
+            return player;
+        } catch {
+            throw new UnauthorizedException('Invalid or expired token');
+        }
     }
 
     /**

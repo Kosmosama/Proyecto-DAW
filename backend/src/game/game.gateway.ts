@@ -1,100 +1,76 @@
-import {
-    WebSocketGateway,
-    SubscribeMessage,
-    MessageBody,
-    ConnectedSocket,
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-} from '@nestjs/websockets';
+import { WebSocketGateway, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { GameService } from './game.service';
+import { AuthService } from 'src/auth/auth.service';
 
 @WebSocketGateway({ namespace: 'game' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private logger = new Logger('GameGateway');
 
-    private matchmakingQueue: Socket[] = [];
-    private playerSockets: Map<string, Socket> = new Map(); // userId => socket
-    private pendingChallenges: Map<string, string> = new Map(); // challengerId => challengedId
+    constructor(
+        private readonly gameService: GameService,
+        private readonly authService: AuthService,
+    ) { }
 
-    handleConnection(client: Socket) {
-        const userId = client.handshake.query.userId as string;
-        if (userId) {
-            this.playerSockets.set(userId, client);
-            this.logger.log(`Client ${userId} connected as ${client.id}`);
+    async handleConnection(client: Socket) {
+        try {
+            const token = this.gameService.extractToken(client);
+            const player = await this.authService.validateAccessToken(token);
+            client.data.player = player;
+            this.logger.log(`Client connected: ${player.username}#${player.tag}`);
+        } catch (err) {
+            this.logger.warn(`Unauthorized client tried to connect: ${client.id}`);
+            client.disconnect();
         }
     }
 
     handleDisconnect(client: Socket) {
-        const userId = client.handshake.query.userId as string;
-        if (userId) {
-            this.playerSockets.delete(userId);
-            this.matchmakingQueue = this.matchmakingQueue.filter((sock) => sock !== client);
-            this.logger.log(`Client ${userId} disconnected`);
-        }
-    }
-
-    @SubscribeMessage('enterMatchmaking')
-    handleEnterMatchmaking(@ConnectedSocket() client: Socket) {
-        const opponent = this.matchmakingQueue.shift();
-
-        if (opponent) {
-            const roomName = `battle-${Date.now()}`;
-
-            client.join(roomName);
-            opponent.join(roomName);
-
-            client.emit('matchFound', { opponentId: opponent.id, room: roomName });
-            opponent.emit('matchFound', { opponentId: client.id, room: roomName });
+        const player = client.data?.player;
+        this.gameService.removeFromQueue(client);
+        if (player) {
+            this.logger.log(`Client disconnected: ${player.username}#${player.tag}`);
         } else {
-            this.matchmakingQueue.push(client);
-            client.emit('waitingForMatch');
+            this.logger.log(`Client disconnected: ${client.id}`);
         }
     }
 
+    @SubscribeMessage('joinMatchmaking')
+    async handleJoinMatchmaking(@ConnectedSocket() client: Socket) {
+        const player = client.data.player;
+        const room = this.gameService.matchPlayer(client, player);
+        if (room) {
+            this.logger.log(`Match started in room: ${room}`);
+        }
+    }
 
     @SubscribeMessage('challengeFriend')
-    handleChallengeFriend(
-        @MessageBody() data: { challengerId: string; friendId: string },
+    async handleChallengeFriend(
+        @MessageBody() data: { targetId: number },
         @ConnectedSocket() client: Socket,
     ) {
-        const friendSocket = this.playerSockets.get(data.friendId);
-        if (friendSocket) {
-            this.pendingChallenges.set(data.challengerId, data.friendId);
-            friendSocket.emit('challengeReceived', {
-                from: data.challengerId,
-            });
-        } else {
-            client.emit('error', { message: 'Friend is not online.' });
+        const challenger = client.data.player;
+        const room = await this.gameService.challengeFriend(client, data.targetId, challenger);
+        if (room) {
+            this.logger.log(`Challenge started in room: ${room}`);
         }
     }
 
-    @SubscribeMessage('acceptChallenge')
-    handleAcceptChallenge(
-        @MessageBody() data: { challengerId: string; friendId: string },
+    @SubscribeMessage('joinAsSpectator')
+    handleJoinAsSpectator(
+        @MessageBody() data: { room: string },
         @ConnectedSocket() client: Socket,
     ) {
-        const challengerSocket = this.playerSockets.get(data.challengerId);
-        if (
-            challengerSocket &&
-            this.pendingChallenges.get(data.challengerId) === data.friendId
-        ) {
-            const roomName = `battle-${Date.now()}`;
-            client.join(roomName);
-            challengerSocket.join(roomName);
+        this.gameService.addSpectator(client, data.room);
+        this.logger.log(`Spectator joined room: ${data.room}`);
+    }
 
-            challengerSocket.emit('challengeAccepted', {
-                room: roomName,
-                opponentId: data.friendId,
-            });
-            client.emit('challengeAccepted', {
-                room: roomName,
-                opponentId: data.challengerId,
-            });
-
-            this.pendingChallenges.delete(data.challengerId);
-        } else {
-            client.emit('error', { message: 'Invalid or expired challenge.' });
-        }
+    @SubscribeMessage('chatMessage')
+    handleChatMessage(
+        @MessageBody() data: { room: string; message: string },
+        @ConnectedSocket() client: Socket,
+    ) {
+        const player = client.data.player;
+        this.gameService.sendChatMessage(client, data.room, player.username, data.message);
     }
 }
