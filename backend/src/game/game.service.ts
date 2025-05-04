@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 import { PlayerService } from 'src/player/player.service';
@@ -8,7 +8,6 @@ import { GameRoom } from './interfaces/game-room.interface';
 export class GameService {
     private matchmakingQueue: { socket: Socket; player: PlayerPrivate }[] = [];
     private gameRooms: Map<string, GameRoom> = new Map();
-    private logger = new Logger('GameService');
 
     constructor(private readonly playerService: PlayerService) { }
 
