@@ -20,7 +20,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.data.player = player;
             this.logger.log(`Client connected: ${player.username}#${player.tag}`);
         } catch (err) {
-            this.logger.warn(`Unauthorized client tried to connect: ${client.id}`);
+            this.logger.warn(`Unauthorized client tried to connect: ${client.id} ${err.message}`);
             client.disconnect();
         }
     }
