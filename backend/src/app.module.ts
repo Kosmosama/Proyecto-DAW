@@ -4,13 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { PlayerModule } from './player/player.module';
 import { JwtGuard } from './auth/guards/jwt-auth.guard';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
-import { StatusModule } from './status/status.module';
-import { StatusGateway } from './status/status.gateway';
 import { GameModule } from './game/game.module';
-import { GameGateway } from './game/game.gateway';
+import { PlayerModule } from './player/player.module';
+import { StatusModule } from './status/status.module';
 import { TeamsModule } from './teams/teams.module';
 
 @Module({
@@ -45,9 +43,7 @@ import { TeamsModule } from './teams/teams.module';
             useClass: JwtGuard,
         },
         JwtStrategy,
-        AppService,
-        StatusGateway,
-        GameGateway,
+        AppService
     ],
 })
 export class AppModule { }

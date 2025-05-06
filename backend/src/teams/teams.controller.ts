@@ -30,6 +30,16 @@ export class TeamController {
         return this.teamService.create(player.id, team.name, team.data);
     }
 
+    // @Post('create/:validationMode')
+    // @ApiParam({ name: 'validationMode', enum: ['any', 'legal'] })
+    // async create(
+    //     @Player() player: PlayerPrivate,
+    //     @Param('validationMode') mode: 'any' | 'legal',
+    //     @Body() team: CreateTeamDto
+    // ) {
+    //     return this.teamService.create(player.id, team.name, team.data, mode, team.format);
+    // }
+
     @Get()
     @ApiOperation({ summary: 'Get all teams for a player' })
     @ApiResponse({ status: 200, description: 'List of teams.' })

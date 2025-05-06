@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { PlayerService } from '../player/player.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Player } from '../player/entities/player.entity';
-import { Friendship } from '../player/entities/friendship.entity';
 import { GameGateway } from './game.gateway';
+import { GameService } from './game.service';
+import { AuthModule } from 'src/auth/auth.module';
+import { PlayerModule } from 'src/player/player.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Player, Friendship])],
-    providers: [GameGateway, PlayerService],
+    imports: [AuthModule, PlayerModule],
+    providers: [GameGateway, GameService],
 })
 export class GameModule { }
