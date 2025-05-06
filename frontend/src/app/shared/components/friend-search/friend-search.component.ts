@@ -2,7 +2,7 @@ import { Component, DestroyRef, OnInit, computed, effect, inject, input, signal 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { Player } from '../../../core/interfaces/player.interface';
+import { Player, PlayersResponse } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 import { from } from 'rxjs';
 
@@ -17,7 +17,7 @@ export class FriendSearchComponent implements OnInit {
   incomingRequests = input.required<Player[]>();
   outgoingRequests = input.required<Player[]>();
   allPlayers = signal<Player[]>([]);
-  friends = signal<Player[]>([]);
+  friends = signal<PlayersResponse>({ data: [], meta: { more: false } });
   searchTerm = signal<string>('');
   currentPage = signal<number>(1);
   totalPlayers = signal<number>(0);
@@ -45,11 +45,12 @@ export class FriendSearchComponent implements OnInit {
   }
 
   loadPlayers(): void {
+    console.log('a')
     this.playerService.getPlayer().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (currentPlayer) => {
         const excludeIds = [
           currentPlayer.id,
-          ...this.friends().map(f => f.id),
+          ...this.friends().data.map(f => f.id),
           ...this.incomingRequests().map(r => r.id),
           ...this.outgoingRequests().map(r => r.id)
         ].filter((id): id is number => typeof id === 'number');
@@ -57,6 +58,7 @@ export class FriendSearchComponent implements OnInit {
         const page = this.currentPage();
         const search = this.searchTerm().trim();
 
+        console.log('b');
         this.playerService.getPlayers({ page, search, excludeIds })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({

@@ -10,7 +10,7 @@ import { Router, RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { map } from 'rxjs';
 import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
-import { PlayerLogin } from '../../core/interfaces/player.interface';
+import { PlayerLogin } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { LoadGoogleApiService } from '../../core/services/load-google-api.service';
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';

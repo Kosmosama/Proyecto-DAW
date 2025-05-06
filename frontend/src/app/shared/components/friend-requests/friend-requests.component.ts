@@ -1,6 +1,6 @@
 import { Component, inject, input, Signal, signal } from '@angular/core';
 import { PlayerService } from '../../../core/services/player.service';
-import { Player } from '../../../core/interfaces/player.interface';
+import { Player } from '../../../core/interfaces/player.model';
 
 @Component({
   selector: 'app-friend-requests',

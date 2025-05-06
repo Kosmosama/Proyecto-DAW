@@ -15,7 +15,7 @@ import { CatModalComponent } from '../../shared/components/modals/cat-modal/cat-
 import { EncodeBase64Directive } from '../../shared/directives/encode-base64.directive';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
 import { matchEmail } from '../../shared/validators/match-email.validator';
-import { Player } from '../../core/interfaces/player.interface';
+import { Player } from '../../core/interfaces/player.model';
 
 @Component({
   standalone: true,

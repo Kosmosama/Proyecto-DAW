@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal, WritableSignal } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginResponse, Player, PlayerLogin, SinglePlayerResponse } from '../interfaces/player.interface';
-import { Router } from '@angular/router';
-import { TokenResponse } from '../interfaces/responses.interface';
+import { LoginResponse } from '../interfaces/auth.model';
+import { Player, PlayerLogin, SinglePlayerResponse } from '../interfaces/player.model';
 
 @Injectable({
     providedIn: 'root',
@@ -40,13 +40,13 @@ export class AuthService {
             .post<LoginResponse>(`auth/login`, playerData)
             .pipe(
                 map((resp: LoginResponse) => {
-                    localStorage.setItem('accessToken', resp.accessToken);
-                    return resp.accessToken;
+                    localStorage.setItem('accessToken', resp.data.accessToken);
+                    return resp.data.accessToken;
                 })
             );
     }
 
-    
+
     /**
      *
      *

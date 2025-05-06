@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Player } from '../interfaces/player.interface';
+import { Player, PlayersResponse } from '../interfaces/player.model';
 
 @Injectable({
     providedIn: 'root',
@@ -26,14 +26,14 @@ export class PlayerService {
      * @return {*}  {Observable<Player[]>}
      * @memberof PlayerService
      */
-    getFriends(): Observable<Player[]> {
+    getFriends(): Observable<PlayersResponse> {
 
         const token = localStorage.getItem('accessToken');
         if (!token) {
             throw new Error('No access token found');
         }
         return this.http
-            .get<Player[]>(`player/friends`, {
+            .get<PlayersResponse>(`player/friends`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
