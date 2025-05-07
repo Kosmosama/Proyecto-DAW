@@ -12,6 +12,9 @@ export class Team {
     @Column({ type: 'jsonb' })
     data: any;
 
+    @Column({ length: 50 })
+    format: string;
+
     @CreateDateColumn()
     createdAt: Date;
 
