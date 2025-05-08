@@ -1,12 +1,12 @@
-import { Controller, Post, Get, Delete, Param, Body, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { TeamService } from './teams.service';
-import { Player } from 'src/player/decorators/player.decorator';
-import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
-import { CreateTeamDto } from './dto/create-team.dto';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Player } from 'src/player/decorators/player.decorator';
+import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { TeamService } from './teams.service';
 
 @ApiTags('Teams')
 @ApiBearerAuth()
@@ -25,20 +25,11 @@ export class TeamController {
     @ApiResponse({ status: 401, description: 'Unauthorized.' })
     async create(
         @Player() player: PlayerPrivate,
-        @Body() team: CreateTeamDto
-    ) {
-        return this.teamService.create(player.id, team.name, team.data);
+        @Body() createTeamDto: CreateTeamDto
+    ): Promise<void> {
+        const { name, data, format = 'gen9ou', strict = true } = createTeamDto;
+        this.teamService.create(player.id, name, data, format, strict);
     }
-
-    // @Post('create/:validationMode')
-    // @ApiParam({ name: 'validationMode', enum: ['any', 'legal'] })
-    // async create(
-    //     @Player() player: PlayerPrivate,
-    //     @Param('validationMode') mode: 'any' | 'legal',
-    //     @Body() team: CreateTeamDto
-    // ) {
-    //     return this.teamService.create(player.id, team.name, team.data, mode, team.format);
-    // }
 
     @Get()
     @ApiOperation({ summary: 'Get all teams for a player' })

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateTeamDto {
     @IsString()
@@ -7,9 +7,13 @@ export class CreateTeamDto {
 
     @IsString()
     @IsNotEmpty()
-    data: string; // Raw Showdown-style team string
+    data: string;
 
-    @IsOptional()
     @IsString()
-    format?: string; // e.g., "gen9ou"
+    @IsOptional()
+    format?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    strict?: boolean;
 }
