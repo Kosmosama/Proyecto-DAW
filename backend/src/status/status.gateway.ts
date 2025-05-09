@@ -1,12 +1,9 @@
 import { Logger } from '@nestjs/common';
-import {
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-    WebSocketGateway,
-    WebSocketServer
-} from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import { Redis } from 'ioredis';
 
 @WebSocketGateway({ namespace: 'status' })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -15,13 +12,15 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     private readonly logger = new Logger(StatusGateway.name);
 
-    // In-memory "sets"
-    private onlinePlayers: Set<number> = new Set(); // Set of player IDs
-    private playerSockets: Map<number, Set<string>> = new Map(); // Map<playerId, Set<socketId>>
-    private playerFriends: Map<number, number[]> = new Map(); // Map<playerId, friendIds[]>
-    private socketToPlayer: Map<string, number> = new Map(); // Map<socketId, playerId>
+    constructor(
+        private readonly playerService: PlayerService,
+        @InjectRedis() private readonly redis: Redis
+    ) { }
 
-    constructor(private readonly playerService: PlayerService) { }
+    private ONLINE_PLAYERS = 'status:onlinePlayers'; // Redis Set
+    private PLAYER_SOCKETS_PREFIX = 'status:playerSockets:'; // Redis Set per player
+    private SOCKET_TO_PLAYER = 'status:socketToPlayer'; // Redis Hash
+    private PLAYER_FRIENDS_PREFIX = 'status:playerFriends:'; // Redis Set per player
 
     async handleConnection(client: Socket) {
         const playerId = this.extractPlayerId(client);
@@ -31,69 +30,76 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
 
         this.logger.debug(`Player ${playerId} connected with socket ${client.id}`);
-        this.socketToPlayer.set(client.id, playerId);
 
-        const sockets = this.playerSockets.get(playerId) ?? new Set();
-        sockets.add(client.id);
-        this.playerSockets.set(playerId, sockets);
+        await this.redis.hset(this.SOCKET_TO_PLAYER, client.id, playerId.toString());
+        await this.redis.sadd(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
 
-        if (!this.onlinePlayers.has(playerId)) {
-            this.onlinePlayers.add(playerId);
+        const isOnline = await this.redis.sismember(this.ONLINE_PLAYERS, playerId.toString());
+        if (!isOnline) {
+            await this.redis.sadd(this.ONLINE_PLAYERS, playerId.toString());
             await this.notifyOnline(playerId);
         }
     }
 
     async handleDisconnect(client: Socket) {
-        const playerId = this.socketToPlayer.get(client.id);
-        if (!playerId) return;
+        const playerIdStr = await this.redis.hget(this.SOCKET_TO_PLAYER, client.id);
+        if (!playerIdStr) return;
 
+        const playerId = parseInt(playerIdStr, 10);
         this.logger.debug(`Player ${playerId} disconnected socket ${client.id}`);
+
         this.playerService.updateLastLogin(playerId);
-        this.socketToPlayer.delete(client.id);
 
-        const sockets = this.playerSockets.get(playerId);
-        if (!sockets) return;
+        await this.redis.hdel(this.SOCKET_TO_PLAYER, client.id);
+        await this.redis.srem(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
 
-        sockets.delete(client.id);
-        if (sockets.size === 0) {
-            this.playerSockets.delete(playerId);
-            this.onlinePlayers.delete(playerId);
+        const sockets = await this.redis.smembers(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`);
+        if (sockets.length === 0) {
+            await this.redis.del(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`);
+            await this.redis.srem(this.ONLINE_PLAYERS, playerId.toString());
             await this.notifyOffline(playerId);
-        } else {
-            this.playerSockets.set(playerId, sockets);
         }
     }
 
     private async notifyOnline(playerId: number) {
         const friends = await this.playerService.getFriends(playerId);
         const friendIds = friends.data.map((f) => f.id);
-        this.playerFriends.set(playerId, friendIds);
 
-        const onlineFriends = friendIds.filter((id) => this.onlinePlayers.has(id));
-        this.emitToPlayer(playerId, 'friends:online', onlineFriends);
+        if (friendIds.length > 0) {
+            await this.redis.sadd(`${this.PLAYER_FRIENDS_PREFIX}${playerId}`, ...friendIds.map(String));
+        }
 
-        friendIds.forEach((friendId) => {
-            if (this.onlinePlayers.has(friendId)) {
-                this.emitToPlayer(friendId, 'friend:online', playerId);
+        const onlineFriendIds: number[] = [];
+
+        for (const id of friendIds) {
+            const isOnline = await this.redis.sismember(this.ONLINE_PLAYERS, id.toString());
+            if (isOnline) {
+                onlineFriendIds.push(id);
             }
-        });
+        }
+
+        this.emitToPlayer(playerId, 'friends:online', onlineFriendIds);
+
+        for (const id of onlineFriendIds) {
+            this.emitToPlayer(id, 'friend:online', playerId);
+        }
     }
 
     private async notifyOffline(playerId: number) {
-        const friendIds = this.playerFriends.get(playerId) ?? [];
-        this.playerFriends.delete(playerId);
+        const friendIds = await this.redis.smembers(`${this.PLAYER_FRIENDS_PREFIX}${playerId}`);
+        await this.redis.del(`${this.PLAYER_FRIENDS_PREFIX}${playerId}`);
 
-        friendIds.forEach((friendId) => {
-            if (this.onlinePlayers.has(friendId)) {
+        for (const id of friendIds) {
+            const friendId = parseInt(id, 10);
+            const isOnline = await this.redis.sismember(this.ONLINE_PLAYERS, friendId.toString());
+            if (isOnline) {
                 this.emitToPlayer(friendId, 'friend:offline', playerId);
             }
-        });
+        }
     }
 
-    private emitToPlayer(playerId: number, event: string, data: any) {
-        const sockets = this.playerSockets.get(playerId);
-        if (!sockets) return;
-
+    private async emitToPlayer(playerId: number, event: string, data: any) {
+        const sockets = await this.redis.smembers(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`);
         for (const socketId of sockets) {
             this.server.to(socketId).emit(event, data);
         }

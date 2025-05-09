@@ -10,6 +10,7 @@ import { GameModule } from './game/game.module';
 import { PlayerModule } from './player/player.module';
 import { StatusModule } from './status/status.module';
 import { TeamsModule } from './teams/teams.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
     imports: [
@@ -35,6 +36,7 @@ import { TeamsModule } from './teams/teams.module';
         GameModule,
         AuthModule,
         TeamsModule,
+        RedisModule
     ],
     controllers: [AppController],
     providers: [
