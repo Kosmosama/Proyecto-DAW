@@ -1,0 +1,43 @@
+.friends-card {
+    width: 90%;
+    max-width: 600px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+  }
+  
+  .friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .friend-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f9f9f9;
+  }
+  
+  .friend-info {
+    flex: 1;
+  }
+  
+  .friend-name {
+    font-weight: bold;
+  }
+  
+  .friend-status {
+    font-size: 0.9em;
+    color: #888;
+  }
+  
+  .friend-photo img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
