@@ -7,20 +7,20 @@ import { Redis } from 'ioredis';
 
 @WebSocketGateway({ namespace: 'status' })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    constructor(
+        private readonly playerService: PlayerService,
+        @InjectRedis() private readonly redis: Redis,
+    ) { }
+
     @WebSocketServer()
     server: Server;
 
     private readonly logger = new Logger(StatusGateway.name);
 
-    constructor(
-        private readonly playerService: PlayerService,
-        @InjectRedis() private readonly redis: Redis
-    ) { }
-
-    private ONLINE_PLAYERS = 'status:onlinePlayers'; // Redis Set
-    private PLAYER_SOCKETS_PREFIX = 'status:playerSockets:'; // Redis Set per player
-    private SOCKET_TO_PLAYER = 'status:socketToPlayer'; // Redis Hash
-    private PLAYER_FRIENDS_PREFIX = 'status:playerFriends:'; // Redis Set per player
+    private ONLINE_PLAYERS = 'status:onlinePlayers';
+    private PLAYER_SOCKETS_PREFIX = 'status:playerSockets:';
+    private SOCKET_TO_PLAYER = 'status:socketToPlayer';
+    private PLAYER_FRIENDS_PREFIX = 'status:playerFriends:';
 
     async handleConnection(client: Socket) {
         const playerId = this.extractPlayerId(client);
@@ -48,7 +48,7 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const playerId = parseInt(playerIdStr, 10);
         this.logger.debug(`Player ${playerId} disconnected socket ${client.id}`);
 
-        this.playerService.updateLastLogin(playerId);
+        await this.playerService.updateLastLogin(playerId);
 
         await this.redis.hdel(this.SOCKET_TO_PLAYER, client.id);
         await this.redis.srem(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
@@ -63,10 +63,13 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     private async notifyOnline(playerId: number) {
         const friends = await this.playerService.getFriends(playerId);
-        const friendIds = friends.data.map((f) => f.id);
+        const friendIds = (friends?.data ?? []).map((f) => f.id);
 
         if (friendIds.length > 0) {
-            await this.redis.sadd(`${this.PLAYER_FRIENDS_PREFIX}${playerId}`, ...friendIds.map(String));
+            await this.redis.sadd(
+                `${this.PLAYER_FRIENDS_PREFIX}${playerId}`,
+                ...friendIds.map(String),
+            );
         }
 
         const onlineFriendIds: number[] = [];
