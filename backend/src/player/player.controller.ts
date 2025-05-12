@@ -95,7 +95,7 @@ export class PlayerController {
 
     @Delete(':id')
     @UseGuards(RolesGuard)
-    @Roles([Role.ADMIN])
+    @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Delete a player (Admin only)' })
     @ApiResponse({ status: 200, description: 'Player deleted successfully.' })
     @ApiResponse({ status: 403, description: 'User lacks admin privileges.' })
@@ -105,8 +105,6 @@ export class PlayerController {
     }
 
     @Post('friend-request/:recieverId')
-    @UseGuards(RolesGuard)
-    @Roles([Role.SELF, Role.ADMIN], { selfParam: 'recieverId' })
     @ApiOperation({ summary: 'Send a friend request' })
     @ApiResponse({ status: 200, description: 'Friend request sent successfully.' })
     @ApiResponse({ status: 400, description: 'Cannot send request to yourself or duplicate request.' })
