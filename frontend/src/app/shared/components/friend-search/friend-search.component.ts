@@ -16,13 +16,17 @@ import { from } from 'rxjs';
 export class FriendSearchComponent implements OnInit {
   incomingRequests = input.required<Player[]>();
   outgoingRequests = input.required<Player[]>();
+
   allPlayers = signal<Player[]>([]);
   friends = signal<PlayersResponse>({ data: [], meta: { more: false } });
+
   searchTerm = signal<string>('');
   currentPage = signal<number>(1);
   totalPlayers = signal<number>(0);
   pageSize = 9;
+
   visiblePlayers = signal<Player[]>([]);
+  excludeIds = signal<number[]>([]);
 
   private destroyRef = inject(DestroyRef);
   private playerService = inject(PlayerService);
@@ -31,51 +35,52 @@ export class FriendSearchComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      from(this.searchTerm$()).pipe(
-        debounceTime(300),
-        distinctUntilChanged()
-      ).subscribe(() => {
-        this.loadPlayers();
-      });
+      const searchTerm = this.searchTerm().trim();
+      if (searchTerm) {
+        from(this.searchTerm$()).pipe(
+          debounceTime(300),
+          distinctUntilChanged()
+        ).subscribe(() => {
+          this.loadPlayers();
+        });
+      } else {
+        this.visiblePlayers.set([]);
+      }
     });
   }
 
   ngOnInit(): void {
     this.loadFriends();
+
+    effect(() => {
+      if (this.incomingRequests && this.outgoingRequests) {
+        const excludeIds = [
+          ...this.excludeIds(),
+          ...this.incomingRequests().map((r: Player) => r.id),
+          ...this.outgoingRequests().map((r: Player) => r.id)
+        ].filter((id): id is number => typeof id === 'number');
+        this.excludeIds.set(excludeIds);
+      }
+    });
   }
 
   loadPlayers(): void {
-    console.log('a')
-    this.playerService.getPlayer().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (currentPlayer) => {
-        const excludeIds = [
-          currentPlayer.id,
-          ...this.friends().data.map(f => f.id),
-          ...this.incomingRequests().map(r => r.id),
-          ...this.outgoingRequests().map(r => r.id)
-        ].filter((id): id is number => typeof id === 'number');
+    const page = this.currentPage();
+    const search = this.searchTerm().trim();
 
-        const page = this.currentPage();
-        const search = this.searchTerm().trim();
+    this.playerService.getPlayers({ page, search, excludeIds: this.excludeIds() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resp) => {
+          this.allPlayers.set(resp.data);
+          this.totalPlayers.set(resp.data.length);
+          this.updateVisiblePlayers();
+        },
+        error: (error) => {
+          console.error('Error al cargar los jugadores:', error);
+        }
+      });
 
-        console.log('b');
-        this.playerService.getPlayers({ page, search, excludeIds })
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: (data) => {
-              this.allPlayers.set(data);
-              this.totalPlayers.set(data.length);
-              this.updateVisiblePlayers();
-            },
-            error: (error) => {
-              console.error('Error al cargar los jugadores:', error);
-            }
-          });
-      },
-      error: (err) => {
-        console.error('Error al obtener el jugador actual:', err);
-      }
-    });
   }
 
   loadFriends(): void {

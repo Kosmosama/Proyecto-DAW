@@ -10,10 +10,17 @@ import { Player, PlayerLogin, SinglePlayerResponse } from '../interfaces/player.
     providedIn: 'root',
 })
 export class AuthService {
-    // private apiUrl = `${environment.apiUrl}`;
     private http = inject(HttpClient);
     private logged: WritableSignal<boolean> = signal(false);
     private router = inject(Router);
+
+    getAuthHeaders() {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            throw new Error('No access token found');
+        }
+        return { Authorization: `Bearer ${token}` };
+    }
 
     /**
      *
