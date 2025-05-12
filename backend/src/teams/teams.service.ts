@@ -72,9 +72,6 @@ export class TeamService {
         return this.teamRepository.save(team);
     }
 
-
-
-
     async findAllByPlayer(playerId: number): Promise<Team[]> {
         return this.teamRepository.find({
             where: { player: { id: playerId } },

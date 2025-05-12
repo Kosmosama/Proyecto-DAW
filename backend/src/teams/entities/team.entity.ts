@@ -1,5 +1,6 @@
+import { PokemonSet } from '@pkmn/data';
 import { Player } from 'src/player/entities/player.entity';
-import { BeforeInsert, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Team {
@@ -10,19 +11,14 @@ export class Team {
     name: string;
 
     @Column({ type: 'jsonb' })
-    data: any;
+    data: PokemonSet[];
 
     @Column({ length: 50 })
     format: string;
 
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt: Date; // Check if sets date automatically
 
     @ManyToOne(() => Player, (player) => player.teams, { onDelete: 'CASCADE' })
     player: Player;
-
-    @BeforeInsert()
-    async setCreatedAt() {
-        this.createdAt = new Date();
-    }
 }

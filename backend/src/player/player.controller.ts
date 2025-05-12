@@ -112,6 +112,10 @@ export class PlayerController {
         @Player() player: PlayerPrivate,
         @Param('recieverId', ParseIntPipe) recieverId: number
     ): Promise<void> {
+        if (player.id === recieverId) {
+            throw new BadRequestException('Cannot send a friend request to yourself.');
+        }
+
         return this.playerService.sendFriendRequest(player.id, recieverId);
     }
 
