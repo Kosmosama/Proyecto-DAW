@@ -6,6 +6,7 @@ import { Sets } from '@pkmn/sets';
 import { PlayerService } from 'src/player/player.service';
 import { Repository } from 'typeorm';
 import { Team } from './entities/team.entity';
+import { TeamValidator } from '@pkmn/sim'
 
 @Injectable()
 export class TeamService {
@@ -31,11 +32,23 @@ export class TeamService {
         const genNumber = match ? Number(match[1]) : 9;
         const gen = this.gens.get(genNumber);
 
-        let parsedTeam;
+        let parsedTeam: PokemonSet[] = [];
+
         try {
-            parsedTeam = Sets.importSet(data);
+            const sets = data.split('\n\n');
+
+            for (const set of sets) {
+                const parsedSet = Sets.importSet(set.trim());
+                console.log('Parsed set:', parsedSet);
+                if (!parsedSet || !parsedSet.species) {
+                    throw new BadRequestException('Invalid Pokémon set data');
+                }
+
+                parsedTeam.push(parsedSet as PokemonSet);
+            }
         } catch (err) {
-            throw new BadRequestException('Failed to parse Showdown team format');
+            console.error('Error parsing test set:', err);
+            throw new BadRequestException('Failed to parse Showdown test set');
         }
 
         if (parsedTeam.length === 0 || parsedTeam.length > 6) {
@@ -46,18 +59,21 @@ export class TeamService {
             await this.checkLegality(parsedTeam, gen, strict);
         } catch (err) {
             console.error('Legality check failed:', err);
-            throw new BadRequestException(`Team legality check failed`);
+            throw new BadRequestException('Team legality check failed');
         }
 
         const team = this.teamRepository.create({
             name,
-            data,
+            data: data,
             format,
             player,
         });
 
         return this.teamRepository.save(team);
     }
+
+
+
 
     async findAllByPlayer(playerId: number): Promise<Team[]> {
         return this.teamRepository.find({
@@ -84,68 +100,12 @@ export class TeamService {
     }
 
     private async checkLegality(parsedTeam: PokemonSet[], gen: Generation, strict: boolean): Promise<void> {
-        for (const set of parsedTeam) {
-            const speciesName = set.species || set.name;
-            const species = gen.species.get(speciesName);
-            if (!species || !species.exists) {
-                throw new BadRequestException(`Invalid Pokémon species: ${speciesName}`);
-            }
+        const validator = new TeamValidator('gen9ou');
 
-            this.validateAbility(set, gen, species, strict);
-            this.validateItem(set, gen);
-            this.validateNature(set, gen);
-            this.validateMoves(set, gen, species, strict);
-        }
-    }
+        const result = validator.validateTeam(parsedTeam);
 
-    private validateAbility(set: PokemonSet, gen: Generation, species: any, strict: boolean) {
-        if (!set.ability) return;
-
-        const ability = gen.abilities.get(set.ability);
-        if (!ability || !ability.exists) {
-            throw new BadRequestException(`Invalid ability: ${set.ability}`);
-        }
-
-        if (strict) {
-            const allowedAbilities = Object.values(species.abilities || {});
-            if (!allowedAbilities.includes(set.ability)) {
-                throw new BadRequestException(`${species.name} cannot have ability: ${set.ability}`);
-            }
-        }
-    }
-
-    private validateItem(set: PokemonSet, gen: Generation) {
-        if (!set.item) return;
-
-        const item = gen.items.get(set.item);
-        if (!item || !item.exists) {
-            throw new BadRequestException(`Invalid item: ${set.item}`);
-        }
-    }
-
-    private validateNature(set: PokemonSet, gen: Generation) {
-        if (!set.nature) return;
-
-        const nature = gen.natures.get(set.nature);
-        if (!nature || !nature.name) {
-            throw new BadRequestException(`Invalid nature: ${set.nature}`);
-        }
-    }
-
-    private validateMoves(set: PokemonSet, gen: Generation, species: any, strict: boolean) {
-        for (const move of set.moves || []) {
-            const moveData = gen.moves.get(move);
-            if (!moveData || !moveData.exists) {
-                throw new BadRequestException(`Invalid move: ${move}`);
-            }
-
-            if (strict) {
-                const learnset = gen.learnsets.get(this.toID(species.name));
-                const moveID = this.toID(move);
-                if (!learnset || !learnset[moveID]) {
-                    throw new BadRequestException(`${species.name} can't learn ${move}`);
-                }
-            }
+        if (result) {
+            throw new BadRequestException(`Team legality check failed: ${result}`);
         }
     }
 }

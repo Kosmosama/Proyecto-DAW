@@ -35,6 +35,7 @@
     "@pkmn/data": "^0.9.34",
     "@pkmn/dex": "^0.9.34",
     "@pkmn/sets": "^5.1.2",
+    "@pkmn/sim": "^0.9.35",
     "@smogon/calc": "^0.10.0",
     "bcrypt": "^5.1.1",
     "class-validator": "^0.14.1",
