@@ -5,7 +5,7 @@ import { PlayerService } from 'src/player/player.service';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
 
-@WebSocketGateway({ namespace: 'status' })
+@WebSocketGateway({ namespace: 'status', cors: { origin: '*' } })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(
         private readonly playerService: PlayerService,
