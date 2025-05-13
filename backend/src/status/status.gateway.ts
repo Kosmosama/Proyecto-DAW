@@ -1,16 +1,8 @@
-import {
-    Logger,
-    Inject,
-} from '@nestjs/common';
-import {
-    WebSocketGateway,
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-    WebSocketServer,
-} from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
+import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { StatusService } from './status.service';
 import { AuthService } from 'src/auth/auth.service';
+import { StatusService } from './status.service';
 
 @WebSocketGateway({ namespace: 'status' })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -24,6 +16,10 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         private readonly authService: AuthService,
     ) { }
 
+    /**
+     * Handles a new WebSocket connection.
+     * Authenticates the player, associates the socket, and registers them as online.
+     */
     async handleConnection(client: Socket) {
         try {
             const token = this.authService.extractToken(client);
@@ -38,6 +34,10 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
+    /**
+     * Handles a socket disconnection.
+     * Updates player's status and notifies friends if the player goes offline.
+     */
     async handleDisconnect(client: Socket) {
         const playerId = await this.statusService.handleDisconnection(client, this.server);
         if (playerId) {

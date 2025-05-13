@@ -16,6 +16,13 @@ export class StatusService {
         @InjectRedis() private readonly redis: Redis,
     ) { }
 
+    /**
+     * Registers a new connection for a player.
+     * @param {Socket} client The socket client representing the connection.
+     * @param {number} playerId The ID of the player.
+     * @param {Server} server The Socket.IO server instance.
+     * @returns {Promise<void>} No return value.
+     */
     async registerConnection(client: Socket, playerId: number, server: Server) {
         await this.redis.hset(this.SOCKET_TO_PLAYER, client.id, playerId.toString());
         await this.redis.sadd(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
@@ -27,6 +34,12 @@ export class StatusService {
         }
     }
 
+    /**
+     * Handles disconnection of a player.
+     * @param {Socket} client The socket client representing the connection.
+     * @param {Server} server The Socket.IO server instance.
+     * @returns {Promise<number | null>} The ID of the player if found, otherwise null.
+     */
     async handleDisconnection(client: Socket, server: Server): Promise<number | null> {
         const playerIdStr = await this.redis.hget(this.SOCKET_TO_PLAYER, client.id);
         if (!playerIdStr) return null;
@@ -47,6 +60,12 @@ export class StatusService {
         return playerId;
     }
 
+    /**
+     * Notifies friends of a player when they come online.
+     * @param {number} playerId The ID of the player.
+     * @param {Server} server The Socket.IO server instance.
+     * @returns {Promise<void>} No return value.
+     */
     private async notifyOnline(playerId: number, server: Server): Promise<void> {
         const friends = await this.playerService.getFriends(playerId);
         const friendIds: number[] = (friends?.data ?? []).map((f: { id: number }) => f.id);
@@ -72,6 +91,12 @@ export class StatusService {
         }
     }
 
+    /**
+     * Notifies friends of a player when they go offline.
+     * @param {number} playerId The ID of the player.
+     * @param {Server} server The Socket.IO server instance.
+     * @returns {Promise<void>} No return value.
+     */
     private async notifyOffline(playerId: number, server: Server) {
         const friendIds = await this.redis.smembers(`${this.PLAYER_FRIENDS_PREFIX}${playerId}`);
         await this.redis.del(`${this.PLAYER_FRIENDS_PREFIX}${playerId}`);
@@ -85,6 +110,14 @@ export class StatusService {
         }
     }
 
+    /**
+     * Emits an event to a specific player.
+     * @param {Server} server The Socket.IO server instance.
+     * @param {number} playerId The ID of the player.
+     * @param {string} event The event name to emit.
+     * @param {any} data The data to send with the event.
+     * @returns {Promise<void>} No return value.
+     */
     private async emitToPlayer(server: Server, playerId: number, event: string, data: any) {
         const sockets = await this.redis.smembers(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`);
         for (const socketId of sockets) {
