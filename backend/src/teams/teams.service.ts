@@ -64,7 +64,7 @@ export class TeamService {
 
         const team = this.teamRepository.create({
             name,
-            data: data,
+            data: parsedTeam,
             format,
             player,
         });
