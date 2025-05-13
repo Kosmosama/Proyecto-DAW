@@ -1,16 +1,12 @@
-import { Module } from '@nestjs/common';
-import { StatusGateway } from './status.gateway';
-import { PlayerService } from '../player/player.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Player } from '../player/entities/player.entity';
-import { Friendship } from '../player/entities/friendship.entity';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { Module } from '@nestjs/common';
+import { AuthModule } from 'src/auth/auth.module';
+import { PlayerModule } from 'src/player/player.module';
+import { StatusGateway } from './status.gateway';
+import { StatusService } from './status.service';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Player, Friendship]),
-        RedisModule
-    ],
-    providers: [StatusGateway, PlayerService],
+    imports: [PlayerModule, RedisModule, AuthModule],
+    providers: [StatusGateway, StatusService],
 })
 export class StatusModule { }
