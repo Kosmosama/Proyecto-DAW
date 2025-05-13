@@ -15,7 +15,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     async handleConnection(client: Socket) {
         try {
-            const token = this.gameService.extractToken(client);
+            const token = this.authService.extractToken(client);
             const player = await this.authService.validateAccessToken(token);
             client.data.player = player;
             this.logger.log(`Client connected: ${player.username}#${player.tag}`);

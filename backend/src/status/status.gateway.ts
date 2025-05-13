@@ -4,13 +4,15 @@ import { Server, Socket } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
+import { AuthService } from 'src/auth/auth.service';
 
-@WebSocketGateway({ namespace: 'status', cors: { origin: '*' } })
+@WebSocketGateway({ namespace: 'status' })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(
         private readonly playerService: PlayerService,
+        private readonly authService: AuthService,
         @InjectRedis() private readonly redis: Redis,
-    ) { }
+    ) {}
 
     @WebSocketServer()
     server: Server;
@@ -23,21 +25,25 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private PLAYER_FRIENDS_PREFIX = 'status:playerFriends:';
 
     async handleConnection(client: Socket) {
-        const playerId = this.extractPlayerId(client);
-        if (!playerId) {
+        try {
+            const token = this.authService.extractToken(client);
+            const player = await this.authService.validateAccessToken(token);
+            const playerId = player.id;
+            client.data.player = player;
+
+            this.logger.debug(`Player ${playerId} connected with socket ${client.id}`);
+
+            await this.redis.hset(this.SOCKET_TO_PLAYER, client.id, playerId.toString());
+            await this.redis.sadd(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
+
+            const isOnline = await this.redis.sismember(this.ONLINE_PLAYERS, playerId.toString());
+            if (!isOnline) {
+                await this.redis.sadd(this.ONLINE_PLAYERS, playerId.toString());
+                await this.notifyOnline(playerId);
+            }
+        } catch (err) {
+            this.logger.warn(`Unauthorized connection: ${client.id} - ${err.message}`);
             client.disconnect();
-            return;
-        }
-
-        this.logger.debug(`Player ${playerId} connected with socket ${client.id}`);
-
-        await this.redis.hset(this.SOCKET_TO_PLAYER, client.id, playerId.toString());
-        await this.redis.sadd(`${this.PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
-
-        const isOnline = await this.redis.sismember(this.ONLINE_PLAYERS, playerId.toString());
-        if (!isOnline) {
-            await this.redis.sadd(this.ONLINE_PLAYERS, playerId.toString());
-            await this.notifyOnline(playerId);
         }
     }
 
@@ -106,10 +112,5 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
         for (const socketId of sockets) {
             this.server.to(socketId).emit(event, data);
         }
-    }
-
-    private extractPlayerId(client: Socket): number | null {
-        const id = client.handshake.query?.playerId;
-        return typeof id === 'string' ? parseInt(id, 10) : null;
     }
 }

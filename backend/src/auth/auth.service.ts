@@ -9,6 +9,7 @@ import { Role } from './enums/role.enum';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenResponse } from './interfaces/token-response.interface';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class AuthService {
@@ -160,6 +161,20 @@ export class AuthService {
         }
 
         return { id: player.id, username: player.username, tag: player.tag };
+    }
+
+    /**
+     * Extracts the JWT token from the socket connection.
+     * @param {Socket} client The socket client object.
+     * @returns {string} The extracted JWT token.
+     * @throws {Error} If the token is missing or invalid.
+     */
+    extractToken(client: Socket): string {
+        const authHeader = client.handshake.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            throw new Error('Missing or invalid Authorization header');
+        }
+        return authHeader.split(' ')[1];
     }
 
     /**

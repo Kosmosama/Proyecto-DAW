@@ -77,12 +77,4 @@ export class GameService {
             this.matchmakingQueue.splice(index, 1);
         }
     }
-
-    extractToken(client: Socket): string {
-        const header = client.handshake.headers['authorization'];
-        if (!header || !header.startsWith('Bearer ')) {
-            throw new Error('Missing or invalid Authorization header');
-        }
-        return header.split(' ')[1];
-    }
 }
