@@ -3,7 +3,7 @@ import { inject, Injectable, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginResponse } from '../interfaces/auth.model';
+import { LoginResponse, TokenResponse } from '../interfaces/auth.model';
 import { Player, PlayerLogin, PlayerResponse } from '../interfaces/player.model';
 
 @Injectable({
@@ -42,13 +42,13 @@ export class AuthService {
      * @return {*}  {Observable<string>}
      * @memberof AuthService
      */
-    login(playerData: PlayerLogin): Observable<string> {
+    login(playerData: PlayerLogin): Observable<void> {
         return this.http
             .post<LoginResponse>(`auth/login`, playerData)
             .pipe(
-                map((resp: LoginResponse) => {
-                    localStorage.setItem('accessToken', resp.data.accessToken);
-                    return resp.data.accessToken;
+                map((response) => {
+                    localStorage.setItem('accessToken', response.data.accessToken);
+                    localStorage.setItem('refreshToken', response.data.refreshToken);
                 })
             );
     }

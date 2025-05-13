@@ -15,6 +15,8 @@ export class FriendListComponent implements OnInit {
   loading = signal<boolean>(true);
   private playerService = inject(PlayerService);
 
+  
+
   constructor() { }
 
   ngOnInit(): void {
