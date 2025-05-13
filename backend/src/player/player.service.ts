@@ -33,19 +33,30 @@ export class PlayerService {
     }
 
     /**
-     * Retrieves a paginated list of players with optional search and exclusion filters.
-     * @param {number} page The page number.
+     * Retrieves a paginated list of players, excluding friends and the player themselves.
+     * @param {number} playerId The ID of the player making the request.
+     * @param {number} page The page number for pagination.
      * @param {number} limit The number of items per page.
-     * @param {string} [search] Optional search term for filtering players by username.
-     * @param {number[]} [excludeIds] Optional array of player IDs to exclude from the results.
-     * @returns {Promise<PaginatedResult<PlayerPublic>>} A paginated result containing player public information.
+     * @param {string} [search] Optional search term to filter players by username.
+     * @returns {Promise<PaginatedResult<PlayerPublic>>} A paginated result containing public player information.
      */
+    // #TODO Maybe reuse another function to avoid code duplication
     async findAll(
+        playerId: number,
         page = 1,
         limit = 10,
         search?: string,
-        excludeIds: number[] = []
     ): Promise<PaginatedResult<PlayerPublic>> {
+        const friendships = await this.friendshipRepository.find({
+            where: [
+                { senderId: playerId, status: FriendshipStatus.ACCEPTED },
+                { receiverId: playerId, status: FriendshipStatus.ACCEPTED }
+            ]
+        });
+
+        const excludeIds = friendships.map(f => f.senderId === playerId ? f.receiverId : f.senderId);
+        excludeIds.push(playerId);
+
         const query = this.playerRepository.createQueryBuilder('player')
             .select(['player.id', 'player.username', 'player.tag', 'player.photo'])
             .skip((page - 1) * limit)
@@ -58,18 +69,17 @@ export class PlayerService {
         }
 
         if (excludeIds.length > 0) {
-            const whereExists = query.expressionMap.wheres.length > 0;
-            const method = whereExists ? 'andWhere' : 'where';
+            const method = query.expressionMap.wheres.length > 0 ? 'andWhere' : 'where';
             query[method]('player.id NOT IN (:...excludeIds)', { excludeIds });
         }
 
         const results = await query.getMany();
-
         const more = results.length > limit;
         const players = more ? results.slice(0, limit) : results;
 
         return { data: players, more };
     }
+
 
     /**
      * Retrieves public data for a single player by ID.

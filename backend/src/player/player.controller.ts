@@ -19,17 +19,16 @@ export class PlayerController {
     @Get()
     @ApiOperation({
         summary: 'Get all players (public info)',
-        description: 'Retrieve a paginated list of players, optionally filtered by a search term.',
+        description: 'Retrieve a paginated list of players, excluding the player and their friends.',
     })
     @ApiResponse({ status: 200, description: 'List of all players returned successfully.' })
     findAll(
+        @Player() player: PlayerPrivate,
         @Query('page') page = 1,
         @Query('limit') limit = 10,
         @Query('search') search?: string,
-        @Query('excludeIds') excludeIds?: string[]
     ): Promise<PaginatedResult<PlayerPublic>> {
-        const parsedExcludeIds = excludeIds?.map(id => Number(id)) ?? [];
-        return this.playerService.findAll(Number(page), Number(limit), search, parsedExcludeIds);
+        return this.playerService.findAll(player.id, Number(page), Number(limit), search);
     }
 
     @Get('profile')
