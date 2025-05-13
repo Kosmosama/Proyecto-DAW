@@ -390,7 +390,7 @@ export class PlayerService {
         const TAG_CHARSET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
         const chars = TAG_CHARSET;
-        const tagLength = Math.floor(Math.random() * length) + 1;
+        const tagLength = length;
         let tag = '';
         for (let i = 0; i < tagLength; i++) {
             tag += chars.charAt(Math.floor(Math.random() * chars.length));
