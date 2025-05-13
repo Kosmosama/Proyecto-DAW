@@ -28,7 +28,7 @@ export class FriendListComponent implements OnInit {
         this.loading.set(false);
       },
       error: (error) => {
-        console.error('Error al cargar los amigos:', error);
+        console.error('Error al cargar los amigos2:', error);
         this.loading.set(false);
       }
     });

@@ -10,8 +10,6 @@ export interface Player {
     lastLogin?: Date;
 }
 
-export type SinglePlayerResponse = ApiResponse<Player>;
-
 export type PlayerResponse = ApiResponse<Player, { more: boolean }>;
 
 export type PlayersResponse = ApiResponse<Player[], { more: boolean }>;

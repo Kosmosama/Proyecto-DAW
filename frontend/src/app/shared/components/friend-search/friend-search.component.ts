@@ -14,8 +14,8 @@ import { from } from 'rxjs';
   standalone: true,
 })
 export class FriendSearchComponent implements OnInit {
-  incomingRequests = input.required<Player[]>();
-  outgoingRequests = input.required<Player[]>();
+  incomingRequests = input<Player[]>([]);
+  outgoingRequests = input<Player[]>([]);
 
   allPlayers = signal<Player[]>([]);
   friends = signal<PlayersResponse>({ data: [], meta: { more: false } });
@@ -47,21 +47,20 @@ export class FriendSearchComponent implements OnInit {
         this.visiblePlayers.set([]);
       }
     });
-  }
-
-  ngOnInit(): void {
-    this.loadFriends();
 
     effect(() => {
       if (this.incomingRequests && this.outgoingRequests) {
         const excludeIds = [
-          ...this.excludeIds(),
           ...this.incomingRequests().map((r: Player) => r.id),
-          ...this.outgoingRequests().map((r: Player) => r.id)
+          ...this.outgoingRequests().map((r: Player) => r.id),
         ].filter((id): id is number => typeof id === 'number');
         this.excludeIds.set(excludeIds);
       }
     });
+  }
+
+  ngOnInit(): void {
+    this.loadFriends();
   }
 
   loadPlayers(): void {
@@ -78,9 +77,8 @@ export class FriendSearchComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error al cargar los jugadores:', error);
-        }
+        },
       });
-
   }
 
   loadFriends(): void {
@@ -92,7 +90,7 @@ export class FriendSearchComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error al cargar los amigos:', error);
-        }
+        },
       });
   }
 
@@ -101,13 +99,13 @@ export class FriendSearchComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          console.log("Solicitud enviada con éxito a: ", player.username);
+          console.log('Solicitud enviada con éxito a: ', player.username);
           this.loadFriends();
           this.loadPlayers();
         },
         error: (error) => {
           console.error('Error al enviar solicitud de amistad:', error);
-        }
+        },
       });
   }
 

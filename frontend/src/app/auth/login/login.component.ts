@@ -1,5 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, signal } from '@angular/core';
 import {
   FormsModule,
   NonNullableFormBuilder,
@@ -13,6 +12,7 @@ import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
 import { PlayerLogin } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { LoadGoogleApiService } from '../../core/services/load-google-api.service';
+import { PlayerService } from '../../core/services/player.service';
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
 import { GoogleLoginDirective } from '../../shared/directives/google-login.directive';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
@@ -28,26 +28,27 @@ import { ValidationClassesDirective } from '../../shared/directives/validation-c
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
-  providers: [RouterLink, ReactiveFormsModule, LoadGoogleApiService,],
+  providers: [RouterLink, ReactiveFormsModule, LoadGoogleApiService],
 })
 export class LoginComponent implements CanComponentDeactivate {
-  #router = inject(Router);
-  #fb = inject(NonNullableFormBuilder);
-  #authService = inject(AuthService);
-  #destroyRef = inject(DestroyRef);
-  #saved = false;
-  #modal = inject(NgbModal);
-  errors = signal<number>(0);
+  private router = inject(Router);
+  private fb = inject(NonNullableFormBuilder);
+  private authService = inject(AuthService);
+  private modal = inject(NgbModal);
+  private playerService = inject(PlayerService);
 
-  constructor() {
-  }
+  private saved = false;
+  errors = signal<number>(0);
+  // public playerProfile = signal<PlayerResponse | null>(null);
+
+  constructor() { }
 
   loggedGoogle() {
-    this.#authService.googleLogin();
+    this.authService.googleLogin();
   }
 
   loggedGithub() {
-    this.#authService.githubLogin();
+    this.authService.githubLogin();
   }
 
   showError(error: string) {
@@ -59,12 +60,22 @@ export class LoginComponent implements CanComponentDeactivate {
       ...this.loginForm.getRawValue(),
     };
 
-    this.#authService
+    this.authService
       .login(player)
       .pipe(
         map(() => {
-          this.#saved = true;
-          this.#router.navigate(['pages/home']);
+          this.saved = true;
+          this.router.navigate(['pages/home']);
+          // this.playerService.getProfile().subscribe({
+          //   next: (response) => {
+          //     this.playerProfile.set(response);
+          //     console.log('Player profile:', this.playerProfile());
+          //     this.router.navigate(['pages/home']);
+          //   },
+          //   error: (error) => {
+          //     console.error('Error fetching player profile:', error);
+          //   },
+          // });
         })
       )
       .subscribe({
@@ -74,36 +85,19 @@ export class LoginComponent implements CanComponentDeactivate {
       });
   }
 
-
-  loginForm = this.#fb.group({
+  loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(4)]],
   });
 
   canDeactivate() {
-    if (this.#saved || this.loginForm.pristine) {
+    if (this.saved || this.loginForm.pristine) {
       return true;
     }
-    const modalRef = this.#modal.open(ConfirmModalComponent);
+    const modalRef = this.modal.open(ConfirmModalComponent);
     modalRef.componentInstance.title = 'Changes not saved';
     modalRef.componentInstance.body = 'Do you want to leave the page?';
     return modalRef.result.catch(() => false);
   }
 }
-
-// googleUserLogin(resp: google.accounts.id.CredentialResponse): void {
-//   const userData: GoogleFbLogin = {
-//     token: resp.credential,
-//     lat: 0,
-//     lng: 0,
-//   };
-
-//   this.#authService
-//     .googleFbLogin(userData)
-//     .pipe(takeUntilDestroyed(this.#destroyRef))
-//     .subscribe(() => {
-//       this.#router.navigate(['/events']);
-//     });
-// }
-
 

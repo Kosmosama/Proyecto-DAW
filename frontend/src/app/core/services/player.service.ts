@@ -12,11 +12,9 @@ export class PlayerService {
     private http = inject(HttpClient);
     private authService = inject(AuthService);
 
-    getPlayer(): Observable<PlayerResponse> {
+    getProfile(): Observable<PlayerResponse> {
         return this.http
-            .get<PlayerResponse>(`player/profile`, {
-                headers: this.authService.getAuthHeaders()
-            });
+            .get<PlayerResponse>(`player/profile`);
     }
 
     /**
@@ -27,9 +25,7 @@ export class PlayerService {
      */
     getFriends(): Observable<PlayersResponse> {
         return this.http
-            .get<PlayersResponse>(`player/friends`, {
-                headers: this.authService.getAuthHeaders()
-            });
+            .get<PlayersResponse>(`player/friends`);
 
     }
 
@@ -53,7 +49,6 @@ export class PlayerService {
         });
 
         return this.http.get<PlayersResponse>(`player`, {
-            headers: this.authService.getAuthHeaders(),
             params: queryParams
         });
     }
@@ -69,9 +64,7 @@ export class PlayerService {
      */
     sendFriendRequest(id: number): Observable<any> {
         return this.http
-            .post<any>(`player/friend-request/${id}`, {}, {
-                headers: this.authService.getAuthHeaders()
-            });
+            .post<any>(`player/friend-request/${id}`, {});
     }
 
     /**
@@ -82,9 +75,7 @@ export class PlayerService {
      * @memberof PlayerService
      */
     acceptFriendRequest(id: number): Observable<any> {
-        return this.http.patch<any>(`player/friend-accept/${id}`, {}, {
-            headers: this.authService.getAuthHeaders()
-        });
+        return this.http.patch<any>(`player/friend-accept/${id}`, {});
     }
 
     /**
@@ -95,9 +86,7 @@ export class PlayerService {
      * @memberof PlayerService
      */
     declineFriendRequest(id: number): Observable<any> {
-        return this.http.patch<any>(`player/friend-decline/${id}`, {
-            headers: this.authService.getAuthHeaders()
-        });
+        return this.http.patch<any>(`player/friend-decline/${id}`, {});
     }
 
     /**
@@ -108,9 +97,7 @@ export class PlayerService {
      */
     fetchIncomingRequests(): Observable<ApiResponse<any[]>> {
         return this.http
-            .get<ApiResponse<any[]>>(`player/friend-requests/incoming`, {
-                headers: this.authService.getAuthHeaders()
-            });
+            .get<ApiResponse<any[]>>(`player/friend-requests/incoming`);
     }
 
     /**
@@ -121,9 +108,7 @@ export class PlayerService {
      */
     fetchOutgoingRequests(): Observable<ApiResponse<any[]>> {
         return this.http
-            .get<ApiResponse<any[]>>(`player/friend-requests/outgoing`, {
-                headers: this.authService.getAuthHeaders()
-            });
+            .get<ApiResponse<any[]>>(`player/friend-requests/outgoing`);
     }
 
 }

@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginResponse } from '../interfaces/auth.model';
-import { Player, PlayerLogin, SinglePlayerResponse } from '../interfaces/player.model';
+import { Player, PlayerLogin, PlayerResponse } from '../interfaces/player.model';
 
 @Injectable({
     providedIn: 'root',
@@ -31,8 +31,8 @@ export class AuthService {
      */
     register(playerData: Player): Observable<Player> {
         return this.http
-            .post<SinglePlayerResponse>(`auth/register`, playerData)
-            .pipe(map((resp: SinglePlayerResponse) => resp.data));
+            .post<PlayerResponse>(`auth/register`, playerData)
+            .pipe(map((resp: PlayerResponse) => resp.data));
     }
 
     /**
@@ -65,25 +65,6 @@ export class AuthService {
 
     githubLogin(): void {
         window.location.href = `${environment.apiUrl}/auth/github/login`;
-    }
-
-    /**
-     *
-     *
-     * @return {*}  {Observable<Player>}
-     * @memberof AuthService
-     */
-    getLoggedPlayer(): Observable<Player> {
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-            throw new Error('No access token found');
-        }
-
-        return this.http
-            .get<SinglePlayerResponse>(`player/`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            .pipe(map((resp: SinglePlayerResponse) => resp.data));
     }
 
     /**

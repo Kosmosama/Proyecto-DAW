@@ -6,16 +6,10 @@
     </div>
     <!-- Second Column -->
     <div class="col-md-6">
-      <app-friend-search
-        [incomingRequests]="incomingRequests()"
-        [outgoingRequests]="outgoingRequests()"
-      ></app-friend-search>
-      <app-friend-requests
-        [incomingRequests]="incomingRequests()"
-        [outgoingRequests]="outgoingRequests()"
+      <app-friend-search></app-friend-search>
+      <app-friend-requests [incomingRequests]="incomingRequests()" [outgoingRequests]="outgoingRequests()"
         [refreshIncomingRequests]="fetchIncomingRequests"
-        [refreshOutgoingRequests]="fetchOutgoingRequests"
-      ></app-friend-requests>
+        [refreshOutgoingRequests]="fetchOutgoingRequests"></app-friend-requests>
     </div>
   </div>
 </div>
