@@ -10,15 +10,21 @@ export class StatusSocketService {
     private socket: Socket | null = null;
 
     connect(playerId: number): void {
-        if (this.socket) {
+        if (this.socket) return;
+
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            console.error('No se encontró token de acceso');
             return;
         }
 
         this.socket = io(`${environment.apiUrl}/status`, {
-            query: { playerId },
-            transports: ['websocket'], // <- fuerza el uso directo de WebSocket
+            query: {
+                playerId,
+                token,
+            },
+            transports: ['websocket'],
         });
-
 
         this.socket.on('connect', () => {
             console.log('Conectado al namespace status');
@@ -40,6 +46,7 @@ export class StatusSocketService {
             console.log(`Tu amigo ${id} se desconectó`);
         });
     }
+
 
     disconnect(): void {
         this.socket?.disconnect();

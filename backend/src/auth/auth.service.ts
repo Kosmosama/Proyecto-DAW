@@ -169,13 +169,22 @@ export class AuthService {
      * @returns {string} The extracted JWT token.
      * @throws {Error} If the token is missing or invalid.
      */
+    // extractToken(client: Socket): string {
+    //     const authHeader = client.handshake.headers.authorization;
+    //     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    //         throw new Error('Missing or invalid Authorization header');
+    //     }
+    //     return authHeader.split(' ')[1];
+    // }
+
     extractToken(client: Socket): string {
-        const authHeader = client.handshake.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            throw new Error('Missing or invalid Authorization header');
+        const token = client.handshake.query?.token;
+        if (!token || typeof token !== 'string') {
+            throw new Error('Missing or invalid token');
         }
-        return authHeader.split(' ')[1];
+        return token;
     }
+
 
     /**
      * Generates JWT tokens for a player.
