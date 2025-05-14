@@ -49,6 +49,7 @@ export class StatusSocketService {
 
 
     disconnect(): void {
+        console.log('Desconectando del socket');
         this.socket?.disconnect();
         this.socket = null;
     }

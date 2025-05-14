@@ -22,12 +22,10 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     async handleConnection(client: Socket) {
         try {
-            console.log('Client connecting:', client.id);
             const token = this.authService.extractToken(client);
             const player = await this.authService.validateAccessToken(token);
             client.data.player = player;
 
-            console.log('Client connected:', client.id);
             this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
             await this.statusService.registerConnection(client, player.id, this.server);
         } catch (err) {
