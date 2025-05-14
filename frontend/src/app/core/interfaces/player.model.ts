@@ -8,6 +8,7 @@ export interface Player {
     online?: boolean;
     photo?: string;
     lastLogin?: Date;
+    tag?: string;
 }
 
 export type PlayerResponse = ApiResponse<Player, { more: boolean }>;

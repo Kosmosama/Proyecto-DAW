@@ -1,0 +1,27 @@
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+      <!-- Foto de perfil -->
+      <img src="images/icons/default-avatar.jpg" alt="Foto de perfil" class="rounded-circle mb-3" width="150"
+        height="150">
+
+      <!-- Nombre de usuario y email -->
+    </div>
+  </div>
+  <h3 class="mb-1">{{ profile()!.data.username }}#{{ profile()!.data.tag}} <small class="text-muted ms-2"></small></h3>
+
+  <!-- Card Equipos -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Equipos</h5>
+        </div>
+        <div class="card-body">
+          <!-- Aquí irían los detalles o lista de equipos del usuario -->
+          <p class="text-muted">Este usuario aún no ha creado ningún equipo. {{profile()!.data.email}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

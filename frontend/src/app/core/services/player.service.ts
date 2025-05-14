@@ -1,16 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { FriendRequestsResponse, Player, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
-import { AuthService } from './auth.service';
-import { ApiResponse } from '../interfaces/api-response.model';
+import { FriendRequestsResponse, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
 
 @Injectable({
     providedIn: 'root',
 })
 export class PlayerService {
     private http = inject(HttpClient);
-    private authService = inject(AuthService);
 
     getProfile(): Observable<PlayerResponse> {
         return this.http

@@ -1,16 +1,16 @@
 import { Component, DestroyRef, OnInit, computed, effect, inject, input, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Player, PlayersResponse } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
-import { from } from 'rxjs';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-friend-search',
   templateUrl: './friend-search.component.html',
   styleUrls: ['./friend-search.component.scss'],
-  imports: [FormsModule],
+  imports: [FormsModule, CommonModule],
   standalone: true,
 })
 export class FriendSearchComponent implements OnInit {
@@ -31,18 +31,15 @@ export class FriendSearchComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private playerService = inject(PlayerService);
 
-  searchTerm$ = computed(() => this.searchTerm());
-
   constructor() {
-    effect(() => {
-      const searchTerm = this.searchTerm().trim();
-      if (searchTerm) {
-        from(this.searchTerm$()).pipe(
-          debounceTime(300),
-          distinctUntilChanged()
-        ).subscribe(() => {
-          this.loadPlayers();
-        });
+    toObservable(this.searchTerm).pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      const term = this.searchTerm().trim();
+      if (term) {
+        this.loadPlayers();
       } else {
         this.visiblePlayers.set([]);
       }
@@ -61,6 +58,14 @@ export class FriendSearchComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadFriends();
+  }
+
+  get searchValue(): string {
+    return this.searchTerm();
+  }
+
+  set searchValue(value: string) {
+    this.searchTerm.set(value);
   }
 
   loadPlayers(): void {
@@ -111,8 +116,8 @@ export class FriendSearchComponent implements OnInit {
 
   updateVisiblePlayers(): void {
     const startIndex = (this.currentPage() - 1) * this.pageSize;
-    const endIndex = startIndex + this.pageSize - 1;
-    const visible = this.allPlayers().slice(startIndex, endIndex + 1);
+    const endIndex = startIndex + this.pageSize;
+    const visible = this.allPlayers().slice(startIndex, endIndex);
     this.visiblePlayers.set(visible);
   }
 

@@ -1,5 +1,5 @@
-import { Component, inject, input, Signal } from '@angular/core';
-import { FriendRequest, FriendRequestsResponse, Player } from '../../../core/interfaces/player.model';
+import { Component, inject, input } from '@angular/core';
+import { FriendRequest } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 
 @Component({
@@ -8,8 +8,8 @@ import { PlayerService } from '../../../core/services/player.service';
   styleUrls: ['./friend-requests.component.scss']
 })
 export class FriendRequestsComponent {
-  incomingRequests = input.required<Signal<FriendRequest[]>>();
-  outgoingRequests = input.required<Signal<FriendRequest[]>>();
+  incomingRequests = input.required<FriendRequest[]>();
+  outgoingRequests = input.required<FriendRequest[]>();
   refreshIncomingRequests = input<() => void>();
   refreshOutgoingRequests = input<() => void>();
   private playerService = inject(PlayerService);

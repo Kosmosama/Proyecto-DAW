@@ -1,9 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { FriendListComponent } from "../../shared/components/friend-list/friend-list.component";
-import { FriendSearchComponent } from "../../shared/components/friend-search/friend-search.component";
-import { FriendRequestsComponent } from "../../shared/components/friend-requests/friend-requests.component";
+import { FriendRequestsResponse } from '../../core/interfaces/player.model';
 import { PlayerService } from '../../core/services/player.service';
-import { FriendRequestsResponse, Player } from '../../core/interfaces/player.model';
+import { FriendListComponent } from "../../shared/components/friend-list/friend-list.component";
+import { FriendRequestsComponent } from "../../shared/components/friend-requests/friend-requests.component";
+import { FriendSearchComponent } from "../../shared/components/friend-search/friend-search.component";
 
 @Component({
   selector: 'friends',
