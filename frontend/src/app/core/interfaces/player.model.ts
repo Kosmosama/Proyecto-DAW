@@ -16,7 +16,7 @@ export type PlayersResponse = ApiResponse<Player[], { more: boolean }>;
 
 export type PlayerLogin = Pick<Player, 'email' | 'password'>;
 
-type FriendRequest = Pick<Player, 'id' | 'username' | 'photo'> & {
+export type FriendRequest = Pick<Player, 'id' | 'username' | 'photo'> & {
     sentAt: string;
 };
 

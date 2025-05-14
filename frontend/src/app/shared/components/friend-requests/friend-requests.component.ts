@@ -1,6 +1,6 @@
-import { Component, inject, input, Signal, signal } from '@angular/core';
+import { Component, inject, input, Signal } from '@angular/core';
+import { FriendRequest, FriendRequestsResponse, Player } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
-import { Player } from '../../../core/interfaces/player.model';
 
 @Component({
   selector: 'app-friend-requests',
@@ -8,8 +8,8 @@ import { Player } from '../../../core/interfaces/player.model';
   styleUrls: ['./friend-requests.component.scss']
 })
 export class FriendRequestsComponent {
-  incomingRequests = input.required<Player[]>();
-  outgoingRequests = input.required<Player[]>();
+  incomingRequests = input.required<Signal<FriendRequest[]>>();
+  outgoingRequests = input.required<Signal<FriendRequest[]>>();
   refreshIncomingRequests = input<() => void>();
   refreshOutgoingRequests = input<() => void>();
   private playerService = inject(PlayerService);
