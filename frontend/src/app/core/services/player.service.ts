@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Player, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
+import { FriendRequestsResponse, Player, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
 import { AuthService } from './auth.service';
 import { ApiResponse } from '../interfaces/api-response.model';
 
@@ -32,25 +32,28 @@ export class PlayerService {
     /**
      *
      *
-     * @param {{ search?: string; excludeIds?: number[] }} [params]
-     * @return {*}  {Observable<Player[]>}
+     * @param {{ page?: number; search?: string; excludeIds?: number[] }} [params]
+     * @return {*}  {Observable<PlayersResponse>}
      * @memberof PlayerService
      */
-    getPlayers(params: { page?: number, search?: string; excludeIds?: number[] } = {}): Observable<PlayersResponse> {
-        const queryParams = new HttpParams({
-            fromObject: {
-                ...(params.page ? { page: params.page.toString() } : {}),
-                ...(params.search ? { search: params.search } : {}),
-                ...(params.excludeIds ? params.excludeIds.reduce((acc, id) => {
-                    acc['excludeIds'] = [...(acc['excludeIds'] || []), id.toString()];
-                    return acc;
-                }, {} as any) : {})
-            }
-        });
+    getPlayers(params: { page?: number; search?: string; excludeIds?: number[] } = {}): Observable<PlayersResponse> {
+        let queryParams = new HttpParams();
 
-        return this.http.get<PlayersResponse>(`player`, {
-            params: queryParams
-        });
+        if (params.page) {
+            queryParams = queryParams.set('page', params.page.toString());
+        }
+
+        if (params.search) {
+            queryParams = queryParams.set('search', params.search);
+        }
+
+        if (params.excludeIds) {
+            params.excludeIds.forEach(id => {
+                queryParams = queryParams.append('excludeIds', id.toString());
+            });
+        }
+
+        return this.http.get<PlayersResponse>('player', { params: queryParams });
     }
 
 
@@ -59,56 +62,56 @@ export class PlayerService {
      *
      *
      * @param {string} id
-     * @return {*}  {Observable<any>}
+     * @return {*}  {Observable<void>}
      * @memberof PlayerService
      */
-    sendFriendRequest(id: number): Observable<any> {
+    sendFriendRequest(id: number): Observable<void> {
         return this.http
-            .post<any>(`player/friend-request/${id}`, {});
+            .post<void>(`player/friend-request/${id}`, {});
     }
 
     /**
      *
      *
      * @param {number} id
-     * @return {*}  {Observable<any>}
+     * @return {*}  {Observable<void>}
      * @memberof PlayerService
      */
-    acceptFriendRequest(id: number): Observable<any> {
-        return this.http.patch<any>(`player/friend-accept/${id}`, {});
+    acceptFriendRequest(id: number): Observable<void> {
+        return this.http.patch<void>(`player/friend-accept/${id}`, {});
     }
 
     /**
      *
      *
      * @param {number} id
-     * @return {*}  {Observable<any>}
+     * @return {*}  {Observable<void>}
      * @memberof PlayerService
      */
-    declineFriendRequest(id: number): Observable<any> {
-        return this.http.patch<any>(`player/friend-decline/${id}`, {});
+    declineFriendRequest(id: number): Observable<void> {
+        return this.http.patch<void>(`player/friend-decline/${id}`, {});
     }
 
     /**
      *
      *
-     * @return {*}  {Observable<any[]>}
+     * @return {*}  {Observable<FriendRequestsResponse>}
      * @memberof PlayerService
      */
-    fetchIncomingRequests(): Observable<ApiResponse<any[]>> {
+    fetchIncomingRequests(): Observable<FriendRequestsResponse> {
         return this.http
-            .get<ApiResponse<any[]>>(`player/friend-requests/incoming`);
+            .get<FriendRequestsResponse>(`player/friend-requests/incoming`);
     }
 
     /**
      *
      *
-     * @return {*}  {Observable<any[]>}
+     * @return {*}  {Observable<FriendRequestsResponse>}
      * @memberof PlayerService
      */
-    fetchOutgoingRequests(): Observable<ApiResponse<any[]>> {
+    fetchOutgoingRequests(): Observable<FriendRequestsResponse> {
         return this.http
-            .get<ApiResponse<any[]>>(`player/friend-requests/outgoing`);
+            .get<FriendRequestsResponse>(`player/friend-requests/outgoing`);
     }
 
 }
