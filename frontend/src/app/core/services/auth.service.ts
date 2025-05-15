@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable, signal, WritableSignal } from '@angular/core';
+import { inject, Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -18,13 +18,24 @@ export class AuthService {
     private router = inject(Router);
     private statusSocketService = inject(StatusSocketService);
 
-    private logged: WritableSignal<boolean> = signal(false);
+    #logged: WritableSignal<boolean> = signal(false);
 
-    private accessToken: string | null = localStorage.getItem(ACCESS_TOKEN_KEY);
-    private refreshToken: string | null = localStorage.getItem(REFRESH_TOKEN_KEY);
+    get logged(): Signal<boolean> {
+        return this.#logged.asReadonly();
+    }
+
+    private accessToken: string | null = null;
+    private refreshToken: string | null = null;
+
+    constructor() {
+        if (typeof window !== 'undefined') {
+            this.accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+            this.refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+        }
+    }
 
     /**
-     * Returns headers with the current access token for authorized requests.
+     * Returns authorization headers.
      */
     getAuthHeaders() {
         if (!this.accessToken) throw new Error('No access token found');
@@ -32,71 +43,70 @@ export class AuthService {
     }
 
     /**
-     * Gets the current access token.
-     * @returns {string} - The current access token.
+     * Returns the access token.
      */
-    getAuth() {
+    getAuth(): string {
         if (!this.accessToken) throw new Error('No access token found');
         return this.accessToken;
     }
 
     /**
      * Registers a new player.
-     * @param {Player} playerData - Player registration data.
-     * @returns {Observable<Player>} - Observable emitting the registered player data.
      */
     register(playerData: Player): Observable<Player> {
-        return this.http.post<PlayerResponse>(`auth/register`, playerData).pipe(
+        return this.http.post<PlayerResponse>('auth/register', playerData).pipe(
             map((resp) => resp.data)
         );
     }
 
     /**
-     * Logs in the user and stores tokens.
-     * @param {PlayerLogin} playerData - Player login data.
-     * @returns {Observable<void>} - Observable indicating login success.
+     * Logs in the user with credentials and stores tokens.
      */
     login(playerData: PlayerLogin): Observable<void> {
-        return this.http.post<LoginResponse>(`auth/login`, playerData).pipe(
-            tap((response) => {
-                this.setTokens(response.data.accessToken, response.data.refreshToken);
-                this.logged.set(true);
-                this.statusSocketService.connect(this.accessToken!);
-                this.router.navigate(['/dashboard']); // Redirect after login
+        return this.http.post<LoginResponse>('auth/login', playerData).pipe(
+            tap(({ data }) => {
+                this.setTokens(data.accessToken, data.refreshToken);
+                this.#logged.set(true);
+                this.statusSocketService.connect(data.accessToken);
+                this.router.navigate(['/dashboard']);
             }),
             map(() => void 0)
         );
     }
 
     /**
-     * Initiates Google OAuth login.
-     * @returns {void}
+     * Logs in using Google OAuth.
      */
     googleLogin(): void {
-        window.location.href = `${environment.apiUrl}/auth/google/login`;
+        this.redirectToOAuth('google');
     }
 
     /**
-     * Initiates GitHub OAuth login.
-     * @returns {void}
+     * Logs in using GitHub OAuth.
      */
     githubLogin(): void {
-        window.location.href = `${environment.apiUrl}/auth/github/login`;
+        this.redirectToOAuth('github');
     }
 
     /**
-     * Validates the stored token with the server.
-     * Can be used in guards to pre-authenticate users.
-     * @returns {Observable<boolean>} - Observable emitting true if token is valid, false otherwise.
+     * Redirects to OAuth login endpoint.
      */
-    validateToken(): Observable<boolean> {
-        if (!this.accessToken) {
-            return of(false);
+    private redirectToOAuth(provider: 'google' | 'github'): void {
+        if (typeof window !== 'undefined') {
+            const url = `${environment.apiUrl}/auth/${provider}/login`;
+            window.location.href = url;
         }
+    }
+
+    /**
+     * Validates the current access token with the server.
+     */
+    private validateToken(): Observable<boolean> {
+        if (!this.accessToken) return of(false);
 
         return this.http.get('auth/validate', { headers: this.getAuthHeaders() }).pipe(
             tap(() => {
-                this.logged.set(true);
+                this.#logged.set(true);
                 this.statusSocketService.connect(this.accessToken!);
             }),
             map(() => true),
@@ -108,18 +118,16 @@ export class AuthService {
     }
 
     /**
-     * Checks if the user is logged in based on cached state or validates token.
-     * @returns {Observable<boolean>} - Observable emitting true if logged in, false otherwise.
+     * Determines whether the user is logged in.
      */
     isLogged(): Observable<boolean> {
+        if (this.#logged()) return of(true);
         if (!this.accessToken) return of(false);
-        if (this.logged()) return of(true);
         return this.validateToken();
     }
 
     /**
-     * Logs out the user, clears tokens and navigates to login page.
-     * @returns {void}
+     * Logs out the user and clears all authentication data.
      */
     logout(): void {
         this.statusSocketService.disconnect();
@@ -128,10 +136,7 @@ export class AuthService {
     }
 
     /**
-     * Caches and stores access and refresh tokens.
-     * @param {string} access - Access token.
-     * @param {string} refresh - Refresh token.
-     * @returns {void}
+     * Stores tokens in memory and localStorage.
      */
     private setTokens(access: string, refresh: string): void {
         this.accessToken = access;
@@ -141,14 +146,13 @@ export class AuthService {
     }
 
     /**
-     * Clears tokens from local storage and updates logged state.
-     * @returns {void}
+     * Clears tokens from memory and localStorage.
      */
     private clearAuth(): void {
         this.accessToken = null;
         this.refreshToken = null;
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
-        this.logged.set(false);
+        this.#logged.set(false);
     }
 }

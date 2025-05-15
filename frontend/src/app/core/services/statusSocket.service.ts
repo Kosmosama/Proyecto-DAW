@@ -1,17 +1,12 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
-import { AuthService } from './auth.service';
 
 @Injectable({
     providedIn: 'root',
 })
 export class StatusSocketService implements OnDestroy {
     private socket: Socket | null = null;
-
-    constructor(private authService: AuthService) {
-        console.log('StatusSocketService initialized');
-    }
 
     connect(token: string): void {
         if (this.socket?.connected) return;
