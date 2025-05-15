@@ -41,7 +41,6 @@ export class LoginComponent implements CanComponentDeactivate {
 
   private saved = false;
   errors = signal<number>(0);
-  // public playerProfile = signal<PlayerResponse | null>(null);
 
   constructor() { }
 
@@ -68,7 +67,7 @@ export class LoginComponent implements CanComponentDeactivate {
         switchMap(() => this.playerService.getProfile()),
         map((player) => {
           this.saved = true;
-          this.statusSocketService.connect(player.data.id!);
+          this.statusSocketService.connect(player.id!);
           this.router.navigate(['pages/home']);
         })
       )

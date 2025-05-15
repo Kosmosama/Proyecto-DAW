@@ -9,7 +9,7 @@
                 Cargando amigos...
                 }
                 @if (!loading()) {
-                @for (friend of friends().data; track $index) {
+                @for (friend of friends(); track $index) {
                 <div class="friend-card d-flex justify-content-between align-items-center mb-3 border p-3 rounded">
                     <div class="friend-info">
                         <h5 class="friend-name">{{ friend.username }}</h5>

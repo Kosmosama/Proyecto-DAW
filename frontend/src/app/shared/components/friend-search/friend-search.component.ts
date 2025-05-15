@@ -18,7 +18,7 @@ export class FriendSearchComponent implements OnInit {
   outgoingRequests = input<Player[]>([]);
 
   allPlayers = signal<Player[]>([]);
-  friends = signal<PlayersResponse>({ data: [], meta: { more: false } });
+  friends = signal<Player[]>([]);
 
   searchTerm = signal<string>('');
   currentPage = signal<number>(1);
@@ -76,8 +76,8 @@ export class FriendSearchComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resp) => {
-          this.allPlayers.set(resp.data);
-          this.totalPlayers.set(resp.data.length);
+          this.allPlayers.set(resp);
+          this.totalPlayers.set(resp.length);
           this.updateVisiblePlayers();
         },
         error: (error) => {

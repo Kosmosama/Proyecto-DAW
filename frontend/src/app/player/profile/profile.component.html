@@ -8,7 +8,7 @@
       <!-- Nombre de usuario y email -->
     </div>
   </div>
-  <h3 class="mb-1">{{ profile()!.data.username }}#{{ profile()!.data.tag}} <small class="text-muted ms-2"></small></h3>
+  <h3 class="mb-1">{{ profile()!.username }}#{{ profile()!.tag}} <small class="text-muted ms-2"></small></h3>
 
   <!-- Card Equipos -->
   <div class="row justify-content-center mt-4">
@@ -19,7 +19,7 @@
         </div>
         <div class="card-body">
           <!-- Aquí irían los detalles o lista de equipos del usuario -->
-          <p class="text-muted">Este usuario aún no ha creado ningún equipo. {{profile()!.data.email}}</p>
+          <p class="text-muted">Este usuario aún no ha creado ningún equipo. {{profile()!.email}}</p>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { FriendRequestsResponse, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
+import { map, Observable } from 'rxjs';
+import { FriendRequestsResponse, Player, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
 
 @Injectable({
     providedIn: 'root',
@@ -9,9 +9,11 @@ import { FriendRequestsResponse, PlayerResponse, PlayersResponse } from '../inte
 export class PlayerService {
     private http = inject(HttpClient);
 
-    getProfile(): Observable<PlayerResponse> {
+    getProfile(): Observable<Player> {
         return this.http
-            .get<PlayerResponse>(`player/profile`);
+            .get<PlayerResponse>(`player/profile`).pipe(
+                map((response: PlayerResponse) => response.data)
+            );
     }
 
     /**
@@ -20,9 +22,11 @@ export class PlayerService {
      * @return {*}  {Observable<Player[]>}
      * @memberof PlayerService
      */
-    getFriends(): Observable<PlayersResponse> {
+    getFriends(): Observable<Player[]> {
         return this.http
-            .get<PlayersResponse>(`player/friends`);
+            .get<PlayersResponse>(`player/friends`).pipe(
+                map((response: PlayersResponse) => response.data)
+            );
 
     }
 
@@ -33,7 +37,7 @@ export class PlayerService {
      * @return {*}  {Observable<PlayersResponse>}
      * @memberof PlayerService
      */
-    getPlayers(params: { page?: number; search?: string; excludeIds?: number[] } = {}): Observable<PlayersResponse> {
+    getPlayers(params: { page?: number; search?: string; excludeIds?: number[] } = {}): Observable<Player[]> {
         let queryParams = new HttpParams();
 
         if (params.page) {
@@ -50,7 +54,9 @@ export class PlayerService {
             });
         }
 
-        return this.http.get<PlayersResponse>('player', { params: queryParams });
+        return this.http.get<PlayersResponse>('player', { params: queryParams }).pipe(
+            map((response: PlayersResponse) => response.data)
+        );
     }
 
 

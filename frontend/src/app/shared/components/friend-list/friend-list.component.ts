@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { PlayersResponse } from '../../../core/interfaces/player.model';
+import { Player, PlayersResponse } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 
 @Component({
@@ -11,7 +11,7 @@ import { PlayerService } from '../../../core/services/player.service';
   standalone: true,
 })
 export class FriendListComponent implements OnInit {
-  friends = signal<PlayersResponse>({ data: [], meta: { more: false } });
+  friends = signal<Player[]>([]);
   loading = signal<boolean>(true);
   private playerService = inject(PlayerService);
 

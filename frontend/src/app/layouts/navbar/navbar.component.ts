@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { PlayerResponse } from '../../core/interfaces/player.model';
+import { Player, PlayerResponse } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { PlayerService } from '../../core/services/player.service';
 import { RouterLink } from '@angular/router';
@@ -15,9 +15,8 @@ export class NavbarComponent {
 
   private authService = inject(AuthService);
   private playerService = inject(PlayerService);
-  // private loginComponent = inject(LoginComponent);
 
-  playerProfile = signal<PlayerResponse | null>(null);
+  playerProfile = signal<Player | null>(null);
 
   constructor() {
     this.playerService.getProfile().subscribe({
