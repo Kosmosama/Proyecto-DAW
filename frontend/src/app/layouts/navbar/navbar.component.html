@@ -1,18 +1,14 @@
 <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #ffffff;">
     <div class="container-fluid">
-        <!-- Centrado de la marca -->
         <a class="navbar-brand mx-auto" href="#" style="color: #d32f2f;">Pokémon Battle</a>
 
-        <!-- Botón de la barra de navegación móvil -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-
-        <!-- Elementos de la barra de navegación -->
+        @if (playerProfile()) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <!-- Enlace de Perfil -->
                 <li class="nav-item">
                     <a class="nav-link" href="/player/profile" style="color: #d32f2f;">
                         {{ playerProfile()?.username }}
@@ -20,11 +16,11 @@
                     </a>
                 </li>
 
-                <!-- Botón de Logout -->
                 <li class="nav-item">
                     <button class="btn btn-outline-danger nav-link" (click)="logout()">Logout</button>
                 </li>
             </ul>
         </div>
+    }
     </div>
 </nav>

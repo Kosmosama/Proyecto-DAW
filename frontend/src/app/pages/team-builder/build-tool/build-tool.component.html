@@ -1,0 +1,31 @@
+<div class="team-builder-wrapper d-flex flex-column align-items-center justify-content-center">
+
+    <div class="card shadow-lg w-100 mb-4" style="max-width: 1200px; background-color: white; border-radius: 1rem;">
+        <div class="card-body">
+            <h2 class="card-title text-danger text-center mb-4">Crear equipo</h2>
+
+            @for (pokemon of team(); track $index) {
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Pokémon </strong>
+                    <button class="btn btn-outline-danger" type="button" (click)="toggleForm($index)">
+                        Añadir Pokémon
+                    </button>
+                </div>
+
+                @if (isFormVisible($index)) {
+                <div class="form-group">
+                    <input type="text" class="form-control"  [formControl]="pokemonForms[$index].controls.name"
+                        placeholder="Nombre del Pokémon" />
+                </div>
+                }
+            </div>
+            }
+
+        </div>
+    </div>
+
+    <button class="btn btn-danger btn-lg px-5 mt-3" (click)="saveTeam()">
+        Guardar equipo
+    </button>
+</div>

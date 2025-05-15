@@ -14,6 +14,7 @@ export class SidebarComponent implements OnInit {
   sidebarItems: { label: string, link: string, icon: string }[] = [
     { label: 'Home', link: 'pages/home', icon: 'bi bi-house-door' },
     { label: 'Friends', link: 'player/friends', icon: 'bi bi-controller' },
+    { label: 'Team Builder', link: 'pages/team-builder', icon: 'bi bi-person-plus' },
   ];
 
   constructor() { }
