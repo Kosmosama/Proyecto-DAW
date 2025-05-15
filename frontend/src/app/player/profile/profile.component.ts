@@ -16,6 +16,10 @@ export class ProfileComponent {
     this.playerService.getProfile().subscribe({
       next: (response) => {
         this.profile.set(response);
+        // console.log('Player profile:', this.playerProfile());
+      },
+      error: (error) => {
+        console.error('Error fetching player profile:', error);
       },
     });
   }

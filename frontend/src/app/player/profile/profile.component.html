@@ -8,6 +8,7 @@
       <!-- Nombre de usuario y email -->
     </div>
   </div>
+  @if (profile()) {
   <h3 class="mb-1">{{ profile()!.data.username }}#{{ profile()!.data.tag}} <small class="text-muted ms-2"></small></h3>
 
   <!-- Card Equipos -->
@@ -24,4 +25,5 @@
       </div>
     </div>
   </div>
+  }
 </div>

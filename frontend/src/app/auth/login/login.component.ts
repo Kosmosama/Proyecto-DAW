@@ -41,7 +41,6 @@ export class LoginComponent implements CanComponentDeactivate {
 
   private saved = false;
   errors = signal<number>(0);
-  // public playerProfile = signal<PlayerResponse | null>(null);
 
   constructor() { }
 
