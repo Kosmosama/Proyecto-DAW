@@ -7,16 +7,13 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { map, switchMap } from 'rxjs';
 import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
 import { PlayerLogin } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { LoadGoogleApiService } from '../../core/services/load-google-api.service';
-import { PlayerService } from '../../core/services/player.service';
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
 import { GoogleLoginDirective } from '../../shared/directives/google-login.directive';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
-import { StatusSocketService } from '../../core/services/statusSocket.service';
 
 @Component({
   standalone: true,
@@ -36,8 +33,6 @@ export class LoginComponent implements CanComponentDeactivate {
   private fb = inject(NonNullableFormBuilder);
   private authService = inject(AuthService);
   private modal = inject(NgbModal);
-  private playerService = inject(PlayerService);
-  private statusSocketService = inject(StatusSocketService);
 
   private saved = false;
   errors = signal<number>(0);
@@ -45,7 +40,11 @@ export class LoginComponent implements CanComponentDeactivate {
   constructor() { }
 
   loggedGoogle() {
-    this.authService.googleLogin();
+    try {
+      this.authService.googleLogin();
+    } catch (error) {
+      this.showError('Google login failed');
+    }
   }
 
   loggedGithub() {
@@ -63,20 +62,15 @@ export class LoginComponent implements CanComponentDeactivate {
 
     this.authService
       .login(player)
-      .pipe(
-        switchMap(() => this.playerService.getProfile()),
-        map((player) => {
-          this.saved = true;
-          this.statusSocketService.connect(player.id!);
-          this.router.navigate(['pages/home']);
-        })
-      )
       .subscribe({
+        next: () => {
+          this.saved = true;
+          this.router.navigate(['pages/home']);
+        },
         error: (error) => {
           this.errors.set(error.status);
         },
       });
-
   }
 
   loginForm = this.fb.group({
