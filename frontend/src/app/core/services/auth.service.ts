@@ -16,7 +16,6 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 export class AuthService {
     private http = inject(HttpClient);
     private router = inject(Router);
-    private statusSocketService = inject(StatusSocketService);
 
     #logged: WritableSignal<boolean> = signal(false);
 
@@ -64,13 +63,13 @@ export class AuthService {
      */
     login(playerData: PlayerLogin): Observable<void> {
         return this.http.post<LoginResponse>('auth/login', playerData).pipe(
-            tap(({ data }) => {
+            map(({ data }) => {
                 this.setTokens(data.accessToken, data.refreshToken);
                 this.#logged.set(true);
-                this.statusSocketService.connect(data.accessToken);
+                // this.statusSocketService.connect(data.accessToken);
                 this.router.navigate(['/dashboard']);
-            }),
-            map(() => void 0)
+                return;
+            })
         );
     }
 
@@ -105,11 +104,10 @@ export class AuthService {
         if (!this.accessToken) return of(false);
 
         return this.http.get('auth/validate', { headers: this.getAuthHeaders() }).pipe(
-            tap(() => {
+            map(() => {
                 this.#logged.set(true);
-                this.statusSocketService.connect(this.accessToken!);
+                return true;
             }),
-            map(() => true),
             catchError(() => {
                 this.clearAuth();
                 return of(false);
@@ -130,7 +128,6 @@ export class AuthService {
      * Logs out the user and clears all authentication data.
      */
     logout(): void {
-        this.statusSocketService.disconnect();
         this.clearAuth();
         this.router.navigate(['/auth/login']);
     }

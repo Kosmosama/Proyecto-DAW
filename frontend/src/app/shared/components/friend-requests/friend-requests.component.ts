@@ -22,7 +22,7 @@ export class FriendRequestsComponent {
         this.refreshOutgoingRequests();
       },
       error: (err) => {
-        console.error('Error accepting request:', err);
+        console.error('Error accepting request:');
       }
     });
   }
@@ -34,7 +34,7 @@ export class FriendRequestsComponent {
         this.refreshOutgoingRequests();
       },
       error: (err) => {
-        console.error('Error declining request:', err);
+        console.error('Error declining request:');
       }
     });
   }

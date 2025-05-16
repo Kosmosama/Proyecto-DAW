@@ -1,6 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({
     providedIn: 'root',
@@ -8,15 +9,23 @@ import { environment } from '../../../environments/environment';
 export class StatusSocketService implements OnDestroy {
     private socket: Socket | null = null;
 
-    connect(token: string): void {
+    constructor(private authService: AuthService) {
+        this.connect();
+        console.log('StatusSocketService initialized');
+    }
+
+    private connect(): void {
         if (this.socket?.connected) return;
+
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            console.error('No access token found');
+            return;
+        }
 
         this.socket = io(`${environment.apiUrl}/status`, {
             auth: { token },
             transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
         });
 
         this.socket.on('connect', () => {

@@ -69,6 +69,7 @@ export class LoginComponent implements CanComponentDeactivate {
         },
         error: (error) => {
           this.errors.set(error.status);
+          console.error(error);
         },
       });
   }

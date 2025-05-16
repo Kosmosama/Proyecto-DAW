@@ -1,16 +1,24 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PokemonService } from '../../../core/services/pokemon.service';
 
 @Component({
   selector: 'build-tool',
   imports: [ReactiveFormsModule],
-  providers: [],
   templateUrl: './build-tool.component.html',
   styles: ``
 })
 export class BuildToolComponent {
 
+  private pokemonService = inject(PokemonService);
+
   team = signal<Array<string>>(["", "", "", "", "", ""]);
+  speciesTest = signal<string>("");
+
+  constructor() {
+    this.speciesTest.set(this.pokemonService.getSpeciesJson());
+    console.log(this.speciesTest());
+  }
 
   pokemonForms: FormGroup<{ name: FormControl<string> }>[] = Array.from({ length: 6 }, () =>
     new FormGroup({

@@ -81,7 +81,7 @@ export class FriendSearchComponent implements OnInit {
           this.updateVisiblePlayers();
         },
         error: (error) => {
-          console.error('Error al cargar los jugadores:', error);
+          console.error('Error al cargar los jugadores:');
         },
       });
   }
@@ -94,7 +94,7 @@ export class FriendSearchComponent implements OnInit {
           this.friends.set(data);
         },
         error: (error) => {
-          console.error('Error al cargar los amigos:', error);
+          console.error('Error al cargar los amigos:');
         },
       });
   }
@@ -109,7 +109,7 @@ export class FriendSearchComponent implements OnInit {
           this.loadPlayers();
         },
         error: (error) => {
-          console.error('Error al enviar solicitud de amistad:', error);
+          console.error('Error al enviar solicitud de amistad:');
         },
       });
   }

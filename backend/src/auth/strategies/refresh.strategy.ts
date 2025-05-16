@@ -25,7 +25,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
 
     // #TODO Maybe we can get plater with @Player decorator instead of using req, have to try it
     validate(req: Request, payload: JwtPayload) {
-        const refreshToken = (req.get('authorization') ?? '').replace('Bearer', '').trim();
+        const refreshToken = (req.get('Authorization') ?? '').replace('Bearer', '').trim();
         const userId = payload.id;
         return this.authService.validateRefreshToken(userId, refreshToken);
     }

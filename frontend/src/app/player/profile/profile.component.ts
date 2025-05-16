@@ -10,13 +10,12 @@ import { PlayerService } from '../../core/services/player.service';
 })
 export class ProfileComponent {
   private playerService = inject(PlayerService);
-  profile = signal<Player | null>(null);
+  playerProfile = signal<Player | null>(null);
 
   constructor() {
-     this.playerService.getProfile().subscribe({
+    this.playerService.getProfile().subscribe({
       next: (response) => {
-        this.profile.set(response);
-        // console.log('Player profile:', this.playerProfile());
+        this.playerProfile.set(response);
       },
       error: (error) => {
         console.error('Error fetching player profile:', error);

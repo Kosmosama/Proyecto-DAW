@@ -15,7 +15,7 @@
 
                 @if (isFormVisible($index)) {
                 <div class="form-group">
-                    <input type="text" class="form-control"  [formControl]="pokemonForms[$index].controls.name"
+                    <input type="text" class="form-control" [formControl]="pokemonForms[$index].controls.name"
                         placeholder="Nombre del Pokémon" />
                 </div>
                 }
@@ -28,4 +28,5 @@
     <button class="btn btn-danger btn-lg px-5 mt-3" (click)="saveTeam()">
         Guardar equipo
     </button>
+
 </div>

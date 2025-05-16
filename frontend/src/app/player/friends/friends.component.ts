@@ -4,6 +4,7 @@ import { PlayerService } from '../../core/services/player.service';
 import { FriendListComponent } from "../../shared/components/friend-list/friend-list.component";
 import { FriendRequestsComponent } from "../../shared/components/friend-requests/friend-requests.component";
 import { FriendSearchComponent } from "../../shared/components/friend-search/friend-search.component";
+import { Player } from "../../core/interfaces/player.model";
 
 @Component({
   selector: 'friends',
@@ -18,8 +19,16 @@ export class FriendsComponent {
   incomingRequestsData = computed(() => this.incomingRequests().data);
   outgoingRequestsData = computed(() => this.outgoingRequests().data);
   private playerService = inject(PlayerService);
-
+  test = signal<Player | null>(null);
   constructor() {
+    this.playerService.getProfile().subscribe({
+      next: (response) => {
+        this.test.set(response);
+      },
+      error: (error) => {
+        console.error('Error fetching player profile:');
+      },
+    });
     this.fetchIncomingRequests();
     this.fetchOutgoingRequests();
   }
@@ -30,7 +39,7 @@ export class FriendsComponent {
         this.incomingRequests.set(requests);
       },
       error: (err) => {
-        console.error('Error fetching incoming requests:', err);
+        console.error('Error fetching incoming requests:');
       }
     });
   }
@@ -42,7 +51,7 @@ export class FriendsComponent {
         console.log('Outgoing Requests:', requests);
       },
       error: (err) => {
-        console.error('Error fetching outgoing requests:', err);
+        console.error('Error fetching outgoing requests:');
       }
     });
   }

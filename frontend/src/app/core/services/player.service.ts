@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { FriendRequestsResponse, Player, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
 
 @Injectable({
@@ -12,7 +12,7 @@ export class PlayerService {
     getProfile(): Observable<Player> {
         return this.http
             .get<PlayerResponse>(`player/profile`).pipe(
-                map((response: PlayerResponse) => response.data)
+                map((response) => response.data),
             );
     }
 
