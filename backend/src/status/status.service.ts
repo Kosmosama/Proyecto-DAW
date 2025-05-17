@@ -1,4 +1,4 @@
-import { SOCKET_TO_PLAYER, PLAYER_SOCKETS_PREFIX, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX } from './../config/status.constants';
+import { SOCKET_TO_PLAYER, PLAYER_SOCKETS_PREFIX, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX } from '../config/redis.constants';
 import { Injectable } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { Redis } from 'ioredis';
