@@ -3,6 +3,8 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { GameService } from './game.service';
 import { AuthService } from 'src/auth/auth.service';
+import { ChallengeFriendDto } from './dto/challenge-friend.dto';
+import { JoinAsSpectatorDto } from './dto/join-as-spectator.dto';
 
 @WebSocketGateway({ namespace: 'game' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -75,7 +77,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage('challenge-friend')
     async handleChallengeFriend(
-        @MessageBody() data: { targetId: number },
+        @MessageBody() data: ChallengeFriendDto,
         @ConnectedSocket() client: Socket,
     ) {
         const challenger = client.data.player;
@@ -93,7 +95,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage('join-as-spectator')
     handleJoinAsSpectator(
-        @MessageBody() data: { room: string },
+        @MessageBody() data: JoinAsSpectatorDto,
         @ConnectedSocket() client: Socket,
     ) {
         this.gameService.addSpectator(client, data.room);

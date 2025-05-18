@@ -16,24 +16,37 @@ export class GameService {
     ) { }
 
     async matchPlayer(server: Server, socket: Socket, player: PlayerPrivate): Promise<string | null> {
-        const opponentJson = await this.redis.lpop(MATCHMAKING_QUEUE);
-        if (opponentJson) {
-            const opponent = JSON.parse(opponentJson) as { id: number; socketId: string; username: string };
+        const playerKey = `player:${player.id}`;
+        const opponentKey = await this.redis.lpop(MATCHMAKING_QUEUE);
 
-            const [id1, id2] = [player.id, opponent.id].sort();
+        if (opponentKey) {
+            const opponentDataRaw = await this.redis.hget('matchmaking:players', opponentKey);
+            if (!opponentDataRaw) {
+                socket.emit('error', 'Opponent data not found');
+                return null;
+            }
+
+            const opponentData = JSON.parse(opponentDataRaw) as { id: number; socketId: string; username: string };
+
+            const [id1, id2] = [player.id, opponentData.id].sort();
             const roomId = `match-${id1}-${id2}-${Date.now()}`;
-            await this.saveGameRoom(roomId, socket.id, opponent.socketId);
+
+            await this.saveGameRoom(roomId, socket.id, opponentData.socketId);
 
             socket.join(roomId);
-            const opponentSocket = this.findSocket(server, opponent.socketId);
+            const opponentSocket = await this.findSocket(server, opponentData.socketId);
             opponentSocket?.join(roomId);
 
-            socket.emit('match-found', { roomId, opponent: opponent.username });
+            socket.emit('match-found', { roomId, opponent: opponentData.username });
             opponentSocket?.emit('match-found', { roomId, opponent: player.username });
+
+            await this.redis.hdel('matchmaking:players', opponentKey); // Clean opponent metadata
             return roomId;
         }
 
-        await this.redis.rpush(MATCHMAKING_QUEUE, JSON.stringify({
+        // No match found, push current player to queue
+        await this.redis.rpush(MATCHMAKING_QUEUE, playerKey);
+        await this.redis.hset('matchmaking:players', playerKey, JSON.stringify({
             id: player.id,
             socketId: socket.id,
             username: player.username,
@@ -70,16 +83,11 @@ export class GameService {
     }
 
     async removeFromQueue(socket: Socket) {
-        const entries = await this.redis.lrange(MATCHMAKING_QUEUE, 0, -1);
-        const updated = entries.filter((entry) => {
-            const parsed = JSON.parse(entry);
-            return parsed.socketId !== socket.id;
-        });
+        const playerKey = `player:${socket.data.player?.id}`;
+        if (!playerKey) return;
 
-        await this.redis.del(MATCHMAKING_QUEUE);
-        if (updated.length > 0) {
-            await this.redis.rpush(MATCHMAKING_QUEUE, ...updated);
-        }
+        await this.redis.lrem(MATCHMAKING_QUEUE, 0, playerKey);
+        await this.redis.hdel('matchmaking:players', playerKey);
     }
 
     async addSpectator(socket: Socket, roomId: string) {
