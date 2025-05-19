@@ -139,8 +139,6 @@ export class GameService {
         if (isFriend) return true;
 
         // Fallback to DB
-        // #TODO Create function
-        // return this.playerService.areFriends(playerId, targetId);
-        return false; // Remove this line :D
+        return this.playerService.areFriends(playerId, targetId);
     }
 }

@@ -377,6 +377,22 @@ export class PlayerService {
     }
 
     /**
+     * Checks if two players are friends.
+     * @param {number} id The first player's ID.
+     * @param {number} id2 The second player's ID.
+     * @returns {Promise<boolean>} True if they are friends, false otherwise.
+     */
+    async areFriends(id: number, id2: number): Promise<boolean> {
+        const friendship = await this.friendshipRepository.findOne({
+            where: [
+                { senderId: id, receiverId: id2, status: FriendshipStatus.ACCEPTED },
+                { senderId: id2, receiverId: id, status: FriendshipStatus.ACCEPTED },
+            ],
+        });
+        return !!friendship;
+    }
+
+    /**
      * Retrieves an existing friendship between two players.
      * @param {number} playerId The ID of the first player.
      * @param {number} friendId The ID of the second player.
