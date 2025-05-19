@@ -63,6 +63,30 @@
                         </datalist>
                     </div>
 
+                    <!-- Tera Type -->
+                    <div class="form-group mb-2">
+                        <label for="teraType{{$index}}">Tera Type</label>
+                        <select class="form-select" [formControl]="pokemonForms[$index].controls.teraType"
+                            id="teraType{{$index}}">
+                            <option value="">Selecciona Tera Type</option>
+                            @for (type of teraTypes(); track type) {
+                            <option [value]="type">{{type}}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Nature -->
+                    <div class="form-group mb-2">
+                        <label for="nature{{$index}}">Naturaleza</label>
+                        <select class="form-select" [formControl]="pokemonForms[$index].controls.nature"
+                            id="nature{{$index}}">
+                            <option value="">Selecciona Naturaleza</option>
+                            @for (nature of natures(); track nature) {
+                            <option [value]="nature">{{nature}}</option>
+                            }
+                        </select>
+                    </div>
+
                     <!-- Movimientos -->
                     <div class="form-group mb-2">
                         <input class="form-control mb-1" type="text"

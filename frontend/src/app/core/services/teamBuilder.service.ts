@@ -36,27 +36,9 @@ export class TeamBuilderService {
         const id = species.id;
 
         const learnset = (await Dex.learnsets.get(id))?.learnset ?? {};        
-        
-        //TODO parse moves to pretty syntax
-
         const moves = Object.keys(learnset);
 
         return { abilities, moves };
     }
-
-    //   async getSpeciesData(name: string): Promise<{ abilities: string[]; moves: string[] }> {
-    //     const species = Dex.species.get(name);
-    //     if (!species) return { abilities: [], moves: [] };
-
-    //     const abilities = Object.values(species.abilities ?? {});
-    //     const id = species.id;
-
-    //     const learnset = (await Dex.learnsets.get(id))?.learnset ?? {};
-    //     const moves = Object.keys(learnset);;
-    //     console.log('Learnset:', moves);
-
-    //     return { abilities, moves };
-    // }
-
 
 }

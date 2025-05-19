@@ -22,9 +22,6 @@ export class BuildToolComponent {
   itemsList = signal<string[]>([]);
   movesList = signal<string[]>([]);
 
-  legalAbilities: string[][] = Array.from({ length: 6 }, () => []);
-  legalMoves: string[][] = Array.from({ length: 6 }, () => []);
-
   teraTypes = signal<string[]>([
     'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison',
     'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'
@@ -38,9 +35,8 @@ export class BuildToolComponent {
     'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky'
   ]);
 
-  MAX_TOTAL_EVS = 510;
-  MAX_EV_PER_STAT = 252;
-
+  legalAbilities: string[][] = Array.from({ length: 6 }, () => []);
+  legalMoves: string[][] = Array.from({ length: 6 }, () => []);
 
   teamName = new FormControl('', { nonNullable: true, validators: [Validators.required] });
   pokemonForms: FormGroup<{
@@ -48,15 +44,15 @@ export class BuildToolComponent {
     item: FormControl<string>;
     ability: FormControl<string>;
     teraType: FormControl<string>;
-    nature: FormControl<string>;
-    evs: FormGroup<{
-      hp: FormControl<number>;
-      atk: FormControl<number>;
-      def: FormControl<number>;
-      spa: FormControl<number>;
-      spd: FormControl<number>;
-      spe: FormControl<number>;
+    EVs: FormGroup<{
+      HP: FormControl<number>;
+      Atk: FormControl<number>;
+      Def: FormControl<number>;
+      SpA: FormControl<number>;
+      SpD: FormControl<number>;
+      Spe: FormControl<number>;
     }>;
+    nature: FormControl<string>;
     moves: FormGroup<{
       move1: FormControl<string>;
       move2: FormControl<string>;
@@ -81,15 +77,15 @@ export class BuildToolComponent {
         item: new FormControl('', { nonNullable: true }),
         ability: new FormControl('', { nonNullable: true }),
         teraType: new FormControl('', { nonNullable: true }),
-        nature: new FormControl('', { nonNullable: true }),
-        evs: new FormGroup({
-          hp: new FormControl(0, { nonNullable: true }),
-          atk: new FormControl(0, { nonNullable: true }),
-          def: new FormControl(0, { nonNullable: true }),
-          spa: new FormControl(0, { nonNullable: true }),
-          spd: new FormControl(0, { nonNullable: true }),
-          spe: new FormControl(0, { nonNullable: true }),
+        EVs: new FormGroup({
+          HP: new FormControl(1, { nonNullable: true }),
+          Atk: new FormControl(0, { nonNullable: true }),
+          Def: new FormControl(0, { nonNullable: true }),
+          SpA: new FormControl(0, { nonNullable: true }),
+          SpD: new FormControl(0, { nonNullable: true }),
+          Spe: new FormControl(0, { nonNullable: true })
         }),
+        nature: new FormControl('', { nonNullable: true }),
         moves: new FormGroup({
           move1: new FormControl('', { nonNullable: true }),
           move2: new FormControl('', { nonNullable: true }),
@@ -98,10 +94,20 @@ export class BuildToolComponent {
         })
       });
 
+      form.controls.name.valueChanges.subscribe(async (value) => {
+        const species = this.speciesList().find(s => s.toLowerCase() === value.toLowerCase());
+        if (species) {
+          const data = await this.tbService.getSpeciesData(species);
+          this.legalAbilities[index] = data.abilities;
+          this.legalMoves[index] = data.moves;
+        } else {
+          this.legalAbilities[index] = [];
+          this.legalMoves[index] = [];
+        }
+      });
+
       return form;
     });
-
-
   }
 
 
@@ -126,8 +132,15 @@ export class BuildToolComponent {
         item: f.get('item')?.value?.trim() ?? '',
         ability: f.get('ability')?.value?.trim() ?? '',
         teraType: f.get('teraType')?.value?.trim() ?? '',
+        EVs: {
+          HP: f.get('EVs.HP')?.value ?? 1,
+          Atk: f.get('EVs.Atk')?.value ?? 0,
+          Def: f.get('EVs.Def')?.value ?? 0,
+          SpA: f.get('EVs.SpA')?.value ?? 0,
+          SpD: f.get('EVs.SpD')?.value ?? 0,
+          Spe: f.get('EVs.Spe')?.value ?? 0
+        },
         nature: f.get('nature')?.value?.trim() ?? '',
-        evs: f.get('evs')?.value,
         moves: {
           move1: f.get('moves.move1')?.value?.trim() ?? '',
           move2: f.get('moves.move2')?.value?.trim() ?? '',
@@ -136,7 +149,7 @@ export class BuildToolComponent {
         }
       }))
       .filter(p =>
-        p.name && p.item && p.ability && p.teraType && p.nature && p.evs &&
+        p.name && p.item && p.ability &&
         p.moves.move1 && p.moves.move2 && p.moves.move3 && p.moves.move4
       );
 
@@ -145,13 +158,14 @@ export class BuildToolComponent {
       return;
     }
 
-    //TODO fix this.teamsService.parseTeam
     const parsed = this.teamsService.parseTeam(rawTeam);
     this.teamsService.postTeam(teamName, parsed).subscribe(() => {
-      console.log('Equipo guardado con éxito');
+      console.log('Equipo guardado correctamente');
+      this.teamName.reset();
+      this.pokemonForms.forEach(form => form.reset());
+      this.team.set(Array(6).fill(''));
     });
   }
-
 
 
 }
