@@ -91,9 +91,22 @@ export class GameService {
     }
 
     async addSpectator(socket: Socket, roomId: string) {
-        const gameRoomRaw = await this.redis.hget(`${GAME_ROOMS_PREFIX}active`, roomId);
-        if (!gameRoomRaw) {
+        const gameRoom = await this.getRoom(roomId);
+        if (!gameRoom) {
             socket.emit('error', 'Room not found');
+            return;
+        }
+
+        // Prevent self-spectating
+        const socketId = socket.id;
+        if (socketId === gameRoom.player1 || socketId === gameRoom.player2) {
+            socket.emit('error', 'You cannot spectate your own game');
+            return;
+        }
+
+        // Check if the player is already a spectator
+        if (gameRoom.spectators.includes(socketId)) {
+            socket.emit('error', 'You are already a spectator in this room');
             return;
         }
 
@@ -118,7 +131,7 @@ export class GameService {
     }
 
     private async saveGameRoom(roomId: string, socketId1: string, socketId2: string) {
-        const roomData = {
+        const roomData: GameRoom = {
             roomId,
             player1: socketId1,
             player2: socketId2,
@@ -140,5 +153,11 @@ export class GameService {
 
         // Fallback to DB
         return this.playerService.areFriends(playerId, targetId);
+    }
+
+    private async getRoom(roomId: string): Promise<GameRoom | null> {
+        const gameRoomRaw = await this.redis.hget(`${GAME_ROOMS_PREFIX}active`, roomId);
+        if (!gameRoomRaw) return null;
+        return JSON.parse(gameRoomRaw) as GameRoom;
     }
 }
