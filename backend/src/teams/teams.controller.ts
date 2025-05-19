@@ -21,7 +21,7 @@ export class TeamController {
         @Player() player: PlayerPrivate,
         @Body() createTeamDto: CreateTeamDto
     ): Promise<void> {
-        const { name, data, format = 'gen9ou', strict = true } = createTeamDto;
+        const { name, data, format = 'gen9ou', strict = false } = createTeamDto;
         this.teamService.create(player.id, name, data, format, strict);
     }
 

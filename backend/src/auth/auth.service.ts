@@ -174,6 +174,7 @@ export class AuthService {
         if (!token || typeof token !== 'string') {
             throw new Error('Missing or invalid token');
         }
+        console.log('Extracted token:', token);
         return token;
     }
 
