@@ -46,8 +46,8 @@ export class StatusService {
         await this.redis.hdel(SOCKET_TO_PLAYER, client.id);
         await this.redis.srem(`${PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
 
-        const remainingSockets = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
-        if (remainingSockets.length === 0) {
+        const remaining = await this.redis.scard(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
+        if (remaining === 0) {
             await this.redis.del(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
             await this.redis.srem(ONLINE_PLAYERS, playerId.toString());
             await this.broadcastOfflineStatusToFriends(playerId, server);

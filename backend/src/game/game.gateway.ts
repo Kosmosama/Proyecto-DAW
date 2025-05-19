@@ -1,14 +1,16 @@
 import { WebSocketGateway, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { GameService } from './game.service';
 import { AuthService } from 'src/auth/auth.service';
 import { ChallengeFriendDto } from './dto/challenge-friend.dto';
 import { JoinAsSpectatorDto } from './dto/join-as-spectator.dto';
+import { JwtWsGuard } from 'src/auth/guards/jwt-ws.guard';
 
+@UseGuards(JwtWsGuard)
 @WebSocketGateway({ namespace: 'game' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    private logger = new Logger('GameGateway');
+    private readonly logger = new Logger(GameGateway.name);
 
     @WebSocketServer()
     server: Server;
@@ -24,15 +26,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * @returns {Promise<void>} No return value.
      */
     async handleConnection(client: Socket) {
-        try {
-            const token = this.authService.extractToken(client);
-            const player = await this.authService.validateAccessToken(token);
-            client.data.player = player;
-            this.logger.log(`Client connected: ${player.username}#${player.tag}`);
-        } catch (err) {
-            this.logger.warn(`Unauthorized client tried to connect: ${client.id} ${err.message}`);
-            client.disconnect();
-        }
+        const player = client.data.player;
+        this.logger.log(`Client connected: ${player.username}#${player.tag}`);
     }
 
     /**
