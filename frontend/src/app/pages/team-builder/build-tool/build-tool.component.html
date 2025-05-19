@@ -4,29 +4,114 @@
         <div class="card-body">
             <h2 class="card-title text-danger text-center mb-4">Crear equipo</h2>
 
-            @for (pokemon of team(); track $index) {
-            <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Pokémon </strong>
-                    <button class="btn btn-outline-danger" type="button" (click)="toggleForm($index)">
-                        Añadir Pokémon
-                    </button>
-                </div>
+            <div class="form-group mb-4">
+                <label for="teamName" class="form-label">Nombre del equipo</label>
+                <input type="text" class="form-control" id="teamName" [formControl]="teamName"
+                    placeholder="Nombre del equipo" />
 
-                @if (isFormVisible($index)) {
-                <div class="form-group">
-                    <input type="text" class="form-control" [formControl]="pokemonForms[$index].controls.name"
-                        placeholder="Nombre del Pokémon" />
+                @for (pokemon of team(); track $index) {
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>Pokémon {{ $index + 1 }}</strong>
+                        <button class="btn btn-outline-danger" type="button" (click)="toggleForm($index)">
+                            Añadir Pokémon
+                        </button>
+                    </div>
+
+                    @if (isFormVisible($index)) {
+                    <div class="form-group">
+                        <input type="text" class="form-control" [formControl]="pokemonForms[$index].controls.name"
+                            [attr.list]="'speciesList' + $index" placeholder="Nombre del Pokémon" />
+                        <datalist [id]="'speciesList' + $index">
+                            @for (name of speciesList(); track name) {
+                            <option [value]="name"></option>
+                            }
+                        </datalist>
+
+                        @if (pokemonForms[$index].controls.name.invalid && pokemonForms[$index].controls.name.touched) {
+                        <div class="text-danger">
+                            @if (pokemonForms[$index].controls.name.errors?.['invalidPokemon']) {
+                            Pokémon no válido.
+                            }
+                        </div>
+                        }
+
+                    </div>
+
+                    <!-- Solo mostrar si es válido -->
+                    @if (pokemonForms[$index].controls.name.valid) {
+
+                    <!-- Objeto -->
+                    <div class="form-group mb-2">
+                        <input class="form-control" type="text" [formControl]="pokemonForms[$index].controls.item"
+                            placeholder="Objeto" [attr.list]="'items' + $index" />
+                        <datalist [id]="'items' + $index">
+                            @for (item of itemsList(); track item) {
+                            <option [value]="item"></option>
+                            }
+                        </datalist>
+                    </div>
+
+                    <!-- Habilidad -->
+                    <div class="form-group mb-2">
+                        <input class="form-control" type="text" [formControl]="pokemonForms[$index].controls.ability"
+                            placeholder="Habilidad" [attr.list]="'abilities' + $index" />
+                        <datalist [id]="'abilities' + $index">
+                            @for (ability of legalAbilities[$index]; track ability) {
+                            <option [value]="ability"></option>
+                            }
+                        </datalist>
+                    </div>
+
+                    <!-- Movimientos -->
+                    <div class="form-group mb-2">
+                        <input class="form-control mb-1" type="text"
+                            [formControl]="pokemonForms[$index].controls.moves.controls.move1"
+                            placeholder="Movimiento 1" [attr.list]="'moves' + $index + '-1'" />
+                        <datalist [id]="'moves' + $index + '-1'">
+                            @for (move of legalMoves[$index]; track move) {
+                            <option [value]="move"></option>
+                            }
+                        </datalist>
+
+                        <input class="form-control mb-1" type="text"
+                            [formControl]="pokemonForms[$index].controls.moves.controls.move2"
+                            placeholder="Movimiento 2" [attr.list]="'moves' + $index + '-2'" />
+                        <datalist [id]="'moves' + $index + '-2'">
+                            @for (move of legalMoves[$index]; track move) {
+                            <option [value]="move"></option>
+                            }
+                        </datalist>
+
+                        <input class="form-control mb-1" type="text"
+                            [formControl]="pokemonForms[$index].controls.moves.controls.move3"
+                            placeholder="Movimiento 3" [attr.list]="'moves' + $index + '-3'" />
+                        <datalist [id]="'moves' + $index + '-3'">
+                            @for (move of legalMoves[$index]; track move) {
+                            <option [value]="move"></option>
+                            }
+                        </datalist>
+
+                        <input class="form-control mb-1" type="text"
+                            [formControl]="pokemonForms[$index].controls.moves.controls.move4"
+                            placeholder="Movimiento 4" [attr.list]="'moves' + $index + '-4'" />
+                        <datalist [id]="'moves' + $index + '-4'">
+                            @for (move of legalMoves[$index]; track move) {
+                            <option [value]="move"></option>
+                            }
+                        </datalist>
+                    </div>
+
+                    }
+                    }
                 </div>
                 }
+
             </div>
-            }
-
         </div>
+
+        <button class="btn btn-danger btn-lg px-5 mt-3" (click)="saveTeam()">
+            Guardar equipo
+        </button>
+
     </div>
-
-    <button class="btn btn-danger btn-lg px-5 mt-3" (click)="saveTeam()">
-        Guardar equipo
-    </button>
-
-</div>
