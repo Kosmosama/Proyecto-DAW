@@ -50,7 +50,10 @@ export class PlayerService {
         const friendships = await this.friendshipRepository.find({
             where: [
                 { senderId: playerId, status: FriendshipStatus.ACCEPTED },
-                { receiverId: playerId, status: FriendshipStatus.ACCEPTED }
+                { receiverId: playerId, status: FriendshipStatus.ACCEPTED },
+
+                { senderId: playerId, status: FriendshipStatus.PENDING },
+                { receiverId: playerId, status: FriendshipStatus.PENDING }
             ]
         });
 
