@@ -2,6 +2,8 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { Team } from '../../core/interfaces/team.model';
 import { TeamsService } from '../../core/services/teams.service';
+import { PokemonData } from '../../core/interfaces/pokemon.model';
+import { TeamBuilderService } from '../../core/services/teamBuilder.service';
 
 @Component({
   selector: 'team-builder',
@@ -12,21 +14,30 @@ import { TeamsService } from '../../core/services/teams.service';
 export class TeamBuilderComponent {
 
   private teamService = inject(TeamsService);
+  private teamBuilderService = inject(TeamBuilderService);
 
   playerTeams = signal<Team[]>([]);
   selectedTeam = signal<Team | null>(null);
 
   constructor() {
-
   }
-
 
   loadTeams() {
     this.teamService.getTeams().subscribe((response) => {
-      this.playerTeams.set(response.data);
-      console.log('Player Teams:', this.playerTeams());
+      const parsedTeams = response.data.map((team: any) => ({
+        ...team,
+        data: typeof team.data === 'string'
+          ? JSON.parse(team.data) as PokemonData[]
+          : team.data
+      }));
+
+      this.playerTeams.set(parsedTeams);
     });
 
+  }
+
+  getSpriteUrl(species: string): string {
+    return this.teamBuilderService.getPokemonSprite(species);
   }
 
 }

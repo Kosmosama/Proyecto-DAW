@@ -3,19 +3,22 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TeamBuilderService } from '../../../core/services/teamBuilder.service';
 import { pokemonNameValidator } from '../../../shared/validators/pokemon-builder.validator';
 import { TeamsService } from '../../../core/services/teams.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'build-tool',
   imports: [ReactiveFormsModule],
   templateUrl: './build-tool.component.html',
-  styles: ``
+  styleUrls: ['./build-tool.component.scss'],
 })
 export class BuildToolComponent {
 
   private tbService = inject(TeamBuilderService);
   private teamsService = inject(TeamsService);
+  private router = inject(Router);
 
   team = signal<string[]>(Array(6).fill(''));
+  pokemonSprites: string[] = [];
 
   speciesList = signal<string[]>([]);
   abilitiesList = signal<string[]>([]);
@@ -61,7 +64,6 @@ export class BuildToolComponent {
     }>;
   }>[] = [];
 
-
   constructor() {
     this.speciesList.set(this.tbService.getSpecies());
     this.abilitiesList.set(this.tbService.getAbilities());
@@ -98,6 +100,8 @@ export class BuildToolComponent {
         const species = this.speciesList().find(s => s.toLowerCase() === value.toLowerCase());
         if (species) {
           const data = await this.tbService.getSpeciesData(species);
+          const sprite = this.tbService.getPokemonSprite(species);
+          this.pokemonSprites[index] = sprite;
           this.legalAbilities[index] = data.abilities;
           this.legalMoves[index] = data.moves;
         } else {
@@ -109,9 +113,6 @@ export class BuildToolComponent {
       return form;
     });
   }
-
-
-
 
   visibleForms: boolean[] = Array(6).fill(false);
 
@@ -164,8 +165,8 @@ export class BuildToolComponent {
       this.teamName.reset();
       this.pokemonForms.forEach(form => form.reset());
       this.team.set(Array(6).fill(''));
+      // this.router.navigate(['/team-builder']);
     });
   }
-
 
 }

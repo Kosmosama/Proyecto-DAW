@@ -28,6 +28,7 @@
     "@ng-bootstrap/ng-bootstrap": "^18.0.0",
     "@pkmn/data": "^0.9.35",
     "@pkmn/dex": "^0.9.35",
+    "@pkmn/img": "^0.2.39",
     "@pkmn/sets": "^5.1.2",
     "@popperjs/core": "^2.11.8",
     "@smogon/calc": "^0.10.0",

@@ -1,0 +1,39 @@
+.pokemon-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.pokemon-card {
+    background-color: #f8f9fa;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    flex: 1 1 calc(50% - 0.5rem);
+
+}
+
+.pokemon-sprite {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pokemon-sprite img {
+  width: 100%;
+  height: auto;
+}
+
+
+.move-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+
+@media (max-width: 768px) {
+    .pokemon-card {
+        flex: 1 1 100%;
+    }
+}

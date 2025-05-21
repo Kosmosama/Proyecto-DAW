@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Dex } from '@pkmn/dex';
-import { Learnsets } from '@pkmn/data';
-
+import { Sprites } from '@pkmn/img';
 
 @Injectable({
     providedIn: 'root'
@@ -28,6 +27,13 @@ export class TeamBuilderService {
         return Dex.moves.all().map(move => move.name);
     }
 
+
+    getPokemonSprite(name: string, shiny = false): string {
+        const { url, w, h, pixelated } = Sprites.getPokemon(name.toLowerCase(), { gen: 'ani', shiny });
+        return url;
+    }
+
+
     async getSpeciesData(name: string): Promise<{ abilities: string[]; moves: string[] }> {
         const species = Dex.species.get(name);
         if (!species) return { abilities: [], moves: [] };
@@ -35,7 +41,7 @@ export class TeamBuilderService {
         const abilities = Object.values(species.abilities ?? {});
         const id = species.id;
 
-        const learnset = (await Dex.learnsets.get(id))?.learnset ?? {};        
+        const learnset = (await Dex.learnsets.get(id))?.learnset ?? {};
         const moves = Object.keys(learnset);
 
         return { abilities, moves };
