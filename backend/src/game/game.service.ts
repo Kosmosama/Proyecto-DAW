@@ -7,16 +7,32 @@ import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { GAME_ROOMS_PREFIX, MATCHMAKING_QUEUE, PLAYER_FRIENDS_PREFIX, PLAYER_SOCKETS_PREFIX } from 'src/config/redis.constants';
 import { Server } from 'socket.io';
+import { TeamService } from 'src/teams/teams.service';
 
 @Injectable()
 export class GameService {
     constructor(
         private readonly playerService: PlayerService,
+        private readonly teamService: TeamService,
         @InjectRedis() private readonly redis: Redis
     ) { }
 
-    async matchPlayer(server: Server, socket: Socket, player: PlayerPrivate): Promise<string | null> {
+    async matchPlayer(server: Server, socket: Socket, player: PlayerPrivate, teamId: number): Promise<string | null> {
         const playerKey = `player:${player.id}`;
+
+        const team = await this.teamService.findOne(player.id, teamId);
+        if (!team) {
+            socket.emit('error', 'Invalid team selection');
+            return null;
+        }
+
+        const selfData: MatchmakingEntry = {
+            id: player.id,
+            username: player.username,
+            socketId: socket.id,
+            teamId: teamId,
+        };
+
         const opponentKey = await this.redis.lpop(MATCHMAKING_QUEUE);
 
         if (opponentKey) {
@@ -26,16 +42,22 @@ export class GameService {
                 return null;
             }
 
-            const opponentData = JSON.parse(opponentDataRaw) as { id: number; socketId: string; username: string };
+            const opponentData = JSON.parse(opponentDataRaw) as MatchmakingEntry;
 
             const [id1, id2] = [player.id, opponentData.id].sort();
             const roomId = `match-${id1}-${id2}-${Date.now()}`;
 
-            await this.saveGameRoom(roomId, socket.id, opponentData.socketId);
+            await this.saveGameRoom(roomId, selfData, opponentData);
 
             socket.join(roomId);
             const opponentSocket = await this.findSocket(server, opponentData.socketId);
-            opponentSocket?.join(roomId);
+            
+            if (!opponentSocket) {
+                socket.emit('error', 'Opponent is not online');
+                return null;
+            } else {
+                opponentSocket.join(roomId);
+            }
 
             socket.emit('match-found', { roomId, opponent: opponentData.username });
             opponentSocket?.emit('match-found', { roomId, opponent: player.username });
@@ -46,41 +68,38 @@ export class GameService {
 
         // No match found, push current player to queue
         await this.redis.rpush(MATCHMAKING_QUEUE, playerKey);
-        await this.redis.hset('matchmaking:players', playerKey, JSON.stringify({
-            id: player.id,
-            socketId: socket.id,
-            username: player.username,
-        }));
+        await this.redis.hset('matchmaking:players', playerKey, JSON.stringify(selfData));
 
         socket.emit('waiting-for-match');
         return null;
     }
 
-    async challengeFriend(server: Server, socket: Socket, targetId: number, challenger: PlayerPrivate): Promise<string | null> {
-        const isFriend = await this.areFriends(challenger.id, targetId);
-        if (!isFriend) {
-            socket.emit('error', 'Target user is not your friend');
-            return null;
-        }
+    // #TODO Friend has to accept the challenge, this shouldnt be done straightforwardly
+    // async challengeFriend(server: Server, socket: Socket, targetId: number, challenger: PlayerPrivate): Promise<string | null> {
+    //     const isFriend = await this.areFriends(challenger.id, targetId);
+    //     if (!isFriend) {
+    //         socket.emit('error', 'Target user is not your friend');
+    //         return null;
+    //     }
 
-        const targetSocketId = await this.getFirstSocketId(targetId);
-        if (!targetSocketId) {
-            socket.emit('error', 'Target user is not online');
-            return null;
-        }
+    //     const targetSocketId = await this.getFirstSocketId(targetId);
+    //     if (!targetSocketId) {
+    //         socket.emit('error', 'Target user is not online');
+    //         return null;
+    //     }
 
-        const roomId = `challenge-${challenger.id}-${targetId}-${Date.now()}`;
-        await this.saveGameRoom(roomId, socket.id, targetSocketId);
+    //     const roomId = `challenge-${challenger.id}-${targetId}-${Date.now()}`;
+    //     await this.saveGameRoom(roomId, socket.id, targetSocketId);
 
-        socket.join(roomId);
-        const targetSocket = this.findSocket(server, targetSocketId);
-        targetSocket?.join(roomId);
+    //     socket.join(roomId);
+    //     const targetSocket = this.findSocket(server, targetSocketId);
+    //     targetSocket?.join(roomId);
 
-        socket.emit('match-found', { roomId, opponentId: targetId });
-        targetSocket?.emit('match-found', { roomId, opponentId: challenger.id });
+    //     socket.emit('match-found', { roomId, opponentId: targetId });
+    //     targetSocket?.emit('match-found', { roomId, opponentId: challenger.id });
 
-        return roomId;
-    }
+    //     return roomId;
+    // }
 
     async removeFromQueue(socket: Socket) {
         const playerKey = `player:${socket.data.player?.id}`;
@@ -90,10 +109,22 @@ export class GameService {
         await this.redis.hdel('matchmaking:players', playerKey);
     }
 
-    async addSpectator(socket: Socket, roomId: string) {
-        const gameRoomRaw = await this.redis.hget(`${GAME_ROOMS_PREFIX}active`, roomId);
-        if (!gameRoomRaw) {
+    async addSpectator(socket: Socket, roomId: string, player: PlayerPrivate) {
+        const gameRoom = await this.getRoom(roomId);
+        if (!gameRoom) {
             socket.emit('error', 'Room not found');
+            return;
+        }
+
+        // Prevent self-spectating
+        if (player.id === gameRoom.player1.id || player.id === gameRoom.player2.id) {
+            socket.emit('error', 'You cannot spectate your own game');
+            return;
+        }
+
+        // Check if the player is already a spectator
+        if (gameRoom.spectators.some(spectator => spectator.id === player.id)) {
+            socket.emit('error', 'You are already a spectator in this room');
             return;
         }
 
@@ -117,11 +148,11 @@ export class GameService {
         return server.sockets.sockets.get(socketId) ?? null;
     }
 
-    private async saveGameRoom(roomId: string, socketId1: string, socketId2: string) {
-        const roomData = {
+    private async saveGameRoom(roomId: string, player1Data: MatchmakingEntry, player2Data: MatchmakingEntry) {
+        const roomData: GameRoom = {
             roomId,
-            player1: socketId1,
-            player2: socketId2,
+            player1: player1Data,
+            player2: player2Data,
             spectators: [],
         };
 
@@ -139,8 +170,12 @@ export class GameService {
         if (isFriend) return true;
 
         // Fallback to DB
-        // #TODO Create function
-        // return this.playerService.areFriends(playerId, targetId);
-        return false; // Remove this line :D
+        return this.playerService.areFriends(playerId, targetId);
+    }
+
+    private async getRoom(roomId: string): Promise<GameRoom | null> {
+        const gameRoomRaw = await this.redis.hget(`${GAME_ROOMS_PREFIX}active`, roomId);
+        if (!gameRoomRaw) return null;
+        return JSON.parse(gameRoomRaw) as GameRoom;
     }
 }

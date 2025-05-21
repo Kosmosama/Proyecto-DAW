@@ -1,21 +1,22 @@
-import { WebSocketGateway, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket, WebSocketServer } from '@nestjs/websockets';
+import { Logger, UseGuards } from '@nestjs/common';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
-import { GameService } from './game.service';
-import { AuthService } from 'src/auth/auth.service';
+import { JwtWsGuard } from 'src/auth/guards/jwt-ws.guard';
 import { ChallengeFriendDto } from './dto/challenge-friend.dto';
 import { JoinAsSpectatorDto } from './dto/join-as-spectator.dto';
+import { JoinMatchDto } from './dto/join-match.dto';
+import { GameService } from './game.service';
 
+@UseGuards(JwtWsGuard)
 @WebSocketGateway({ namespace: 'game' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    private logger = new Logger('GameGateway');
+    private readonly logger = new Logger(GameGateway.name);
 
     @WebSocketServer()
     server: Server;
 
     constructor(
-        private readonly gameService: GameService,
-        private readonly authService: AuthService,
+        private readonly gameService: GameService
     ) { }
 
     /**
@@ -24,15 +25,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * @returns {Promise<void>} No return value.
      */
     async handleConnection(client: Socket) {
-        try {
-            const token = this.authService.extractToken(client);
-            const player = await this.authService.validateAccessToken(token);
-            client.data.player = player;
-            this.logger.log(`Client connected: ${player.username}#${player.tag}`);
-        } catch (err) {
-            this.logger.warn(`Unauthorized client tried to connect: ${client.id} ${err.message}`);
-            client.disconnect();
-        }
+        const player = client.data.player;
+        this.logger.log(`Client connected: ${player.username}#${player.tag}`);
     }
 
     /**
@@ -51,9 +45,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * @returns {Promise<void>} No return value.
      */
     @SubscribeMessage('join-matchmaking')
-    async handleJoinMatchmaking(@ConnectedSocket() client: Socket) {
-        const player = client.data.player;
-        const room = await this.gameService.matchPlayer(this.server, client, player);
+    async handleJoinMatchmaking(
+        @MessageBody() dto: JoinMatchDto,
+        @ConnectedSocket() client: Socket,
+    ) {
+        const player = client.data.player; // Create decorator @Player() player: PlayerPrivate
+
+        const room = await this.gameService.matchPlayer(this.server, client, player, dto.teamId);
         if (room) {
             this.logger.log(`Match started in room: ${room}`);
         }
@@ -75,17 +73,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * @param {number} targetId The ID of the target player.
      * @returns {Promise<void>} No return value.
      */
-    @SubscribeMessage('challenge-friend')
-    async handleChallengeFriend(
-        @MessageBody() data: ChallengeFriendDto,
-        @ConnectedSocket() client: Socket,
-    ) {
-        const challenger = client.data.player;
-        const room = await this.gameService.challengeFriend(this.server, client, data.targetId, challenger);
-        if (room) {
-            this.logger.log(`Challenge started in room: ${room}`);
-        }
-    }
+    // @SubscribeMessage('challenge-friend')
+    // async handleChallengeFriend(
+    //     @MessageBody() data: ChallengeFriendDto,
+    //     @ConnectedSocket() client: Socket,
+    // ) {
+    //     const challenger = client.data.player;
+    //     const room = await this.gameService.challengeFriend(this.server, client, data.targetId, challenger);
+    //     if (room) {
+    //         this.logger.log(`Challenge started in room: ${room}`);
+    //     }
+    // }
 
     /**
      * Handles a request to join a room as a spectator.
@@ -98,7 +96,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @MessageBody() data: JoinAsSpectatorDto,
         @ConnectedSocket() client: Socket,
     ) {
-        this.gameService.addSpectator(client, data.room);
+        const player = client.data.player;
+
+        this.gameService.addSpectator(client, data.room, player);
         this.logger.log(`Spectator joined room: ${data.room}`);
     }
 

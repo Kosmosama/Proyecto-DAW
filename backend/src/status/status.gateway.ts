@@ -1,9 +1,11 @@
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { StatusService } from './status.service';
+import { JwtWsGuard } from 'src/auth/guards/jwt-ws.guard';
 
+@UseGuards(JwtWsGuard)
 @WebSocketGateway({ namespace: 'status' })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly logger = new Logger(StatusGateway.name);
@@ -21,17 +23,9 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * Authenticates the player, associates the socket, and registers them as online.
      */
     async handleConnection(client: Socket) {
-        try {
-            const token = this.authService.extractToken(client);
-            const player = await this.authService.validateAccessToken(token);
-            client.data.player = player;
-
-            this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
-            await this.statusService.registerConnection(client, player.id, this.server);
-        } catch (err) {
-            this.logger.warn(`Unauthorized connection: ${client.id} - ${err.message}`);
-            client.disconnect();
-        }
+        const player = client.data.player;
+        this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
+        await this.statusService.registerConnection(client, player.id, this.server);
     }
 
     /**
