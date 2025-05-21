@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { FriendRequest } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 
@@ -8,21 +8,24 @@ import { PlayerService } from '../../../core/services/player.service';
   styleUrls: ['./friend-requests.component.scss']
 })
 export class FriendRequestsComponent {
+
   incomingRequests = input.required<FriendRequest[]>();
   outgoingRequests = input.required<FriendRequest[]>();
-  refreshIncomingRequests = input<() => void>();
-  refreshOutgoingRequests = input<() => void>();
+
+  refresh = output<void>();
+
   private playerService = inject(PlayerService);
 
 
   acceptRequest(id: number) {
     this.playerService.acceptFriendRequest(id).subscribe({
       next: () => {
-        this.refreshIncomingRequests();
-        this.refreshOutgoingRequests();
+        console.log('Request accepted successfully');
+        this.refresh.emit();
+
       },
       error: (err) => {
-        console.error('Error accepting request:');
+        console.error('Error accepting request: ', err);
       }
     });
   }
@@ -30,11 +33,11 @@ export class FriendRequestsComponent {
   declineRequest(id: number) {
     this.playerService.declineFriendRequest(id).subscribe({
       next: () => {
-        this.refreshIncomingRequests();
-        this.refreshOutgoingRequests();
+        console.log('Request declined successfully');
+        this.refresh.emit();
       },
       error: (err) => {
-        console.error('Error declining request:');
+        console.error('Error declining request: ', err);
       }
     });
   }

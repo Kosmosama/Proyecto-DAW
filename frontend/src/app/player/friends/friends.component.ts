@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FriendRequestsResponse } from '../../core/interfaces/player.model';
 import { PlayerService } from '../../core/services/player.service';
 import { FriendListComponent } from "../../shared/components/friend-list/friend-list.component";
@@ -13,24 +13,21 @@ import { Player } from "../../core/interfaces/player.model";
   styleUrl: './friends.component.scss',
 })
 export class FriendsComponent {
+
+  private playerService = inject(PlayerService);
+
   incomingRequests = signal<FriendRequestsResponse>({ data: [] });
   outgoingRequests = signal<FriendRequestsResponse>({ data: [] });
 
+  friendList = viewChild(FriendListComponent);
+
   incomingRequestsData = computed(() => this.incomingRequests().data);
   outgoingRequestsData = computed(() => this.outgoingRequests().data);
-  private playerService = inject(PlayerService);
-  test = signal<Player | null>(null);
+
+
   constructor() {
-    this.playerService.getProfile().subscribe({
-      next: (response) => {
-        this.test.set(response);
-      },
-      error: (error) => {
-        console.error('Error fetching player profile:');
-      },
-    });
-    this.fetchIncomingRequests();
-    this.fetchOutgoingRequests();
+    this.onRequestUpdate();
+
   }
 
   fetchIncomingRequests() {
@@ -55,4 +52,11 @@ export class FriendsComponent {
       }
     });
   }
+
+  onRequestUpdate() {
+    this.fetchIncomingRequests();
+    this.fetchOutgoingRequests();
+    this.friendList()?.loadFriends();
+  }
+
 }

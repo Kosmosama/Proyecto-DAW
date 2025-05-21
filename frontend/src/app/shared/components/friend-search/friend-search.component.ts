@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, effect, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -28,6 +28,8 @@ export class FriendSearchComponent implements OnInit {
   visiblePlayers = signal<Player[]>([]);
   excludeIds = signal<number[]>([]);
 
+  refresh = output<void>();
+
   private destroyRef = inject(DestroyRef);
   private playerService = inject(PlayerService);
 
@@ -54,6 +56,8 @@ export class FriendSearchComponent implements OnInit {
         this.excludeIds.set(excludeIds);
       }
     });
+
+    this.loadPlayers();
   }
 
   ngOnInit(): void {
@@ -107,6 +111,7 @@ export class FriendSearchComponent implements OnInit {
           console.log('Solicitud enviada con éxito a: ', player.username);
           this.loadFriends();
           this.loadPlayers();
+          this.refresh.emit();
         },
         error: (error) => {
           console.error('Error al enviar solicitud de amistad:');
