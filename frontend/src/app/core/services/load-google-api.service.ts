@@ -28,7 +28,7 @@ export class LoadGoogleApiService {
     await this.#loader; 
     google.accounts.id.renderButton(
       btn,
-      { theme: 'outline', size: 'large', type: 'standard', shape: 'pill', width: 120 }
+      { theme: 'outline', size: 'large', type: 'standard', shape: 'rectangular' }
     );
   }
 

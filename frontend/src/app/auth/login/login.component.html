@@ -1,9 +1,7 @@
-<div class="d-flex justify-content-center align-items-center vh-100"
-  style="background: url('images/backgrounds/login_bg.jpg') no-repeat center center; background-size: cover; position: relative;">
-  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.15);">
-  </div>
-  <div class="card shadow-lg"
-    style="width: 30rem; background-color: white; border-radius: 1rem; position: relative; z-index: 1;">
+<div class="login-wrapper">
+  <div class="background-overlay"></div>
+
+  <div class="card login-card">
     <div class="card-body">
       <h2 class="card-title text-center text-danger mb-4">Login and begin the showDAW!</h2>
 
@@ -18,8 +16,14 @@
       <form action="#" role="form" method="POST" [formGroup]="loginForm" (ngSubmit)="login()">
         <div class="mb-3">
           <label for="email" class="form-label">Email:</label>
-          <input type="email" class="form-control" id="email" formControlName="email" placeholder="Email"
-            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            formControlName="email"
+            placeholder="Email"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }"
+          />
           @let emailErrors = loginForm.get('email')?.errors;
           @if(emailErrors?.['required']) {
           <div class="invalid-feedback">Email cannot be empty</div>
@@ -30,8 +34,14 @@
 
         <div class="mb-3">
           <label for="password" class="form-label">Password:</label>
-          <input type="password" class="form-control" id="password" formControlName="password" placeholder="Password"
-            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            formControlName="password"
+            placeholder="Password"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }"
+          />
           @let pwErrors = loginForm.get('password')?.errors;
           @if(pwErrors?.['required']) {
           <div class="invalid-feedback">Password cannot be empty</div>
@@ -40,14 +50,32 @@
           }
         </div>
 
-        <div class="d-flex justify-content-between">
-          <button type="submit" class="btn btn-danger" [disabled]="loginForm.invalid">Login</button>
-          <google-login class="btn" (login)="loggedGoogle()"></google-login>
-          <button type="button" class="btn btn-outline-danger" (click)="loggedGithub()">GitHub login</button>
-
-          <button type="button" class="btn btn-outline-danger">
-            <a href="auth/register" class="text-decoration-none text-danger">Create an account</a>
+        <div class="d-grid mb-3">
+          <button type="submit" class="btn btn-danger" [disabled]="loginForm.invalid">
+            Login
           </button>
+        </div>
+
+        <div class="text-center my-3 text-muted">or login with</div>
+
+        <div class="d-flex justify-content-center gap-3 mb-4 flex-wrap">
+          <google-login class="btn btn-outline-secondary" (login)="loggedGoogle()">
+          </google-login>
+
+          <button
+            type="button"
+            class="btn btn-dark d-flex align-items-center gap-2"
+            (click)="loggedGithub()"
+          >
+            <i class="bi bi-github"></i>
+            GitHub
+          </button>
+        </div>
+
+        <div class="text-center">
+          <a href="auth/register" class="btn btn-link text-decoration-none text-danger">
+            Don't have an account? Create one
+          </a>
         </div>
       </form>
     </div>

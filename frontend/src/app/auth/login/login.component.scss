@@ -1,0 +1,42 @@
+@mixin d-flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.google-login,
+.btn-google {
+    background-color: white;
+    border: 1px solid #ccc;
+    color: #333;
+
+    &:hover {
+        background-color: #f7f7f7;
+    }
+}
+
+.login-wrapper {
+    @include d-flex-center;
+    height: 100vh;
+    background: url('/images/backgrounds/login_bg.jpg') no-repeat center center;
+    background-size: cover;
+    position: relative;
+}
+
+.background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.login-card {
+    width: 30rem;
+    background-color: white;
+    border-radius: 1rem;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
