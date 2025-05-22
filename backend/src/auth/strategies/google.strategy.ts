@@ -15,7 +15,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET'),
             callbackURL: configService.get<string>('GOOGLE_CALLBACK_URL'),
             scope: ['profile', 'email'],
+            prompt: 'select_account'
         });
+    }
+
+     authorizationParams(): Record<string, string> {
+        return {
+            prompt: 'select_account'
+        };
     }
 
     async validate(accessToken: string, refreshToken: string, profile: any, done: VerifyCallback) {

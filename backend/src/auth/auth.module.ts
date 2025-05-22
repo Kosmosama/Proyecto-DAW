@@ -9,6 +9,8 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
+import { JwtWsGuard } from './guards/jwt-ws.guard';
+import { IsEmailUniqueConstraint } from './validators/is-email-unique.validator';
 
 @Module({
     imports: [
@@ -22,7 +24,7 @@ import { RefreshJwtStrategy } from './strategies/refresh.strategy';
             }),
         }),
     ],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, LocalStrategy, RefreshJwtStrategy],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, LocalStrategy, RefreshJwtStrategy, JwtWsGuard, IsEmailUniqueConstraint],
     controllers: [AuthController],
     exports: [AuthService, JwtModule],
 })
