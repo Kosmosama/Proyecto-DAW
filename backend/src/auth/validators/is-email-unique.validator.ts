@@ -8,7 +8,7 @@ export class IsEmailUniqueConstraint implements ValidatorConstraintInterface {
     constructor(private readonly playerService: PlayerService) { }
 
     async validate(email: string, args: ValidationArguments): Promise<boolean> {
-        const exists = await this.playerService.userExistsBy({ username: email });
+        const exists = await this.playerService.userExistsBy({ email: email });
         return !exists;
     }
 
