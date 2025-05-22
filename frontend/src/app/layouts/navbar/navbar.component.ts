@@ -6,8 +6,7 @@ import { PlayerService } from '../../core/services/player.service';
 
 @Component({
   selector: 'navbar',
-  imports: [],
-  providers: [RouterLink],
+  imports: [RouterLink],
   templateUrl: './navbar.component.html',
   styles: ``
 })

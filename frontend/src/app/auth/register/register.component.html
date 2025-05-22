@@ -74,7 +74,7 @@
         <img src="" alt="Preview" id="imgPreview" class="img-thumbnail d-none mb-3" />
 
         <div class="d-flex justify-content-between">
-          <a class="btn btn-secondary" href="login.html" role="button">Go back</a>
+          <a [routerLink]="['/auth/login']" routerLinkActive="router-link-active"  class="btn btn-secondary" role="button">Return to login</a>
           <button type="submit" class="btn btn-danger" [disabled]="registerForm.invalid">Create account</button>
         </div>
       </form>

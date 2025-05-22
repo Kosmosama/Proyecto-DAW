@@ -22,11 +22,12 @@ import { ValidationClassesDirective } from '../../shared/directives/validation-c
     FormsModule,
     ReactiveFormsModule,
     ValidationClassesDirective,
-    GoogleLoginDirective,
+    // GoogleLoginDirective,
+    RouterLink
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
-  providers: [RouterLink, ReactiveFormsModule, LoadGoogleApiService],
+  providers: [ReactiveFormsModule, LoadGoogleApiService],
 })
 export class LoginComponent implements CanComponentDeactivate {
   private router = inject(Router);

@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #ffffff;">
     <div class="container-fluid">
-        <a class="navbar-brand mx-auto" href="#" style="color: #d32f2f;">Pokémon Battle</a>
+        <a class="navbar-brand mx-auto" style="color: #d32f2f;">Pokémon Battle</a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -10,7 +10,8 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="/player/profile" style="color: #d32f2f;">
+                    <a class="nav-link" [routerLink]="['/player/profile']" routerLinkActive="router-link-active"
+                        style="color: #d32f2f;">
                         <!-- {{ playerProfile()?.username }} -->
 
                     </a>
@@ -21,6 +22,6 @@
                 </li>
             </ul>
         </div>
-    <!-- } -->
+        <!-- } -->
     </div>
 </nav>

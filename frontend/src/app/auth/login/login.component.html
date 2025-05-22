@@ -16,14 +16,8 @@
       <form action="#" role="form" method="POST" [formGroup]="loginForm" (ngSubmit)="login()">
         <div class="mb-3">
           <label for="email" class="form-label">Email:</label>
-          <input
-            type="email"
-            class="form-control"
-            id="email"
-            formControlName="email"
-            placeholder="Email"
-            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }"
-          />
+          <input type="email" class="form-control" id="email" formControlName="email" placeholder="Email"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
           @let emailErrors = loginForm.get('email')?.errors;
           @if(emailErrors?.['required']) {
           <div class="invalid-feedback">Email cannot be empty</div>
@@ -34,14 +28,8 @@
 
         <div class="mb-3">
           <label for="password" class="form-label">Password:</label>
-          <input
-            type="password"
-            class="form-control"
-            id="password"
-            formControlName="password"
-            placeholder="Password"
-            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }"
-          />
+          <input type="password" class="form-control" id="password" formControlName="password" placeholder="Password"
+            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
           @let pwErrors = loginForm.get('password')?.errors;
           @if(pwErrors?.['required']) {
           <div class="invalid-feedback">Password cannot be empty</div>
@@ -59,21 +47,22 @@
         <div class="text-center my-3 text-muted">or login with</div>
 
         <div class="d-flex justify-content-center gap-3 mb-4 flex-wrap">
-          <google-login class="btn btn-outline-secondary" (login)="loggedGoogle()">
-          </google-login>
+          <button type="button" class="btn btn-outline-secondary d-flex align-items-center gap-2"
+            (click)="loggedGoogle()">
+            <i class="bi bi-google"></i>
 
-          <button
-            type="button"
-            class="btn btn-dark d-flex align-items-center gap-2"
-            (click)="loggedGithub()"
-          >
+            Google
+          </button>
+
+
+          <button type="button" class="btn btn-dark d-flex align-items-center gap-2" (click)="loggedGithub()">
             <i class="bi bi-github"></i>
             GitHub
           </button>
         </div>
 
         <div class="text-center">
-          <a href="auth/register" class="btn btn-link text-decoration-none text-danger">
+          <a [routerLink]="['/auth/register']" class="btn btn-link text-decoration-none text-danger">
             Don't have an account? Create one
           </a>
         </div>
