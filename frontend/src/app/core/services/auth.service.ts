@@ -1,11 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, map, Observable, of, tap } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginResponse } from '../interfaces/auth.model';
 import { Player, PlayerLogin, PlayerResponse } from '../interfaces/player.model';
-import { StatusSocketService } from './statusSocket.service';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -27,26 +26,8 @@ export class AuthService {
     private refreshToken: string | null = null;
 
     constructor() {
-        if (typeof window !== 'undefined') {
-            this.accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-            this.refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-        }
-    }
-
-    /**
-     * Returns authorization headers.
-     */
-    getAuthHeaders() {
-        if (!this.accessToken) throw new Error('No access token found');
-        return { Authorization: `Bearer ${this.accessToken}` };
-    }
-
-    /**
-     * Returns the access token.
-     */
-    getAuth(): string {
-        if (!this.accessToken) throw new Error('No access token found');
-        return this.accessToken;
+        this.accessToken = localStorage.getItem('accessToken');
+        this.refreshToken = localStorage.getItem('refreshToken');
     }
 
     /**
@@ -103,7 +84,7 @@ export class AuthService {
     private validateToken(): Observable<boolean> {
         if (!this.accessToken) return of(false);
 
-        return this.http.get('auth/validate', { headers: this.getAuthHeaders() }).pipe(
+        return this.http.get('auth/validate', { headers: { Authorization: `Bearer ${this.accessToken}` } }).pipe(
             map(() => {
                 this.#logged.set(true);
                 return true;
@@ -129,6 +110,10 @@ export class AuthService {
      */
     logout(): void {
         this.clearAuth();
+        if (typeof google !== 'undefined' && google.accounts.id){
+            google.accounts.id.disableAutoSelect();
+        }
+
         this.router.navigate(['/auth/login']);
     }
 

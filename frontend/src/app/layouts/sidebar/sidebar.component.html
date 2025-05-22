@@ -4,11 +4,12 @@
     <div class="bg-dark text-white" [class.sidebar-visible]="isSidebarVisible()" id="sidebar">
         <!-- Title -->
         <div class="text-center py-3">
-            <img src="/images/icons/sidebarIcon.png" alt="Sidebar Icon" class="sidebar-icon"> <h2>ShowDAW</h2>
+            <img src="/images/icons/sidebarIcon.png" alt="Sidebar Icon" class="sidebar-icon">
+            <h2>ShowDAW</h2>
         </div>
         <ul class="list-unstyled">
             @for (item of sidebarItems; track $index) {
-            <a href="{{ item.link }}" class="text-white list-item-link">
+            <a [routerLink]="[item.link]" routerLinkActive="router-link-active" class="text-white list-item-link">
                 <li class="py-3 px-4">
                     <i class="{{ item.icon }}"></i> {{ item.label }}
                 </li>

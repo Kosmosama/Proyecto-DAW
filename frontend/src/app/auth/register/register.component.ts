@@ -6,7 +6,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
 import { AuthService } from '../../core/services/auth.service';
@@ -25,6 +25,7 @@ import { Player } from '../../core/interfaces/player.model';
     EncodeBase64Directive,
     ReactiveFormsModule,
     ValidationClassesDirective,
+    RouterLink
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
@@ -46,7 +47,7 @@ export class RegisterComponent implements CanComponentDeactivate {
       email: ['', [Validators.required, Validators.email]],
       email2: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(4)]],
-      avatar: [''],
+      avatar: [],
     },
     { validators: matchEmail('email', 'email2') }
   );
@@ -55,14 +56,15 @@ export class RegisterComponent implements CanComponentDeactivate {
 
   addPlayer() {
     const rawValue = this.registerForm.getRawValue();
-  
+
     const player: Player = {
       username: rawValue.name,
       email: rawValue.email,
       password: rawValue.password,
-      photo: this.imageBase64 || ''
+      // Only add photo if imageBase64 is not empty
+      ...(this.imageBase64 && { photo: this.imageBase64 })
     };
-  
+
     this.authService
       .register(player)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -72,7 +74,7 @@ export class RegisterComponent implements CanComponentDeactivate {
           const modalRef = this.modal.open(CatModalComponent);
           modalRef.componentInstance.message = 'Registration successful!';
           modalRef.componentInstance.catImageUrl = 'https://http.cat/200';
-  
+
           modalRef.result.then(
             () => this.router.navigate(['auth/login']),
           );
@@ -86,6 +88,7 @@ export class RegisterComponent implements CanComponentDeactivate {
         }
       });
   }
+
   handleAvatarChange(base64Image: string) {
     this.imageBase64 = base64Image;
     const img = document.getElementById('imgPreview') as HTMLImageElement;
