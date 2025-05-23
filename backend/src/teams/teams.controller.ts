@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Player } from 'src/player/decorators/player.decorator';
+import { Player } from 'src/auth/decorators/player.decorator';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { TeamService } from './teams.service';

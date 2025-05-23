@@ -178,6 +178,30 @@ export class AuthService {
         return token;
     }
 
+    async authenticateClient(client: Socket): Promise<PlayerPrivate> {
+        const token = client.handshake.headers.authorization?.split(' ')[1];
+        if (!token) throw new Error('No token provided');
+
+        const payload = this.verifyJwt(token);
+        return this.validatePayload(payload);
+    }
+
+    verifyJwt(token: string): JwtPayload {
+        try {
+            return this.jwtService.verify<JwtPayload>(token);
+        } catch {
+            throw new Error('Invalid token');
+        }
+    }
+
+    async validatePayload(payload: JwtPayload): Promise<PlayerPrivate> {
+        const player = await this.playerService.findOnePrivate(payload.id);
+        if (!player) {
+            throw new Error('Player not found');
+        }
+        return player;
+    }
+
     /**
      * Generates JWT tokens for a player.
      * @param {number} playerId The player's ID.

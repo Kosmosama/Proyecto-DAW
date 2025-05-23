@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards, } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Player } from './decorators/player.decorator';
+import { Player } from '../auth/decorators/player.decorator';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { PlayerPublic } from './interfaces/player-public.interface';
 import { Friend } from './interfaces/friend.interface';

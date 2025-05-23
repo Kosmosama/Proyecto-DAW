@@ -1,8 +1,8 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { PlayerPublic } from '../interfaces/player-public.interface';
+import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 
 export const Player = createParamDecorator(
-    (data: unknown, ctx: ExecutionContext): PlayerPublic => {
+    (data: unknown, ctx: ExecutionContext): PlayerPrivate => {
         const request = ctx.switchToHttp().getRequest();
         return request.user;
     },

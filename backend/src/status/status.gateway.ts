@@ -4,8 +4,9 @@ import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { StatusService } from './status.service';
 import { JwtWsGuard } from 'src/auth/guards/jwt-ws.guard';
+import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
+import { PlayerWs } from 'src/auth/decorators/player-ws.decorator';
 
-@UseGuards(JwtWsGuard)
 @WebSocketGateway({ namespace: 'status' })
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly logger = new Logger(StatusGateway.name);
@@ -22,11 +23,20 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * Handles a new WebSocket connection.
      * Authenticates the player, associates the socket, and registers them as online.
      */
-    async handleConnection(client: Socket) {
-        const player = client.data.player;
-        console.log(player);
-        this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
-        await this.statusService.registerConnection(client, player.id, this.server);
+    @UseGuards(JwtWsGuard)
+    async handleConnection(
+        client: Socket,
+        @PlayerWs() player: PlayerPrivate,
+    ) {
+        try {
+            const player = await this.authService.authenticateClient(client);
+
+            this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
+            await this.statusService.registerConnection(client, player.id, this.server);
+        } catch (err) {
+            this.logger.warn(`Unauthorized socket connection: ${err.message}`);
+            client.disconnect();
+        }
     }
 
     /**
