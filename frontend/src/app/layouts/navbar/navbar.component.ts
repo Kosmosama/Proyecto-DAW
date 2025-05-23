@@ -8,24 +8,24 @@ import { PlayerService } from '../../core/services/player.service';
   selector: 'navbar',
   imports: [RouterLink],
   templateUrl: './navbar.component.html',
-  styles: ``
+  styleUrl: 'navbar.component.scss'
 })
 export class NavbarComponent {
 
   private authService = inject(AuthService);
-  // private playerService = inject(PlayerService);
+  private playerService = inject(PlayerService);
 
   playerProfile = signal<Player | null>(null);
 
   constructor() {
-    // this.playerService.getProfile().subscribe({
-    //   next: (response) => {
-    //     this.playerProfile.set(response);
-    //   },
-    //   error: (error) => {
-    //     console.error('Error fetching player profile:', error);
-    //   },
-    // });
+    this.playerService.getProfile().subscribe({
+      next: (response) => {
+        this.playerProfile.set(response);
+      },
+      error: (error) => {
+        console.error('Error fetching player profile:', error);
+      },
+    });
   }
 
   logout() {

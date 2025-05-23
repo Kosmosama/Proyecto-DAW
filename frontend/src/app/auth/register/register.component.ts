@@ -9,20 +9,18 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
-import { AuthService } from '../../core/services/auth.service';
-import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
-import { CatModalComponent } from '../../shared/components/modals/cat-modal/cat-modal.component'; // Importa CatModalComponent
-import { EncodeBase64Directive } from '../../shared/directives/encode-base64.directive';
-import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
-import { matchEmail } from '../../shared/validators/match-email.validator';
 import { Player } from '../../core/interfaces/player.model';
+import { AuthService } from '../../core/services/auth.service';
+import { CatModalComponent } from '../../shared/components/modals/cat-modal/cat-modal.component'; // Importa CatModalComponent
+import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
+import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
+import { matchPassword } from '../../shared/validators/match-password.validator';
 
 @Component({
   standalone: true,
   selector: 'register',
   imports: [
     FormsModule,
-    EncodeBase64Directive,
     ReactiveFormsModule,
     ValidationClassesDirective,
     RouterLink
@@ -31,13 +29,19 @@ import { Player } from '../../core/interfaces/player.model';
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent implements CanComponentDeactivate {
+
   private fb = inject(NonNullableFormBuilder);
   private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
   private modal = inject(NgbModal);
+
   private saved = false;
-  imageBase64 = '';
+
+  availableAvatars = signal<string[]>([]);
+  selectedAvatar = signal<string | null>(null);
+
+  currentStep = signal<1 | 2>(1);
 
   errors = signal<number>(0);
 
@@ -45,24 +49,38 @@ export class RegisterComponent implements CanComponentDeactivate {
     {
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      email2: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(4)]],
+      password2: ['', [Validators.required, Validators.minLength(4)]],
       avatar: [],
     },
-    { validators: matchEmail('email', 'email2') }
+    { validators: matchPassword('password', 'password2') }
   );
 
-  constructor() { }
+  constructor() {
+    fetch('/images/avatars/avatar-list.json')
+      .then(res => res.json())
+      .then((avatars: string[]) => {
+        this.availableAvatars.set(avatars.map(name => name.replace('.jpg', '.jpg')));
+      });
+  }
 
   addPlayer() {
+    if (this.currentStep() === 1) {
+      if (this.registerForm.valid) {
+        this.currentStep.set(2);
+      } else {
+        this.registerForm.markAllAsTouched();
+      }
+      return;
+    }
+
     const rawValue = this.registerForm.getRawValue();
 
     const player: Player = {
       username: rawValue.name,
       email: rawValue.email,
       password: rawValue.password,
-      // Only add photo if imageBase64 is not empty
-      ...(this.imageBase64 && { photo: this.imageBase64 })
+      photo: this.selectedAvatar() ?? ''
     };
 
     this.authService
@@ -71,31 +89,18 @@ export class RegisterComponent implements CanComponentDeactivate {
       .subscribe({
         next: () => {
           this.saved = true;
-          const modalRef = this.modal.open(CatModalComponent);
-          modalRef.componentInstance.message = 'Registration successful!';
-          modalRef.componentInstance.catImageUrl = 'https://http.cat/200';
-
-          modalRef.result.then(
-            () => this.router.navigate(['auth/login']),
-          );
+          this.router.navigate(['auth/login']);
         },
         error: (error) => {
           this.errors.set(error.status);
           window.scrollTo(0, 0);
-          const modalRef = this.modal.open(CatModalComponent);
-          modalRef.componentInstance.message = `Error ${error.status}: ${error.message}`;
-          modalRef.componentInstance.catImageUrl = `https://http.cat/${error.status}`;
         }
       });
   }
 
-  handleAvatarChange(base64Image: string) {
-    this.imageBase64 = base64Image;
-    const img = document.getElementById('imgPreview') as HTMLImageElement;
-    if (img) {
-      img.src = base64Image;
-      img.classList.remove('d-none');
-    }
+
+  selectAvatar(filename: string) {
+    this.selectedAvatar.set(filename);
   }
 
   canDeactivate() {

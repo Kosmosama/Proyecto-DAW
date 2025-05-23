@@ -1,4 +1,5 @@
-<div class="d-flex justify-content-center align-items-center vh-100" style="background: url('/images/backgrounds/register_bg.jpg') no-repeat center center; background-size: cover;">
+<div class="d-flex justify-content-center align-items-center vh-100"
+  style="background: url('/images/backgrounds/register_bg.jpg') no-repeat center center; background-size: cover;">
   <div class="card shadow-lg" style="width: 35rem; background-color: white; border-radius: 1rem;">
     <div class="card-body">
       <h2 class="card-title text-center text-danger mb-4">Create your account</h2>
@@ -6,6 +7,9 @@
       @if(errors() === 400) {
       <div class="alert alert-danger">Email is already registered</div>
       }
+
+      @if(currentStep() === 1) {
+
 
       <form class="mt-4" method="POST" [formGroup]="registerForm" (ngSubmit)="addPlayer()">
         <div class="mb-3">
@@ -32,23 +36,6 @@
         </div>
 
         <div class="mb-3">
-          <label for="email2">Repeat Email:</label>
-          <input type="email" class="form-control" id="email2" formControlName="email2" placeholder="Repeat Email"
-            [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
-          @let email2Errors = registerForm.get('email2')?.errors;
-          @if (email2Errors?.['required']) {
-          <div class="invalid-feedback">Email cannot be empty</div>
-          }
-          @if (email2Errors?.['email']) {
-          <div class="invalid-feedback">Must be email type</div>
-          }
-        </div>
-
-        @if (registerForm.errors?.['matchEmail']) {
-        <div class="invalid-feedback">Emails must match!</div>
-        }
-
-        <div class="mb-3">
           <label for="password">Password:</label>
           <input type="password" class="form-control" id="password" formControlName="password" placeholder="Password"
             [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
@@ -62,22 +49,52 @@
         </div>
 
         <div class="mb-3">
-          <label for="avatar">Avatar image:</label>
-          <input type="file" class="form-control" id="avatar" encodeBase64 formControlName="avatar"
-            (encoded)="handleAvatarChange($event)" [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
-          @let avatarErrors = registerForm.get('avatar')?.errors;
-          @if (avatarErrors?.['required']) {
-          <div class="invalid-feedback">Avatar cannot be empty</div>
+          <label for="password2">Repeat Password:</label>
+          <input type="password" class="form-control" id="password2" formControlName="password2"
+            placeholder="Repeat Password" [validationClasses]="{ valid: 'is-valid', invalid: 'is-invalid' }" />
+          @let pw2Errors = registerForm.get('password2')?.errors;
+          @if (pw2Errors?.['required']) {
+          <div class="invalid-feedback">Password cannot be empty</div>
+          }
+          @if (pw2Errors?.['minlength']) {
+          <div class="invalid-feedback">Must be at least 4 characters long</div>
+          }
+          @if (pw2Errors?.['passwordsNotMatching']) {
+          <div class="invalid-feedback d-block">Passwords must match!</div>
           }
         </div>
 
-        <img src="" alt="Preview" id="imgPreview" class="img-thumbnail d-none mb-3" />
+        <button type="button" (click)="addPlayer()" class="btn btn-danger">Next</button>
 
-        <div class="d-flex justify-content-between">
-          <a [routerLink]="['/auth/login']" routerLinkActive="router-link-active"  class="btn btn-secondary" role="button">Return to login</a>
-          <button type="submit" class="btn btn-danger" [disabled]="registerForm.invalid">Create account</button>
+        <div class="text-center m-0">
+          <a [routerLink]="['/auth/login']" routerLinkActive="router-link-active"
+            class="btn btn-link text-decoration-none" role="button">Return to login</a>
         </div>
       </form>
+      }
+      @if(currentStep() === 2) {
+
+      <div class="mb-3">
+        <label>Choose your avatar:</label>
+        <div class="row mt-2">
+          @for (avatar of availableAvatars(); track $index) {
+          <div class="col-3 d-flex justify-content-center mb-3 avatar-option">
+            <img [src]="'/images/avatars/' + avatar" class="img-thumbnail avatar-option"
+              [class.border-primary]="selectedAvatar() === avatar" (click)="selectAvatar(avatar)" [alt]="avatar" />
+          </div>
+          }
+        </div>
+        @if (!selectedAvatar()) {
+        <div class="text-danger mt-2">You must select an avatar</div>
+        }
+      </div>
+
+
+      <div class="d-flex justify-content-between">
+        <button (click)="currentStep.set(1)" class="btn btn-sm btn-secondary me-2" style="background-color: #e0e0e0; color: #333;">Go back</button>
+        <button (click)="addPlayer()" class="btn" [disabled]="registerForm.invalid">Create account</button>
+      </div>
+      }
     </div>
   </div>
 </div>
