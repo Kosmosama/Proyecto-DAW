@@ -13,7 +13,7 @@
       <div class="alert alert-danger">Wrong email!</div>
       }
 
-      <form action="#" role="form" method="POST" [formGroup]="loginForm" (ngSubmit)="login()">
+      <form [formGroup]="loginForm" (ngSubmit)="login()">
         <div class="mb-3">
           <label for="email" class="form-label">Email:</label>
           <input type="email" class="form-control" id="email" formControlName="email" placeholder="Email"
@@ -50,7 +50,6 @@
           <button type="button" class="btn btn-outline-secondary d-flex align-items-center gap-2"
             (click)="loggedGoogle()">
             <i class="bi bi-google"></i>
-
             Google
           </button>
 

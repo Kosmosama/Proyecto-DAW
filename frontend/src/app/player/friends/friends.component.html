@@ -1,16 +1,11 @@
 <div class="container">
   <div class="row">
-    <!-- First Column -->
     <div class="col-md-6">
       <app-friends-list></app-friends-list>
     </div>
-    <!-- Second Column -->
     <div class="col-md-6">
-      <app-friend-search
-      (refresh)="onRequestUpdate()"
-      ></app-friend-search>
-      <app-friend-requests [incomingRequests]="incomingRequestsData()"
-        [outgoingRequests]="outgoingRequestsData()"
+      <app-friend-search (refresh)="onRequestUpdate()"></app-friend-search>
+      <app-friend-requests [incomingRequests]="incomingRequestsData()" [outgoingRequests]="outgoingRequestsData()"
         (refresh)="onRequestUpdate()"></app-friend-requests>
     </div>
   </div>

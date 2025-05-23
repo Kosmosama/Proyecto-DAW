@@ -24,8 +24,10 @@ export class StatusSocketService implements OnDestroy {
         }
 
         this.socket = io(`${environment.apiUrl}/status`, {
-            auth: { token },
             transports: ['websocket'],
+            extraHeaders: {
+                Authorization: `Bearer ${token}`,
+            },
         });
 
         this.socket.on('connect', () => {
@@ -48,6 +50,7 @@ export class StatusSocketService implements OnDestroy {
             console.log(`Friend ${id} went offline`);
         });
     }
+
 
     public disconnect(): void {
         if (this.socket) {

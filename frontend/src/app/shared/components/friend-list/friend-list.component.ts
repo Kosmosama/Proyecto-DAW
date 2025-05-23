@@ -2,12 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Player, PlayersResponse } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-friends-list',
   templateUrl: './friend-list.component.html',
   styleUrls: ['./friend-list.component.scss'],
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   standalone: true,
 })
 export class FriendListComponent implements OnInit {

@@ -12,12 +12,11 @@ export class LoadGoogleApiService {
 
   constructor() {
     if (this.#clientId === null) {
-      // Error al desarrollador cuando no ha inyectado la id de Google
       throw new Error(
         'LoadGoogleApiService: You must call provideGoogleId in your providers array'
       );
     }
-    this.#loader = this.#loadApi(); // Empezamos a cargar la librería
+    this.#loader = this.#loadApi();
   }
 
   get credential$() {

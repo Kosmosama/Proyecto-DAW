@@ -11,6 +11,7 @@ import { PlayerService } from './player.service';
 import { FriendRequest } from './interfaces/friend-request.interface';
 import { PlayerPrivate } from './interfaces/player-private.interface';
 
+
 @ApiTags('player')
 @Controller('player')
 export class PlayerController {

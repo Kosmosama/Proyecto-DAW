@@ -11,7 +11,7 @@ import { StatusSocketService } from '../../core/services/statusSocket.service';
 export class HomeComponent {
 
   player = signal<Player | null>(null);
-  // private socketService = inject(StatusSocketService);
+  private socketService = inject(StatusSocketService);
   ngOnInit(): void {
 
   }

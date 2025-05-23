@@ -1,33 +1,32 @@
 <div class="friends-card container">
     <div class="card text-center">
         <div class="card-header">
-            <h2>Lista de Amigos</h2>
+            <h2>Friend list</h2>
         </div>
         <div class="card-body">
             <div class="friends-list">
                 @if (loading()) {
-                Cargando amigos...
+                loading friends
                 }
                 @if (!loading()) {
                 @for (friend of friends(); track $index) {
-                <div class="friend-card d-flex justify-content-between align-items-center mb-3 border p-3 rounded">
+                <div class="friend-card d-flex justify-content-between align-items-center border p-1 rounded mb-1"
+                    [routerLink]="[`/player/profile/${friend.id}`]" style="cursor: pointer;">
                     <div class="friend-info">
-                        <h5 class="friend-name">{{ friend.username }}</h5>
+                        <h5 class="friend-name mb-0" style="font-size: 1rem;">{{ friend.username }}</h5>
                         <span class="friend-status"
                             [ngClass]="{'text-success': friend.online, 'text-danger': !friend.online}">
-                            {{ friend.online ? 'En línea' : 'Última vez: ' + friend.lastLogin }}
-
-
+                            {{ friend.online ? 'Online' : 'Last login: ' + friend.lastLogin }}
                         </span>
                     </div>
                     @if(friend.photo) {
                     <div class="friend-photo">
-                        <img [src]="friend.photo" alt="{{ friend.username }}'s photo" class="img-fluid rounded-circle"
-                            style="width: 40px; height: 40px; object-fit: cover;" />
+                        <img [src]="'/images/avatars/' + friend.photo" alt="{{ friend.username }}'s photo"
+                            class="img-fluid rounded-circle friend-avatar" />
                     </div>
                     }
-
                 </div>
+
                 }
                 }
             </div>

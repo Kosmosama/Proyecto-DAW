@@ -1,16 +1,12 @@
-import { inject, Injectable } from '@angular/core';
-import { Resolve } from '@angular/router';
-import { Observable } from 'rxjs';
-import { Player } from '../interfaces/player.model';
+import { ResolveFn } from '@angular/router';
 import { PlayerService } from '../services/player.service';
+import { Player } from '../interfaces/player.model';
+import { inject } from '@angular/core';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ProfileResolver implements Resolve<Player> {
-  private playerService = inject(PlayerService);
-
-  resolve(): Observable<Player> {
-    return this.playerService.getProfile();
+export const profileResolver: ResolveFn<Player> = (route) => {
+  const playerService = inject(PlayerService);
+  if (route.params['id']) {
+    return playerService.getProfile(+route.params['id']);
   }
-}
+  return playerService.getProfile();
+};

@@ -1,19 +1,19 @@
 <div class="friend-search container">
     <div class="card">
         <div class="card-header">
-            <h2>Buscar Amigos</h2>
+            <h2>Search players</h2>
             <input type="text" class="form-control" placeholder="Buscar por nombre" [(ngModel)]="searchValue" />
 
         </div>
         <div class="card-body">
             @if (allPlayers().length === 0 && searchTerm() == "") {
             <div>
-                <p>Comienza a buscar amigos!</p>
+                <p>Start searching rivals!</p>
             </div>
             }
             @if (allPlayers().length === 0 && searchTerm() !== "") {
             <div>
-                <p>No se han encontrado jugadores...</p>
+                <p>No player found with given criteria.</p>
             </div>
             }
 
@@ -21,7 +21,7 @@
                 @for (player of visiblePlayers(); track $index) {
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <span>{{ player.username }}</span>
-                    <button class="btn btn-primary btn-sm" (click)="addFriend(player)">Agregar</button>
+                    <button class="btn btn-primary btn-sm" (click)="addFriend(player)">Add friend</button>
                 </li>
                 }
             </ul>
@@ -30,11 +30,11 @@
             <div class="pagination">
                 <button class="btn btn-secondary btn-sm" (click)="changePage(currentPage() - 1)"
                     [disabled]="currentPage() === 1">
-                    Anterior
+                    Next
                 </button>
                 <button class="btn btn-secondary btn-sm" (click)="changePage(currentPage() + 1)"
                     [disabled]="currentPage() * 9 >= totalPlayers()">
-                    Siguiente
+                    Previous
                 </button>
             </div>
             }
