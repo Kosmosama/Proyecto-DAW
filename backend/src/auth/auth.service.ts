@@ -179,7 +179,9 @@ export class AuthService {
     }
 
     async authenticateClient(client: Socket): Promise<PlayerPrivate> {
-        const token = client.handshake.headers.authorization?.split(' ')[1];
+        // const token = client.handshake.headers.authorization?.split(' ')[1];
+        const token = client.handshake.auth.token?.replace('Bearer ', '');
+
         if (!token) throw new Error('No token provided');
 
         const payload = this.verifyJwt(token);
