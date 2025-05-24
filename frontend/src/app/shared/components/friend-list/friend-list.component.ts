@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
 import { Player, PlayersResponse } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 import { RouterLink } from '@angular/router';
+import { StatusSocketService } from '../../../core/services/statusSocket.service';
 
 @Component({
   selector: 'app-friends-list',
@@ -13,19 +14,40 @@ import { RouterLink } from '@angular/router';
 })
 export class FriendListComponent implements OnInit {
   friends = signal<Player[]>([]);
-  loading = signal<boolean>(true);
-  private playerService = inject(PlayerService);
+  onlineFriends = signal<number[]>([]);
 
-  constructor() { }
+  loading = signal<boolean>(true);
+
+  private playerService = inject(PlayerService);
+  private statusSocket = inject(StatusSocketService);
+  private currentPlayerId = signal<number | null>(null);
+
+  constructor() {
+    effect(() => {
+      this.onlineFriends.set(this.statusSocket.getOnlineFriends());
+    });
+  }
 
   ngOnInit(): void {
-    this.loadFriends();
+
+    this.playerService.getProfile().subscribe({
+      next: (player) => {
+        this.currentPlayerId.set(player.id!);
+        this.loadFriends();
+      },
+      error: () => {
+        this.loadFriends();
+      }
+    });
   }
 
   loadFriends(): void {
     this.playerService.getFriends().subscribe({
       next: (data) => {
-        this.friends.set(data);
+        const filtered = this.currentPlayerId
+          ? data.filter(friend => friend.id !== this.currentPlayerId())
+          : data;
+        this.friends.set(filtered);
         this.loading.set(false);
       },
       error: (error) => {
@@ -34,5 +56,18 @@ export class FriendListComponent implements OnInit {
       }
     });
   }
+
+  get friendsWithStatus(): Player[] {
+    const onlineIds = this.onlineFriends();
+    const sorted = [...this.friends()].map(friend => ({
+      ...friend,
+      online: onlineIds.includes(friend.id!),
+    }));
+
+    sorted.sort((a, b) => Number(b.online) - Number(a.online));
+
+    return sorted;
+  }
+
 
 }

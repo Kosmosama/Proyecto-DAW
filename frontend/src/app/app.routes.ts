@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './shared/components/layout/layout.component';
+import { loginActivateGuard } from './core/guards/login-activate.guard';
 
 export const routes: Routes = [
     {
@@ -15,11 +16,13 @@ export const routes: Routes = [
                 path: 'pages',
                 loadChildren: () =>
                     import('./pages/pages.routes').then((r) => r.pagesRoutes),
+                // canActivate: [loginActivateGuard]
             },
             {
                 path: 'player',
                 loadChildren: () =>
                     import('./player/player.routes').then((r) => r.playerRoutes),
+                // canActivate: [loginActivateGuard]
             },
             {
                 path: '',

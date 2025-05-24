@@ -4,7 +4,7 @@ import { AuthService } from '../services/auth.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-export const loginActivateGuard: CanActivateFn = (): Observable<
+export const logoutActivateGuard: CanActivateFn = (): Observable<
   boolean | UrlTree
 > => {
   const authService = inject(AuthService);

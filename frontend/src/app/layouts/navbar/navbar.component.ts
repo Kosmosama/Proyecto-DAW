@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Player } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { PlayerService } from '../../core/services/player.service';
+import { StatusSocketService } from '../../core/services/statusSocket.service';
 
 @Component({
   selector: 'navbar',
@@ -14,6 +15,7 @@ export class NavbarComponent {
 
   private authService = inject(AuthService);
   private playerService = inject(PlayerService);
+  private statusService = inject(StatusSocketService);
 
   playerProfile = signal<Player | null>(null);
 
@@ -29,6 +31,7 @@ export class NavbarComponent {
   }
 
   logout() {
+    this.statusService.disconnect();
     this.authService.logout()
   }
 }

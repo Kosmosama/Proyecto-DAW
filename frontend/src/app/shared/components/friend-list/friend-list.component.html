@@ -9,14 +9,18 @@
                 loading friends
                 }
                 @if (!loading()) {
-                @for (friend of friends(); track $index) {
+                @for (friend of friendsWithStatus; track $index) {
                 <div class="friend-card d-flex justify-content-between align-items-center border p-1 rounded mb-1"
-                    [routerLink]="[`/player/profile/${friend.id}`]" style="cursor: pointer;">
+                    [routerLink]="[`/player/profile/${friend.id}`]" style="cursor: pointer;"
+                    [attr.title]="!friend.online ? ('Last login: ' + (friend.lastLogin | date:'medium')) : null">
                     <div class="friend-info">
                         <h5 class="friend-name mb-0" style="font-size: 1rem;">{{ friend.username }}</h5>
                         <span class="friend-status"
-                            [ngClass]="{'text-success': friend.online, 'text-danger': !friend.online}">
-                            {{ friend.online ? 'Online' : 'Last login: ' + friend.lastLogin }}
+                            [ngClass]="{'text-success': friend.online, 'text-danger last-login-info': !friend.online}">
+                            {{ friend.online ? 'Online' : 'Offline ' }}
+                            @if (!friend.online) {
+                            <i class="bi bi-info-square"></i>
+                            }
                         </span>
                     </div>
                     @if(friend.photo) {

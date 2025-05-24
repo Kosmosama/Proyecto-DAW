@@ -14,6 +14,7 @@ import { LoadGoogleApiService } from '../../core/services/load-google-api.servic
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
 import { GoogleLoginDirective } from '../../shared/directives/google-login.directive';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
+import { StatusSocketService } from '../../core/services/statusSocket.service';
 
 @Component({
   standalone: true,
@@ -34,6 +35,7 @@ export class LoginComponent implements CanComponentDeactivate {
   private fb = inject(NonNullableFormBuilder);
   private authService = inject(AuthService);
   private modal = inject(NgbModal);
+  private statusService = inject(StatusSocketService);
 
   private saved = false;
   errors = signal<number>(0);
@@ -66,6 +68,7 @@ export class LoginComponent implements CanComponentDeactivate {
       .subscribe({
         next: () => {
           this.saved = true;
+          this.statusService.connect();
           this.router.navigate(['pages/home']);
         },
         error: (error) => {

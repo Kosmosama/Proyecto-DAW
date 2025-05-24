@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -6,28 +6,23 @@ import { AuthService } from './auth.service';
 @Injectable({
     providedIn: 'root',
 })
-export class StatusSocketService implements OnDestroy {
+export class StatusSocketService {
     private socket: Socket | null = null;
+    private authService = inject(AuthService);
+    private onlineFriendIds = signal<number[]>([]);
 
-    constructor(private authService: AuthService) {
+    constructor() {
         this.connect();
-        console.log('StatusSocketService initialized');
     }
 
-    private connect(): void {
+    connect(): void {
         if (this.socket?.connected) return;
 
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-            console.error('No access token found');
-            return;
-        }
 
         this.socket = io(`${environment.apiUrl}/status`, {
-            transports: ['websocket'],
-            extraHeaders: {
-                Authorization: `Bearer ${token}`,
-            },
+            auth: {
+                token: this.authService.getAccessToken(),
+            }
         });
 
         this.socket.on('connect', () => {
@@ -40,17 +35,29 @@ export class StatusSocketService implements OnDestroy {
 
         this.socket.on('friends:online', (data) => {
             console.log('Your online friends:', data);
+            this.onlineFriendIds.set(data);
         });
 
-        this.socket.on('friend:online', (id) => {
+        this.socket.on('friend:online', (id: number) => {
             console.log(`Friend ${id} came online`);
+            this.onlineFriendIds.update((friendIds: number[]) => [...friendIds, id]);
         });
 
         this.socket.on('friend:offline', (id) => {
             console.log(`Friend ${id} went offline`);
+            this.onlineFriendIds.update((friendIds: number[]) =>
+                friendIds.filter(i => i !== id)
+            )
         });
     }
 
+    // public listen<T = any>(event: string, callback: (data: T) => void): void {
+    //     this.socket?.on(event, callback);
+    // }
+
+    getOnlineFriends(): number[] {
+        return this.onlineFriendIds();
+    }
 
     public disconnect(): void {
         if (this.socket) {
@@ -60,7 +67,7 @@ export class StatusSocketService implements OnDestroy {
         }
     }
 
-    ngOnDestroy(): void {
-        this.disconnect();
-    }
+    // ngOnDestroy(): void {
+    //     this.disconnect();
+    // }
 }

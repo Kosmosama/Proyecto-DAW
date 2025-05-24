@@ -5,6 +5,7 @@ import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginResponse } from '../interfaces/auth.model';
 import { Player, PlayerLogin, PlayerResponse } from '../interfaces/player.model';
+import { StatusSocketService } from './statusSocket.service';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -28,6 +29,13 @@ export class AuthService {
     constructor() {
         this.accessToken = localStorage.getItem('accessToken');
         this.refreshToken = localStorage.getItem('refreshToken');
+    }
+
+    /**
+     * Returns the current access token.
+     */
+    getAccessToken(): string | null {
+        return this.accessToken;
     }
 
     /**
@@ -84,7 +92,7 @@ export class AuthService {
     private validateToken(): Observable<boolean> {
         if (!this.accessToken) return of(false);
 
-        return this.http.get('auth/validate', { headers: { Authorization: `Bearer ${this.accessToken}` } }).pipe(
+        return this.http.get('auth/refresh', { headers: { Authorization: `Bearer ${this.accessToken}` } }).pipe(
             map(() => {
                 this.#logged.set(true);
                 return true;
@@ -113,7 +121,6 @@ export class AuthService {
         if (typeof google !== 'undefined' && google.accounts.id){
             google.accounts.id.disableAutoSelect();
         }
-
         this.router.navigate(['/auth/login']);
     }
 

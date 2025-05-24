@@ -4,14 +4,15 @@
       <div class="d-flex align-items-center mb-3">
         <img [src]="'/images/avatars/' + playerProfile()!.photo" alt="Foto de perfil" class="rounded-circle me-3"
           width="60" height="60">
-        <h5 class="mb-0">{{ playerProfile()!.username }}#{{ playerProfile()!.tag }}</h5>
+        <h4 class="mb-0">{{ playerProfile()!.username }}#{{ playerProfile()!.tag }}</h4>
       </div>
+      <p class="text-muted"> {{playerProfile()!.email}}</p>
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0">Equipos</h5>
         </div>
         <div class="card-body">
-          <p class="text-muted">Este usuario aún no ha creado ningún equipo. {{playerProfile()!.email}}</p>
+          <p class="text-muted">Este usuario aún no ha creado ningún equipo.</p>
         </div>
       </div>
     </div>
