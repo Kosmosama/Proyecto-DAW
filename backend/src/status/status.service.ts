@@ -24,9 +24,12 @@ export class StatusService {
     async registerConnection(client: Socket, playerId: number, server: Server) {
         await this.redis.hset(SOCKET_TO_PLAYER, client.id, playerId.toString());
         await this.redis.sadd(`${PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
-        await this.redis.sadd(ONLINE_PLAYERS, playerId.toString());
 
-        await this.broadcastOnlineStatusToFriends(playerId, server);
+        const socketCount = await this.redis.scard(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
+        if (socketCount === 1) {
+            await this.redis.sadd(ONLINE_PLAYERS, playerId.toString());
+            await this.broadcastOnlineStatusToFriends(playerId, server);
+        }
     }
 
     /**
@@ -38,9 +41,10 @@ export class StatusService {
     async handleDisconnection(client: Socket, server: Server): Promise<number | null> {
         const playerIdStr = await this.redis.hget(SOCKET_TO_PLAYER, client.id);
         if (!playerIdStr) return null;
-        
+
         const playerId = parseInt(playerIdStr, 10);
-        this.logger.debug(`Broadcasting offline status for player ${playerId} to friends`);
+        this.logger.debug(`Handling disconnect for player ${playerId} with socket ${client.id}`);
+
         await this.playerService.updateLastLogin(playerId);
 
         await this.redis.hdel(SOCKET_TO_PLAYER, client.id);
@@ -51,6 +55,9 @@ export class StatusService {
             await this.redis.del(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
             await this.redis.srem(ONLINE_PLAYERS, playerId.toString());
             await this.broadcastOfflineStatusToFriends(playerId, server);
+            this.logger.debug(`Player ${playerId} is no longer online.`);
+        } else {
+            this.logger.debug(`Player ${playerId} still has ${remaining} active socket(s).`);
         }
 
         return playerId;
