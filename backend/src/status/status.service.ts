@@ -38,8 +38,9 @@ export class StatusService {
     async handleDisconnection(client: Socket, server: Server): Promise<number | null> {
         const playerIdStr = await this.redis.hget(SOCKET_TO_PLAYER, client.id);
         if (!playerIdStr) return null;
-
+        
         const playerId = parseInt(playerIdStr, 10);
+        this.logger.debug(`Broadcasting offline status for player ${playerId} to friends`);
         await this.playerService.updateLastLogin(playerId);
 
         await this.redis.hdel(SOCKET_TO_PLAYER, client.id);

@@ -7,7 +7,14 @@ import { JwtWsGuard } from 'src/auth/guards/jwt-ws.guard';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 import { PlayerWs } from 'src/auth/decorators/player-ws.decorator';
 
-@WebSocketGateway({ namespace: 'status' })
+@WebSocketGateway({
+    namespace: 'status',
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST'],
+        credentials: true,
+    },
+})
 export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly logger = new Logger(StatusGateway.name);
 
