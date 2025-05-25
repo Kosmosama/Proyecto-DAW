@@ -3,10 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Generation, Generations } from '@pkmn/data';
 import { Dex, PokemonSet } from '@pkmn/dex';
 import { Sets } from '@pkmn/sets';
+import { TeamValidator } from '@pkmn/sim';
 import { PlayerService } from 'src/player/player.service';
 import { Repository } from 'typeorm';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
 import { Team } from './entities/team.entity';
-import { TeamValidator } from '@pkmn/sim'
 
 @Injectable()
 export class TeamService {
@@ -18,58 +20,40 @@ export class TeamService {
         private readonly playerService: PlayerService,
     ) { }
 
-    async create(
-        playerId: number,
-        name: string,
-        data: string,
-        format: string = 'gen9ou',
-        strict: boolean = true
-    ): Promise<Team> {
+    async create(playerId: number, dto: CreateTeamDto): Promise<Team> {
         const player = await this.playerService.findOnePrivate(playerId);
         if (!player) throw new NotFoundException('Player not found');
 
-        const match = format.match(/gen(\d+)/);
-        const genNumber = match ? Number(match[1]) : 9;
-        const gen = this.gens.get(genNumber);
+        const { name, data } = dto;
+        const { team: rawData, format = 'gen9ou', strict = true } = data;
 
-        let parsedTeam: PokemonSet[] = [];
+        const parsedTeam = await this.validateAndParseTeam(rawData, format, strict);
 
-        try {
-            const sets = data.split('\n\n');
-
-            for (const set of sets) {
-                const parsedSet = Sets.importSet(set.trim());
-                console.log('Parsed set:', parsedSet);
-                if (!parsedSet || !parsedSet.species) {
-                    throw new BadRequestException('Invalid Pokémon set data');
-                }
-
-                parsedTeam.push(parsedSet as PokemonSet);
-            }
-        } catch (err) {
-            console.error('Error parsing test set:', err);
-            throw new BadRequestException('Failed to parse Showdown test set');
-        }
-
-        if (parsedTeam.length === 0 || parsedTeam.length > 6) {
-            throw new BadRequestException('Team must contain 1 to 6 Pokémon');
-        }
-
-        try {
-            await this.checkLegality(parsedTeam, gen, strict);
-        } catch (err) {
-            console.error('Legality check failed:', err);
-            throw new BadRequestException('Team legality check failed');
-        }
-
-        const team = this.teamRepository.create({
+        const newTeam = this.teamRepository.create({
             name,
             data: parsedTeam,
             format,
             player,
         });
 
-        return this.teamRepository.save(team);
+        return this.teamRepository.save(newTeam);
+    }
+
+    async update(playerId: number, teamId: number, dto: UpdateTeamDto): Promise<void> {
+        const team = await this.findOne(playerId, teamId);
+
+        if (dto.name) {
+            team.name = dto.name;
+        }
+
+        if (dto.data) {
+            const { team: rawData, format = 'gen9ou', strict = false } = dto.data;
+            const parsedTeam = await this.validateAndParseTeam(rawData, format, strict);
+            team.data = parsedTeam;
+            team.format = format;
+        }
+
+        await this.teamRepository.save(team);
     }
 
     async findAllByPlayer(playerId: number): Promise<Team[]> {
@@ -92,9 +76,10 @@ export class TeamService {
         if (!result.affected) throw new NotFoundException('Team not found or not owned by player');
     }
 
-    private toID(text: string): string {
-        return text.toLowerCase().replace(/[^a-z0-9]/g, '');
-    }
+    // Leave here in case it is needed
+    // private toID(text: string): string {
+    //     return text.toLowerCase().replace(/[^a-z0-9]/g, '');
+    // }
 
     private async checkLegality(parsedTeam: PokemonSet[], gen: Generation, strict: boolean): Promise<void> {
         const validator = new TeamValidator('gen9ou');
@@ -104,5 +89,43 @@ export class TeamService {
         if (result) {
             throw new BadRequestException(`Team legality check failed: ${result}`);
         }
+    }
+
+    private async validateAndParseTeam(
+        data: string,
+        format: string,
+        strict: boolean
+    ): Promise<PokemonSet[]> {
+        const match = format.match(/gen(\d+)/);
+        const genNumber = match ? Number(match[1]) : 9;
+        const gen = this.gens.get(genNumber);
+
+        let parsedTeam: PokemonSet[] = [];
+
+        try {
+            const sets = data.split('\n\n');
+
+            for (const set of sets) {
+                const parsedSet = Sets.importSet(set.trim());
+                if (!parsedSet || !parsedSet.species) {
+                    throw new BadRequestException('Invalid Pokémon set data');
+                }
+                parsedTeam.push(parsedSet as PokemonSet);
+            }
+        } catch (err) {
+            throw new BadRequestException('Failed to parse Showdown team');
+        }
+
+        if (parsedTeam.length === 0 || parsedTeam.length > 6) {
+            throw new BadRequestException('Team must contain 1 to 6 Pokémon');
+        }
+
+        try {
+            await this.checkLegality(parsedTeam, gen, strict);
+        } catch (err) {
+            throw new BadRequestException('Team legality check failed');
+        }
+
+        return parsedTeam;
     }
 }
