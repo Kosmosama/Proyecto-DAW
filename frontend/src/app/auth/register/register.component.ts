@@ -15,6 +15,7 @@ import { CatModalComponent } from '../../shared/components/modals/cat-modal/cat-
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
 import { matchPassword } from '../../shared/validators/match-password.validator';
+import { PlayerService } from '../../core/services/player.service';
 
 @Component({
   standalone: true,
@@ -35,6 +36,7 @@ export class RegisterComponent implements CanComponentDeactivate {
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
   private modal = inject(NgbModal);
+  private playerService = inject(PlayerService);
 
   private saved = false;
 
@@ -57,12 +59,13 @@ export class RegisterComponent implements CanComponentDeactivate {
   );
 
   constructor() {
-    fetch('/images/avatars/avatar-list.json')
-      .then(res => res.json())
-      .then((avatars: string[]) => {
+    this.playerService.fetchAvatarImages()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((avatars: string[]) => {
         this.availableAvatars.set(avatars.map(name => name.replace('.jpg', '.jpg')));
       });
   }
+
 
   addPlayer() {
     if (this.currentStep() === 1) {

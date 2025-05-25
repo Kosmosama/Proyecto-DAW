@@ -13,7 +13,7 @@ export const logoutActivateGuard: CanActivateFn = (): Observable<
   return authService.isLogged().pipe(
     map((isLoggedIn) => {
       if (isLoggedIn) {
-        return router.createUrlTree(['/events']);
+        return router.createUrlTree(['/player/home']);
       } else {
         return true;
       }

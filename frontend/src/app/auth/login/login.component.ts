@@ -12,7 +12,6 @@ import { PlayerLogin } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { LoadGoogleApiService } from '../../core/services/load-google-api.service';
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
-import { GoogleLoginDirective } from '../../shared/directives/google-login.directive';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
 import { StatusSocketService } from '../../core/services/statusSocket.service';
 
@@ -23,7 +22,6 @@ import { StatusSocketService } from '../../core/services/statusSocket.service';
     FormsModule,
     ReactiveFormsModule,
     ValidationClassesDirective,
-    // GoogleLoginDirective,
     RouterLink
   ],
   templateUrl: './login.component.html',

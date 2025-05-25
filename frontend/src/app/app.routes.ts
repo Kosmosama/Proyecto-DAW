@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LayoutComponent } from './shared/components/layout/layout.component';
+import { logoutActivateGuard } from './core/guards/logout-activate.guard';
 import { loginActivateGuard } from './core/guards/login-activate.guard';
 
 export const routes: Routes = [
@@ -7,6 +8,7 @@ export const routes: Routes = [
         path: 'auth',
         loadChildren: () =>
             import('./auth/auth.routes').then((r) => r.authRoutes),
+        canActivate: [logoutActivateGuard]
     },
     {
         path: '',
@@ -16,13 +18,13 @@ export const routes: Routes = [
                 path: 'pages',
                 loadChildren: () =>
                     import('./pages/pages.routes').then((r) => r.pagesRoutes),
-                // canActivate: [loginActivateGuard]
+                canActivate: [loginActivateGuard]
             },
             {
                 path: 'player',
                 loadChildren: () =>
                     import('./player/player.routes').then((r) => r.playerRoutes),
-                // canActivate: [loginActivateGuard]
+                canActivate: [loginActivateGuard]
             },
             {
                 path: '',

@@ -69,5 +69,8 @@ export class FriendListComponent implements OnInit {
     return sorted;
   }
 
+  onImageError(event: Event){
+    this.playerService.setDefaultAvatar(event);
+  }
 
 }

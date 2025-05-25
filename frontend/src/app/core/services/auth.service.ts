@@ -5,7 +5,6 @@ import { catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginResponse } from '../interfaces/auth.model';
 import { Player, PlayerLogin, PlayerResponse } from '../interfaces/player.model';
-import { StatusSocketService } from './statusSocket.service';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -27,6 +26,7 @@ export class AuthService {
     private refreshToken: string | null = null;
 
     constructor() {
+        console.log("AuthService created");
         this.accessToken = localStorage.getItem('accessToken');
         this.refreshToken = localStorage.getItem('refreshToken');
     }
@@ -87,13 +87,16 @@ export class AuthService {
     }
 
     /**
-     * Validates the current access token with the server.
+     * Refreshes the current access token with the refreshToken.
      */
-    private validateToken(): Observable<boolean> {
-        if (!this.accessToken) return of(false);
+    public refreshAccessToken(): Observable<boolean> {
+        if (!this.refreshToken) return of(false);
 
-        return this.http.get('auth/refresh', { headers: { Authorization: `Bearer ${this.accessToken}` } }).pipe(
-            map(() => {
+        return this.http.post<LoginResponse>('auth/refresh', {}, {
+            headers: { Authorization: `Bearer ${this.refreshToken}` }
+        }).pipe(
+            map(({ data }) => {
+                this.setTokens(data.accessToken, data.refreshToken);
                 this.#logged.set(true);
                 return true;
             }),
@@ -104,13 +107,15 @@ export class AuthService {
         );
     }
 
+
     /**
      * Determines whether the user is logged in.
      */
     isLogged(): Observable<boolean> {
         if (this.#logged()) return of(true);
         if (!this.accessToken) return of(false);
-        return this.validateToken();
+        // return this.validateToken();
+        return of(true);
     }
 
     /**
@@ -118,7 +123,7 @@ export class AuthService {
      */
     logout(): void {
         this.clearAuth();
-        if (typeof google !== 'undefined' && google.accounts.id){
+        if (typeof google !== 'undefined' && google.accounts.id) {
             google.accounts.id.disableAutoSelect();
         }
         this.router.navigate(['/auth/login']);

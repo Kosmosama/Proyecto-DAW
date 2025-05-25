@@ -7,8 +7,9 @@
         </button>
         @if (playerProfile()) {
         <div class="d-flex align-items-center ms-auto">
-            <a routerLink="/player/profile" class="d-flex align-items-center profile-label p-2 rounded nav-link px-2 text-danger fw-bold"
-               routerLinkActive="router-link-active">
+            <a routerLink="/player/profile"
+                class="d-flex align-items-center profile-label p-2 rounded nav-link px-2 text-danger fw-bold"
+                routerLinkActive="router-link-active">
                 <img [src]="'/images/avatars/' + playerProfile()?.photo" alt="Avatar" class="rounded-circle me-2"
                     width="32" height="32">
                 {{ playerProfile()?.username }}
