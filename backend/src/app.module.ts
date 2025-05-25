@@ -13,6 +13,7 @@ import { GameModule } from './game/game.module';
 import { PlayerModule } from './player/player.module';
 import { StatusModule } from './status/status.module';
 import { TeamsModule } from './teams/teams.module';
+import { RedisFlushService } from './common/redis-flush.service';
 
 @Module({
     imports: [
@@ -29,6 +30,7 @@ import { TeamsModule } from './teams/teams.module';
     providers: [
         AppService,
         JwtStrategy,
+        RedisFlushService,
         {
             provide: 'APP_GUARD',
             useClass: JwtGuard,
