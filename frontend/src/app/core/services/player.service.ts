@@ -63,8 +63,6 @@ export class PlayerService {
         );
     }
 
-
-
     /**
      *
      *
@@ -119,6 +117,25 @@ export class PlayerService {
     fetchOutgoingRequests(): Observable<FriendRequestsResponse> {
         return this.http
             .get<FriendRequestsResponse>(`player/friend-requests/outgoing`);
+    }
+
+    fetchAvatarImages(): Observable<string[]> {
+        return new Observable<string[]>((observer) => {
+            fetch('/images/avatars/avatar-list.json')
+                .then(res => res.json())
+                .then((avatars: string[]) => {
+                    observer.next(avatars.map(name => name.replace('.jpg', '.jpg')));
+                    observer.complete();
+                })
+                .catch(err => {
+                    observer.error(err);
+                });
+        });
+    }
+
+    setDefaultAvatar(event: Event): void {
+        const target = event.target as HTMLImageElement;
+        target.src = '/images/icons/default-avatar.jpg';
     }
 
 }

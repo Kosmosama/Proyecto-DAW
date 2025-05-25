@@ -3,21 +3,16 @@ import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
-import { AuthFeedbackService } from '../services/auth-feedback.service';
 
-export const loginActivateGuard: CanActivateFn = (): Observable<
-  boolean | UrlTree
-> => {
+export const loginActivateGuard: CanActivateFn = (): Observable<boolean | UrlTree> => {
   const authService = inject(AuthService);
-  const router = inject(Router);
-  const feedbackService = inject(AuthFeedbackService);
+  const router = inject(Router);  
 
   return authService.isLogged().pipe(
     map((isLoggedIn) => {
       if (!isLoggedIn) {
-        feedbackService.notifyLoginRequired();
-        // return router.createUrlTree(['/auth/login']);
-        return false;
+        alert('You must log in to access this page!');
+        return router.createUrlTree(['/auth/login']);
       }
       return true;
     })
