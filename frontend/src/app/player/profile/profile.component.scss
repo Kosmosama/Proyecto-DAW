@@ -11,6 +11,14 @@
   color: #d32f2f;
 }
 
+.edit-profile-form {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  min-width: 500px;
+}
+
 .tag {
   font-weight: 400;
   color: #666;
@@ -21,10 +29,10 @@
   font-size: 0.95rem;
 }
 
-.friendlist-placeholder {
+.friendlist {
   background-color: #f8f9fa;
   color: #999;
-  min-height: 200px;
+  max-height: 500px;
   font-style: italic;
 }
 
@@ -40,8 +48,8 @@
   }
 }
 
-.team-scroll {
-  max-height: 600px;
+.card-body.team-scroll {
+  flex: 1;
   overflow-y: auto;
   padding-right: 0.5rem;
 
@@ -64,4 +72,10 @@
   .card {
     max-width: 480px;
   }
+}
+
+.card.teams-container {
+  height: 500px;
+  display: flex;
+  flex-direction: column;
 }

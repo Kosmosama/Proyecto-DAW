@@ -1,20 +1,47 @@
 <div class="container my-5">
+  <div class="user-info d-flex flex-wrap align-items-start justify-content-between mb-5">
+    <div class="d-flex align-items-start">
+      <div class="d-flex align-items-start me-4">
+        <img
+          [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
+          (error)="onImageError($event)" alt="{{ playerProfile()!.username }}'s photo"
+          class="avatar rounded-circle me-4" />
+        <div>
+          <h2 class="username">
+            {{ playerProfile()!.username }}
+            <small class="tag">#{{ playerProfile()!.tag }}</small>
+          </h2>
+          <p class="text-muted">{{ playerProfile()!.email }}</p>
+          <button (click)="toggleEditForms()" class="btn btn-danger">
+            Edit profile
+          </button>
+        </div>
+      </div>
 
-  <div class="user-info d-flex align-items-center mb-5">
-    <img
-      [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
-      (error)="onImageError($event)" alt="{{ playerProfile()!.username }}'s photo" class="avatar rounded-circle me-4" />
-    <div>
-      <h2 class="username mb-1">{{ playerProfile()!.username }} <small class="tag">#{{ playerProfile()!.tag }}</small>
-      </h2>
-      <p class="email text-muted">{{ playerProfile()!.email }}</p>
+      @if (showEditForms()) {
+      <form [formGroup]="editForm" class="bg-white border p-3 rounded ms-4" style="min-width: 350px;">
+        <div class="row g-2 align-items-end">
+          <div class="col">
+            <label for="username" class="form-label">New Username</label>
+            <input id="username" type="text" class="form-control" formControlName="username" />
+          </div>
+          <div class="col">
+            <label for="password" class="form-label">New Password</label>
+            <input id="password" type="password" class="form-control" formControlName="password" />
+          </div>
+          <div class="col-auto">
+            <button type="button" class="btn btn-outline-danger" (click)="submitEditForm()">Save</button>
+          </div>
+        </div>
+      </form>
+      }
     </div>
   </div>
 
   <div class="row">
 
     <div class="col-lg-8 mb-4">
-      <div class="card shadow-sm">
+      <div class="card shadow-sm teams-container">
         <div class="card-header bg-danger text-white">
           <h5 class="mb-0">Teams</h5>
         </div>
@@ -45,9 +72,8 @@
     </div>
 
     <div class="col-lg-4">
-      <div class="friendlist-placeholder border rounded p-3 h-100 d-flex align-items-center justify-content-center">
-        <p class="text-muted mb-0">FriendList goes here</p>
-      </div>
+      <app-friends-list [title]="'Online Friends'" [showOnlyOnline]="true"></app-friends-list>
+
     </div>
 
   </div>
