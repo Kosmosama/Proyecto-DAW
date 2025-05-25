@@ -1,20 +1,80 @@
 <div class="container my-5">
-  <div class="row justify-content-center mt-4">
-    <div class="col-md-8">
-      <div class="d-flex align-items-center mb-3">
-        <img [src]="'/images/avatars/' + playerProfile()!.photo" alt="Foto de perfil" class="rounded-circle me-3"
-          width="60" height="60">
-        <h4 class="mb-0">{{ playerProfile()!.username }}#{{ playerProfile()!.tag }}</h4>
-      </div>
-      <p class="text-muted"> {{playerProfile()!.email}}</p>
-      <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0">Equipos</h5>
+  <div class="user-info d-flex flex-wrap align-items-start justify-content-between mb-5">
+    <div class="d-flex align-items-start">
+      <div class="d-flex align-items-start me-4">
+        <img
+          [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
+          (error)="onImageError($event)" alt="{{ playerProfile()!.username }}'s photo"
+          class="avatar rounded-circle me-4" />
+        <div>
+          <h2 class="username">
+            {{ playerProfile()!.username }}
+            <small class="tag">#{{ playerProfile()!.tag }}</small>
+          </h2>
+          <p class="text-muted">{{ playerProfile()!.email }}</p>
+          <button (click)="toggleEditForms()" class="btn btn-danger">
+            Edit profile
+          </button>
         </div>
-        <div class="card-body">
-          <p class="text-muted">Este usuario aún no ha creado ningún equipo.</p>
+      </div>
+
+      @if (showEditForms()) {
+      <form [formGroup]="editForm" class="bg-white border p-3 rounded ms-4" style="min-width: 350px;">
+        <div class="row g-2 align-items-end">
+          <div class="col">
+            <label for="username" class="form-label">New Username</label>
+            <input id="username" type="text" class="form-control" formControlName="username" />
+          </div>
+          <div class="col">
+            <label for="password" class="form-label">New Password</label>
+            <input id="password" type="password" class="form-control" formControlName="password" />
+          </div>
+          <div class="col-auto">
+            <button type="button" class="btn btn-outline-danger" (click)="submitEditForm()">Save</button>
+          </div>
+        </div>
+      </form>
+      }
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow-sm teams-container">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0">Teams</h5>
+        </div>
+        <div class="card-body team-scroll">
+          @if(!hasTeams()) {
+          <p class="text-muted fst-italic">
+            This user has not created any team yet
+          </p>
+          } @else {
+          <div class="d-flex flex-column align-items-center">
+            @for (team of teams(); track $index) {
+            <div class="card mb-3 w-100">
+              <div class="card-body">
+                <h5 class="card-title">{{ team.name }}</h5>
+                <div class="d-flex justify-content-start flex-wrap">
+                  @for (pokemon of team.data; track $index) {
+                  <img [src]="getSpriteUrl(pokemon.species)" alt="{{ pokemon.species }}" width="48" height="48"
+                    style="image-rendering: pixelated; margin: 0 6px 6px 0;" />
+                  }
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+          }
         </div>
       </div>
     </div>
+
+    <div class="col-lg-4">
+      <app-friends-list [title]="'Online Friends'" [showOnlyOnline]="true"></app-friends-list>
+
+    </div>
+
   </div>
 </div>

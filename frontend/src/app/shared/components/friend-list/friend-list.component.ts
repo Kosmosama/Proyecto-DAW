@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, input, OnInit, signal } from '@angular/core';
 import { Player, PlayersResponse } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 import { RouterLink } from '@angular/router';
@@ -15,6 +15,9 @@ import { StatusSocketService } from '../../../core/services/statusSocket.service
 export class FriendListComponent implements OnInit {
   friends = signal<Player[]>([]);
   onlineFriends = signal<number[]>([]);
+
+  title = input<string>('');
+  showOnlyOnline = input<boolean>(false);
 
   loading = signal<boolean>(true);
 
@@ -57,16 +60,20 @@ export class FriendListComponent implements OnInit {
     });
   }
 
-  get friendsWithStatus(): Player[] {
+   get friendsWithStatus(): Player[] {
     const onlineIds = this.onlineFriends();
-    const sorted = [...this.friends()].map(friend => ({
+    let friendsList = [...this.friends()].map(friend => ({
       ...friend,
       online: onlineIds.includes(friend.id!),
     }));
 
-    sorted.sort((a, b) => Number(b.online) - Number(a.online));
+    if (this.showOnlyOnline()) {
+      friendsList = friendsList.filter(f => f.online);
+    } else {
+      friendsList.sort((a, b) => Number(b.online) - Number(a.online));
+    }
 
-    return sorted;
+    return friendsList;
   }
 
   onImageError(event: Event){

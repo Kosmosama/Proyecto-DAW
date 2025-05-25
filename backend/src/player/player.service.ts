@@ -113,10 +113,15 @@ export class PlayerService {
      * @throws {NotFoundException} If the player is not found.
      */
     async update(id: number, dto: UpdatePlayerDto): Promise<PlayerPublic> {
-        const result = await this.playerRepository.update(id, dto);
-        if (!result.affected) throw new NotFoundException('Player not found.');
-        return this.findOnePublic(id);
+        const player = await this.playerRepository.findOne({ where: { id } });
+        if (!player) throw new NotFoundException('Player not found.');
+
+        Object.assign(player, dto);
+
+        const updated = await this.playerRepository.save(player);
+        return this.findOnePublic(updated.id);
     }
+
 
     /**
      * Deletes a player by ID.

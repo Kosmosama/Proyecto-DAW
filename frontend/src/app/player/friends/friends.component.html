@@ -1,7 +1,7 @@
 <div class="container">
   <div class="row">
     <div class="col-md-6">
-      <app-friends-list></app-friends-list>
+      <app-friends-list [title]="'Friend List'"></app-friends-list>
     </div>
     <div class="col-md-6">
       <app-friend-search (refresh)="onRequestUpdate()"></app-friend-search>
