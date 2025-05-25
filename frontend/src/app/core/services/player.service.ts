@@ -8,6 +8,7 @@ import { FriendRequestsResponse, Player, PlayerResponse, PlayersResponse } from 
 })
 export class PlayerService {
     private http = inject(HttpClient);
+    private defaultAvatar: string = '/images/icons/default-avatar.jpg';
 
     getProfile(id?: number): Observable<Player> {
         if (id) {
@@ -135,7 +136,7 @@ export class PlayerService {
 
     setDefaultAvatar(event: Event): void {
         const target = event.target as HTMLImageElement;
-        target.src = '/images/icons/default-avatar.jpg';
+        target.src = this.defaultAvatar;
     }
 
 }

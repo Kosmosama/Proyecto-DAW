@@ -23,13 +23,13 @@
                             }
                         </span>
                     </div>
-                    @if(friend.photo) {
                     <div class="friend-photo">
-                        <img [src]="'/images/avatars/' + friend.photo" (error)="onImageError($event)"
-                            alt="{{ friend.username }}'s photo" class="img-fluid rounded-circle friend-avatar" />
+                        <img [src]="friend.photo ? '/images/avatars/' + friend.photo : '/images/icons/default-avatar.jpg'"
+                            (error)="onImageError($event)" alt="{{ friend.username }}'s photo"
+                            class="img-fluid rounded-circle friend-avatar" />
 
                     </div>
-                    }
+
                 </div>
 
                 }

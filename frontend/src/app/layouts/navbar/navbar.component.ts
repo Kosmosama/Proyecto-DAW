@@ -30,6 +30,10 @@ export class NavbarComponent {
     });
   }
 
+  onImageError(event: Event) {
+    this.playerService.setDefaultAvatar(event);
+  }
+
   logout() {
     this.statusService.disconnect();
     this.authService.logout()

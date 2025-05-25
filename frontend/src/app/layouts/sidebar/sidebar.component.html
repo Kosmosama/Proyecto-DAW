@@ -1,17 +1,33 @@
-<div class="d-flex" id="wrapper">
-    <div class="bg-dark text-white" [class.sidebar-visible]="isSidebarVisible()" id="sidebar">
-        <div class="text-center py-3">
-            <img src="/images/icons/sidebarIcon.png" alt="Sidebar Icon" class="sidebar-icon">
-            <h1>ShowDAW</h1>
+<div id="wrapper">
+    <div id="sidebar" class="bg-dark text-white d-flex flex-column">
+
+        <div class="flex-grow-1">
+            <div class="text-center py-3">
+                <img src="/images/icons/sidebarIcon.png" alt="Sidebar Icon" class="sidebar-icon" />
+                <h1>ShowDAW</h1>
+            </div>
+            <ul class="list-unstyled">
+                @for (item of sidebarItems; track $index) {
+                <a [routerLink]="[item.link]" routerLinkActive="router-link-active" class="text-white list-item-link">
+                    <li class="py-3 px-3 list-item">
+                        <i class="{{ item.icon }}"></i> {{ item.label }}
+                    </li>
+                </a>
+                }
+            </ul>
         </div>
-        <ul class="list-unstyled">
-            @for (item of sidebarItems; track $index) {
-            <a [routerLink]="[item.link]" routerLinkActive="router-link-active" class="text-white list-item-link">
-                <li class="py-3 px-3 list-item">
-                    <i class="{{ item.icon }}"></i> {{ item.label }}
-                </li>
+
+        @if (playerProfile()) {
+        <div class="p-3 border-top d-flex align-items-center justify-content-between profile-section">
+            <a routerLink="/player/profile" class="d-flex align-items-center text-decoration-none text-white"
+                routerLinkActive="router-link-active">
+                <img [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
+                    (error)="onImageError($event)" alt="{{ playerProfile()?.username }}'s photo"
+                    class="img-fluid rounded-circle avatar me-2" />
+                <span class="fw-bold">{{ playerProfile()?.username }}</span>
             </a>
-            }
-        </ul>
+            <button class="btn btn-sm btn-outline-light ms-2" (click)="logout()">Logout</button>
+        </div>
+        }
     </div>
 </div>

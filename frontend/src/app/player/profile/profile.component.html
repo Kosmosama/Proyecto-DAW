@@ -2,8 +2,9 @@
   <div class="row justify-content-center mt-4">
     <div class="col-md-8">
       <div class="d-flex align-items-center mb-3">
-        <img [src]="'/images/avatars/' + playerProfile()!.photo" alt="Foto de perfil" class="rounded-circle me-3"
-          width="60" height="60">
+        <img [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
+                    (error)="onImageError($event)" alt="{{ playerProfile()?.username }}'s photo"
+                    class="img-fluid rounded-circle avatar me-2" />
         <h4 class="mb-0">{{ playerProfile()!.username }}#{{ playerProfile()!.tag }}</h4>
       </div>
       <p class="text-muted"> {{playerProfile()!.email}}</p>
