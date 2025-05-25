@@ -20,6 +20,7 @@ export class TeamBuilderComponent {
   selectedTeam = signal<Team | null>(null);
 
   constructor() {
+    this.loadTeams();
   }
 
   loadTeams() {

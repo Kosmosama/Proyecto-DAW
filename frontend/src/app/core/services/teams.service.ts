@@ -12,7 +12,7 @@ export class TeamsService {
     private http = inject(HttpClient);
 
     postTeam(teamName: string, teamData: string): Observable<void> {
-        return this.http.post<void>('teams', { name: teamName, data: teamData });
+        return this.http.post<void>('teams', { name: teamName, data: { team: teamData } });
     }
 
     getTeams(): Observable<{ data: Team[] }> {

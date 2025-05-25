@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
-import { FriendRequestsResponse, Player, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
+import { FriendRequestsResponse, Player, PlayerProfileUpdate, PlayerProfileUpdateResponse, PlayerResponse, PlayersResponse } from '../interfaces/player.model';
 
 @Injectable({
     providedIn: 'root',
@@ -137,6 +137,10 @@ export class PlayerService {
     setDefaultAvatar(event: Event): void {
         const target = event.target as HTMLImageElement;
         target.src = this.defaultAvatar;
+    }
+
+    updatePlayerProfile(newProfileData: PlayerProfileUpdate): Observable<PlayerProfileUpdateResponse> {
+        return this.http.patch<PlayerProfileUpdateResponse>('player/profile', newProfileData);
     }
 
 }

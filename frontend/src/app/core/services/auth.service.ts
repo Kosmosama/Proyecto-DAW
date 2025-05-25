@@ -107,6 +107,23 @@ export class AuthService {
         );
     }
 
+    /**
+     * 
+     * @returns boolean
+     * Validates logged user's accessToken
+     */
+
+    validateToken(): Observable<boolean> {
+        return this.http.get('auth/validate').pipe(
+            map(() => true),
+            catchError(() => {
+                this.clearAuth();
+                return of(false);
+            })
+        );
+    }
+
+
 
     /**
      * Determines whether the user is logged in.
@@ -114,20 +131,18 @@ export class AuthService {
     isLogged(): Observable<boolean> {
         if (this.#logged()) return of(true);
         if (!this.accessToken) return of(false);
-        // return this.validateToken();
-        return of(true);
+        return this.validateToken();
     }
 
     /**
      * Logs out the user and clears all authentication data.
      */
     logout(): void {
+        this.http.post('auth/logout', {}).subscribe(); // opcionalmente manejar errores
         this.clearAuth();
-        if (typeof google !== 'undefined' && google.accounts.id) {
-            google.accounts.id.disableAutoSelect();
-        }
         this.router.navigate(['/auth/login']);
     }
+
 
     /**
      * Stores tokens in memory and localStorage.
