@@ -8,7 +8,7 @@ export const routes: Routes = [
         path: 'auth',
         loadChildren: () =>
             import('./auth/auth.routes').then((r) => r.authRoutes),
-        // canActivate: [logoutActivateGuard]
+        canActivate: [logoutActivateGuard]
     },
     {
         path: '',
@@ -18,13 +18,13 @@ export const routes: Routes = [
                 path: 'pages',
                 loadChildren: () =>
                     import('./pages/pages.routes').then((r) => r.pagesRoutes),
-                // canActivate: [loginActivateGuard]
+                canActivate: [loginActivateGuard]
             },
             {
                 path: 'player',
                 loadChildren: () =>
                     import('./player/player.routes').then((r) => r.playerRoutes),
-                // canActivate: [loginActivateGuard]
+                canActivate: [loginActivateGuard]
             },
             {
                 path: '',
