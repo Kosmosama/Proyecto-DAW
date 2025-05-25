@@ -16,7 +16,7 @@ export class WsJwtStrategy extends PassportStrategy(Strategy, 'wsjwt') {
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
                 (req) => {
-                    const authHeader = req?.headers?.authorization;
+                    const authHeader = req?.auth.token;
                     if (authHeader && authHeader.startsWith('Bearer ')) {
                         return authHeader.split(' ')[1];
                     }

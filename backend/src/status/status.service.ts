@@ -16,13 +16,13 @@ export class StatusService {
     ) { }
 
     /**
-     * Registers a new connection for a player.
+     * Handles a new connection for a player.
      * @param {Socket} client The socket client representing the connection.
      * @param {number} playerId The ID of the player.
      * @param {Server} server The Socket.IO server instance.
      * @returns {Promise<void>} No return value.
      */
-    async registerConnection(client: Socket, playerId: number, server: Server) {
+    async handleNewConnection(client: Socket, playerId: number, server: Server) {
         await this.redis.hset(SOCKET_TO_PLAYER, client.id, playerId.toString());
         await this.redis.sadd(`${PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
 
@@ -149,7 +149,7 @@ export class StatusService {
      * @param {any} data The data to send with the event.
      * @returns {Promise<void>} No return value.
      */
-    private async emitToPlayer(server: Server, playerId: number, event: string, data: any) {
+    public async emitToPlayer(server: Server, playerId: number, event: string, data: any) {
         const sockets = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
         for (const socketId of sockets) {
             server.to(socketId).emit(event, data);

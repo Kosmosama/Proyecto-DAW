@@ -30,16 +30,16 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * Handles a new WebSocket connection.
      * Authenticates the player, associates the socket, and registers them as online.
      */
-    @UseGuards(JwtWsGuard)
+    // @UseGuards(JwtWsGuard)
     async handleConnection(
         client: Socket,
-        @PlayerWs() player: PlayerPrivate,
+        // @PlayerWs() player: PlayerPrivate,
     ) {
         try {
             const player = await this.authService.authenticateClient(client);
 
             this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
-            await this.statusService.registerConnection(client, player.id, this.server);
+            await this.statusService.handleNewConnection(client, player.id, this.server);
         } catch (err) {
             this.logger.warn(`Unauthorized socket connection: ${err.message}`);
             client.disconnect();
