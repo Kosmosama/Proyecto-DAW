@@ -7,7 +7,6 @@ import { FriendshipStatus } from "src/player/enums/friendship-status.enum";
 import { TeamService } from "src/teams/teams.service";
 import { Repository } from "typeorm";
 
-
 const names = ['Ash', 'Misty', 'Brock', 'Gary', 'May', 'Dawn', 'Iris', 'Serena', 'Lillie', 'Go'];
 
 @Injectable()
@@ -37,7 +36,7 @@ export class PlayerSeeder {
                 username: names[i],
                 tag: `T${i + 100}`,
                 email: `${names[i].toLowerCase()}@poke.com`,
-                password: 'password123', // Will be hashed
+                password: 'password123',
                 role: Role.USER,
             });
 

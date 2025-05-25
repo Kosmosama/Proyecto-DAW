@@ -29,7 +29,7 @@ export class AuthController {
     login(@Player() player: PlayerPrivate): Promise<TokenResponse> {
         return this.authService.login(player);
     }
-    
+
     @Public()
     @Post('register')
     @ApiOperation({ summary: 'Register a new player' })
@@ -40,12 +40,21 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
-    @HttpCode(HttpStatus.OK)
+    @HttpCode(204)
     @Post('logout')
     @ApiOperation({ summary: 'Logout the current player' })
-    @ApiResponse({ status: 200, description: 'Logout successful.' })
+    @ApiResponse({ status: 204, description: 'Logout successful.' })
     logout(@Player() player: PlayerPrivate): Promise<void> {
         return this.authService.logout(player);
+    }
+
+    @HttpCode(204)
+    @Get('validate')
+    @ApiOperation({ summary: 'Validate the current player\'s token' })
+    @ApiResponse({ status: 204, description: 'Token is valid.' })
+    @ApiResponse({ status: 401, description: 'Invalid or expired token.' })
+    validate(): void {
+        // Validates token
     }
 
     @Public()
