@@ -10,6 +10,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { PlayerService } from './player.service';
 import { FriendRequest } from './interfaces/friend-request.interface';
 import { PlayerPrivate } from './interfaces/player-private.interface';
+import { PaginatedResult } from './interfaces/paginated-result.interface';
 
 
 @ApiTags('player')

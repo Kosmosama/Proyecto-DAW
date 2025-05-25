@@ -53,7 +53,10 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleDisconnect(client: Socket) {
         const playerId = await this.statusService.handleDisconnection(client, this.server);
         if (playerId) {
-            this.logger.debug(`Player ${playerId} fully disconnected.`);
+            this.logger.debug(`Player ${playerId} with socket id ${client.id} disconnected.`);
+        }
+        else {
+            this.logger.warn(`Player ID not found for socket ${client.id}. Something else disconnected?`);
         }
     }
 }

@@ -1,13 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { DataSource } from 'typeorm';
-import { runSeeders } from './common/seeds/seed';
+import { SeederModule } from './seeds/seeder.module';
+import { PlayerSeeder } from './seeds/player.seeder';
 
 async function bootstrap() {
-  const app = await NestFactory.createApplicationContext(AppModule);
-  const dataSource = app.get(DataSource);
+  const app = await NestFactory.createApplicationContext(SeederModule);
+  const seeder = app.get(PlayerSeeder);
 
-  await runSeeders(dataSource);
+  await seeder.seed();
 
   await app.close();
 }

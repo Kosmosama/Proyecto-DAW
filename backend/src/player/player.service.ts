@@ -11,6 +11,7 @@ import { FriendRequest } from './interfaces/friend-request.interface';
 import { Friend } from './interfaces/friend.interface';
 import { PlayerPublic } from './interfaces/player-public.interface';
 import { PlayerPrivate } from './interfaces/player-private.interface';
+import { PaginatedResult } from './interfaces/paginated-result.interface';
 
 @Injectable()
 export class PlayerService {
