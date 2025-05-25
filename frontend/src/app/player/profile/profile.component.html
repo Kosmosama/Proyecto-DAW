@@ -1,21 +1,54 @@
 <div class="container my-5">
-  <div class="row justify-content-center mt-4">
-    <div class="col-md-8">
-      <div class="d-flex align-items-center mb-3">
-        <img [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
-                    (error)="onImageError($event)" alt="{{ playerProfile()?.username }}'s photo"
-                    class="img-fluid rounded-circle avatar me-2" />
-        <h4 class="mb-0">{{ playerProfile()!.username }}#{{ playerProfile()!.tag }}</h4>
-      </div>
-      <p class="text-muted"> {{playerProfile()!.email}}</p>
-      <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0">Equipos</h5>
+
+  <div class="user-info d-flex align-items-center mb-5">
+    <img
+      [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
+      (error)="onImageError($event)" alt="{{ playerProfile()!.username }}'s photo" class="avatar rounded-circle me-4" />
+    <div>
+      <h2 class="username mb-1">{{ playerProfile()!.username }} <small class="tag">#{{ playerProfile()!.tag }}</small>
+      </h2>
+      <p class="email text-muted">{{ playerProfile()!.email }}</p>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0">Teams</h5>
         </div>
-        <div class="card-body">
-          <p class="text-muted">Este usuario aún no ha creado ningún equipo.</p>
+        <div class="card-body team-scroll">
+          @if(!hasTeams()) {
+          <p class="text-muted fst-italic">
+            This user has not created any team yet
+          </p>
+          } @else {
+          <div class="d-flex flex-column align-items-center">
+            @for (team of teams(); track $index) {
+            <div class="card mb-3 w-100">
+              <div class="card-body">
+                <h5 class="card-title">{{ team.name }}</h5>
+                <div class="d-flex justify-content-start flex-wrap">
+                  @for (pokemon of team.data; track $index) {
+                  <img [src]="getSpriteUrl(pokemon.species)" alt="{{ pokemon.species }}" width="48" height="48"
+                    style="image-rendering: pixelated; margin: 0 6px 6px 0;" />
+                  }
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+          }
         </div>
       </div>
     </div>
+
+    <div class="col-lg-4">
+      <div class="friendlist-placeholder border rounded p-3 h-100 d-flex align-items-center justify-content-center">
+        <p class="text-muted mb-0">FriendList goes here</p>
+      </div>
+    </div>
+
   </div>
 </div>
