@@ -24,10 +24,15 @@
                 <img [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
                     (error)="onImageError($event)" alt="{{ playerProfile()?.username }}'s photo"
                     class="img-fluid rounded-circle avatar me-2" />
+
                 <span class="fw-bold">{{ playerProfile()?.username }}</span>
             </a>
+            <i class="bi bi-person-exclamation fs-4 mb-2" data-bs-toggle="modal" data-bs-target="#friendRequestsModal"> </i>
+
             <button class="btn btn-sm btn-outline-light ms-2" (click)="logout()">Logout</button>
         </div>
         }
+
+        <app-friend-requests-modal></app-friend-requests-modal>
     </div>
 </div>

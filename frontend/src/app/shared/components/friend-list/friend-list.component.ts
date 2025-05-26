@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, effect, inject, input, OnInit, signal } from '@angular/core';
-import { Player, PlayersResponse } from '../../../core/interfaces/player.model';
-import { PlayerService } from '../../../core/services/player.service';
 import { RouterLink } from '@angular/router';
+import { Player } from '../../../core/interfaces/player.model';
+import { PlayerService } from '../../../core/services/player.service';
 import { StatusSocketService } from '../../../core/services/statusSocket.service';
 
 @Component({
@@ -15,6 +15,7 @@ import { StatusSocketService } from '../../../core/services/statusSocket.service
 export class FriendListComponent implements OnInit {
   friends = signal<Player[]>([]);
   onlineFriends = signal<number[]>([]);
+
 
   title = input<string>('');
   showOnlyOnline = input<boolean>(false);

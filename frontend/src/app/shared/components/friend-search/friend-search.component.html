@@ -1,43 +1,34 @@
-<div class="friend-search container">
-    <div class="card">
-        <div class="card-header">
-            <h2>Search players</h2>
-            <input type="text" class="form-control" placeholder="Buscar por nombre" [(ngModel)]="searchValue" />
+<div class="card w-100">
+  <div class="card-header">
+    <h2>Search players</h2>
+    <input type="text" class="form-control" placeholder="Buscar por nombre" [(ngModel)]="searchValue" />
+  </div>
+  <div class="card-body">
+    @if (allPlayers().length === 0 && searchTerm() == "") {
+      <p>Start searching rivals!</p>
+    }
+    @if (allPlayers().length === 0 && searchTerm() !== "") {
+      <p>No player found with given criteria.</p>
+    }
 
-        </div>
-        <div class="card-body">
-            @if (allPlayers().length === 0 && searchTerm() == "") {
-            <div>
-                <p>Start searching rivals!</p>
-            </div>
-            }
-            @if (allPlayers().length === 0 && searchTerm() !== "") {
-            <div>
-                <p>No player found with given criteria.</p>
-            </div>
-            }
+    <ul class="list-group">
+      @for (player of visiblePlayers(); track $index) {
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ player.username }} <span class="text-muted"> # {{ player.tag }}</span></span>
+          <button class="btn btn-primary btn-sm" (click)="addFriend(player)">Add friend</button>
+        </li>
+      }
+    </ul>
 
-            <ul class="list-group">
-                @for (player of visiblePlayers(); track $index) {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{{ player.username }} <span class="text-muted"> # {{ player.tag }}</span></span>
-                    <button class="btn btn-primary btn-sm" (click)="addFriend(player)">Add friend</button>
-                </li>
-                }
-            </ul>
-
-            @if (totalPlayers() > 9) {
-            <div class="pagination">
-                <button class="btn btn-secondary btn-sm" (click)="changePage(currentPage() - 1)"
-                    [disabled]="currentPage() === 1">
-                    Next
-                </button>
-                <button class="btn btn-secondary btn-sm" (click)="changePage(currentPage() + 1)"
-                    [disabled]="currentPage() * 9 >= totalPlayers()">
-                    Previous
-                </button>
-            </div>
-            }
-        </div>
-    </div>
+    @if (totalPlayers() > 9) {
+      <div class="pagination mt-3 d-flex justify-content-between">
+        <button class="btn btn-secondary btn-sm" (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1">
+          Previous
+        </button>
+        <button class="btn btn-secondary btn-sm" (click)="changePage(currentPage() + 1)" [disabled]="currentPage() * 9 >= totalPlayers()">
+          Next
+        </button>
+      </div>
+    }
+  </div>
 </div>

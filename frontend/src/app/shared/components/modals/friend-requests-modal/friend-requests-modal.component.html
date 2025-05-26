@@ -1,0 +1,61 @@
+<div class="modal fade" id="friendRequestsModal" tabindex="-1" aria-labelledby="friendRequestsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="friendRequestsModalLabel">Friend Requests</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" id="incoming-tab" data-bs-toggle="tab" data-bs-target="#incoming"
+              type="button" role="tab" aria-controls="incoming" aria-selected="true">
+              Incoming Requests
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="outgoing-tab" data-bs-toggle="tab" data-bs-target="#outgoing" type="button"
+              role="tab" aria-controls="outgoing" aria-selected="false">
+              Outgoing Requests
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content pt-3">
+          <div class="tab-pane fade show active" id="incoming" role="tabpanel" aria-labelledby="incoming-tab">
+            @if (incomingRequests().length === 0) {
+              <p>No incoming friend requests.</p>
+            }
+            @if (incomingRequests().length > 0) {
+              <ul class="list-group">
+                @for (request of incomingRequests(); track $index) {
+                  <li class="list-group-item">
+                    {{ request.username }}
+                    <button class="btn btn-success btn-sm float-end ms-2" (click)="acceptRequest(request.id!)">Accept</button>
+                    <button class="btn btn-danger btn-sm float-end" (click)="declineRequest(request.id!)">Decline</button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          <div class="tab-pane fade" id="outgoing" role="tabpanel" aria-labelledby="outgoing-tab">
+            @if (outgoingRequests().length === 0) {
+              <p>No outgoing friend requests.</p>
+            }
+            @if (outgoingRequests().length > 0) {
+              <ul class="list-group">
+                @for (request of outgoingRequests(); track $index) {
+                  <li class="list-group-item">
+                    {{ request.username }}
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
