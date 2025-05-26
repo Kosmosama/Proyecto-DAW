@@ -1,15 +1,15 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Player } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
 import { PlayerService } from '../../core/services/player.service';
 import { StatusSocketService } from '../../core/services/statusSocket.service';
-import { Player } from '../../core/interfaces/player.model';
-import { NgIf, NgFor } from '@angular/common';
+import { FriendRequestsModalComponent } from '../../shared/components/modals/friend-requests-modal/friend-requests-modal.component';
 
 @Component({
   selector: 'sidebar',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FriendRequestsModalComponent],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })

@@ -1,12 +1,11 @@
-import { Component, effect, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, effect, inject, input, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Player } from '../../core/interfaces/player.model';
-import { PlayerService } from '../../core/services/player.service';
-import { TeamsService } from '../../core/services/teams.service';
-import { TeamBuilderService } from '../../core/services/teamBuilder.service';
-import { Team } from '../../core/interfaces/team.model';
 import { PokemonData } from '../../core/interfaces/pokemon.model';
-import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Team } from '../../core/interfaces/team.model';
+import { PlayerService } from '../../core/services/player.service';
+import { TeamBuilderService } from '../../core/services/teamBuilder.service';
+import { TeamsService } from '../../core/services/teams.service';
 import { FriendListComponent } from '../../shared/components/friend-list/friend-list.component';
 
 @Component({
@@ -21,12 +20,11 @@ export class ProfileComponent {
   private playerService = inject(PlayerService);
   private teamsService = inject(TeamsService);
   private teamBuilderService = inject(TeamBuilderService);
-  private route = inject(ActivatedRoute);
   private fb = inject(NonNullableFormBuilder);
 
   playerProfile = signal<Player | null>(null);
   showEditForms = signal<boolean>(false);
-
+  profile = input.required<Player>();
   teams = signal<Team[]>([]);
 
   editForm = this.fb.group({
@@ -35,10 +33,8 @@ export class ProfileComponent {
   });
 
   constructor() {
-    const resolvedData = this.route.snapshot.data['profile'] as Player;
     effect(() => {
-
-      this.playerProfile.set(resolvedData);
+      this.playerProfile.set(this.profile());
     })
 
     this.teamsService.getTeams().subscribe((response: any) => {
