@@ -1,14 +1,17 @@
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { JwtWsGuard } from 'src/auth/guards/jwt-ws.guard';
-import { ChallengeFriendDto } from './dto/challenge-friend.dto';
-import { JoinAsSpectatorDto } from './dto/join-as-spectator.dto';
-import { JoinMatchDto } from './dto/join-match.dto';
+import { AuthService } from 'src/auth/auth.service';
 import { GameService } from './game.service';
 
-@UseGuards(JwtWsGuard)
-@WebSocketGateway({ namespace: 'game' })
+@WebSocketGateway({
+    namespace: 'game',
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST'],
+        credentials: true,
+    },
+})
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly logger = new Logger(GameGateway.name);
 
@@ -16,118 +19,51 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server: Server;
 
     constructor(
-        private readonly gameService: GameService
+        private readonly gameService: GameService,
+        private readonly authService: AuthService,
     ) { }
 
-    /**
-     * Handles a new client connection.
-     * @param {Socket} client The socket client representing the connection.
-     * @returns {Promise<void>} No return value.
-     */
     async handleConnection(client: Socket) {
-        const player = client.data.player;
-        this.logger.log(`Client connected: ${player.username}#${player.tag}`);
-    }
+        try {
+            const player = await this.authService.authenticateClient(client);
+            client.data.playerId = player.id;
 
-    /**
-     * Handles client disconnection.
-     * @param {Socket} client The socket client representing the connection.
-     * @returns {Promise<void>} No return value.
-     */
-    async handleDisconnect(client: Socket) {
-        await this.gameService.removeFromQueue(client);
-        this.logger.log(`Client disconnected: ${client.id}`);
-    }
-
-    /**
-     * Handles a request to join a matchmaking queue.
-     * @param {Socket} client The socket client representing the connection.
-     * @returns {Promise<void>} No return value.
-     */
-    @SubscribeMessage('join-matchmaking')
-    async handleJoinMatchmaking(
-        @MessageBody() dto: JoinMatchDto,
-        @ConnectedSocket() client: Socket,
-    ) {
-        const player = client.data.player; // Create decorator @Player() player: PlayerPrivate
-
-        const room = await this.gameService.matchPlayer(this.server, client, player, dto.teamId);
-        if (room) {
-            this.logger.log(`Match started in room: ${room}`);
+            this.logger.debug(`Player ${player.id} connected to game gateway`);
+        } catch (err) {
+            this.logger.warn(`Unauthorized connection: ${err.message}`);
+            client.disconnect();
         }
     }
 
-    /**
-     * Handles a request to leave the matchmaking queue.
-     * @param {Socket} client The socket client representing the connection.
-     * @returns {Promise<void>} No return value.
-     */
-    @SubscribeMessage('leave-matchmaking')
-    async handleLeaveMatchmaking(@ConnectedSocket() client: Socket) {
-        await this.gameService.removeFromQueue(client);
+    async handleDisconnect(client: Socket) {
+        const playerId = client.data.playerId;
+        this.logger.debug(`Player ${playerId} disconnected`);
     }
 
-    /**
-     * Handles a request to challenge a friend.
-     * @param {Socket} client The socket client representing the connection.
-     * @param {number} targetId The ID of the target player.
-     * @returns {Promise<void>} No return value.
-     */
-    // @SubscribeMessage('challenge-friend')
-    // async handleChallengeFriend(
-    //     @MessageBody() data: ChallengeFriendDto,
-    //     @ConnectedSocket() client: Socket,
-    // ) {
-    //     const challenger = client.data.player;
-    //     const room = await this.gameService.challengeFriend(this.server, client, data.targetId, challenger);
-    //     if (room) {
-    //         this.logger.log(`Challenge started in room: ${room}`);
-    //     }
-    // }
-
-    /**
-     * Handles a request to join a room as a spectator.
-     * @param {Socket} client The socket client representing the connection.
-     * @param {string} room The room ID to join.
-     * @returns {Promise<void>} No return value.
-     */
-    @SubscribeMessage('join-as-spectator')
-    handleJoinAsSpectator(
-        @MessageBody() data: JoinAsSpectatorDto,
+    @SubscribeMessage('joinMatch')
+    async onJoinMatch(
         @ConnectedSocket() client: Socket,
+        @MessageBody() data: { matchId: string },
     ) {
-        const player = client.data.player;
+        const { matchId } = data;
+        const playerId = client.data.playerId;
 
-        this.gameService.addSpectator(client, data.room, player);
-        this.logger.log(`Spectator joined room: ${data.room}`);
+        await this.gameService.joinMatch(client, matchId, playerId);
     }
 
-    // #TODO Improve later
-    //      if player leaves room -> lose game
-    //      if spectator leaves room -> just leave
-    //      Check if room exists and if player/spectator is in it
-    // @SubscribeMessage('leave-room')
-    // async handleLeaveRoom(
-    //     @MessageBody() data: { roomId: string },
-    //     @ConnectedSocket() client: Socket,
-    // ) {
-    //     client.leave(data.roomId);
-    //     client.emit('left-room', { roomId: data.roomId });
-    // }
+    @SubscribeMessage('chat')
+    async onChat(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { matchId: string; message: string },
+    ) {
+        const playerId = client.data.playerId;
 
-    /**
-     * Handles a request to leave a room.
-     * @param {Socket} client The socket client representing the connection.
-     * @param {string} room The room ID to leave.
-     * @returns {Promise<void>} No return value.
-     */
-    // @SubscribeMessage('chat-message')
-    // handleChatMessage(
-    //     @MessageBody() data: { room: string; message: string },
-    //     @ConnectedSocket() client: Socket,
-    // ) {
-    //     #TODO Should this have auth too? So that I dont have to pass data.player
-    //     const player = client.data.player;
-    //     this.gameService.sendChatMessage(client, data.room, player.username, data.message);
-    // }
+        await this.gameService.handleMessage(
+            client,
+            data.matchId,
+            playerId,
+            data.message,
+            this.server,
+        );
+    }
 }

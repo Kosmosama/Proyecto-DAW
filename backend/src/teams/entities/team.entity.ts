@@ -17,7 +17,7 @@ export class Team {
     format: string;
 
     @CreateDateColumn()
-    createdAt: Date; // Check if sets date automatically
+    createdAt: Date;
 
     @ManyToOne(() => Player, (player) => player.teams, { onDelete: 'CASCADE' })
     player: Player;
