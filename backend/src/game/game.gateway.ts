@@ -1,5 +1,13 @@
 import { Logger } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+    ConnectedSocket,
+    MessageBody,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    SubscribeMessage,
+    WebSocketGateway,
+    WebSocketServer,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { GameService } from './game.service';
@@ -27,7 +35,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         try {
             const player = await this.authService.authenticateClient(client);
             client.data.playerId = player.id;
-
             this.logger.debug(`Player ${player.id} connected to game gateway`);
         } catch (err) {
             this.logger.warn(`Unauthorized connection: ${err.message}`);
@@ -37,7 +44,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     async handleDisconnect(client: Socket) {
         const playerId = client.data.playerId;
-        this.logger.debug(`Player ${playerId} disconnected`);
+        this.logger.debug(`Player ${playerId} disconnected from game gateway`);
+        await this.gameService.handlePlayerDisconnect(client, this.server);
     }
 
     @SubscribeMessage('joinMatch')
@@ -47,7 +55,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         const { matchId } = data;
         const playerId = client.data.playerId;
-
         await this.gameService.joinMatch(client, matchId, playerId);
     }
 
@@ -57,7 +64,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @MessageBody() data: { matchId: string; message: string },
     ) {
         const playerId = client.data.playerId;
-
         await this.gameService.handleMessage(
             client,
             data.matchId,
