@@ -7,6 +7,8 @@ import { PlayerService } from '../../core/services/player.service';
 import { TeamBuilderService } from '../../core/services/teamBuilder.service';
 import { TeamsService } from '../../core/services/teams.service';
 import { FriendListComponent } from '../../shared/components/friend-list/friend-list.component';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { AvatarModalComponent } from '../../shared/components/modals/avatar-modal/avatar-modal.component';
 
 @Component({
   selector: 'profile',
@@ -21,6 +23,7 @@ export class ProfileComponent {
   private teamsService = inject(TeamsService);
   private teamBuilderService = inject(TeamBuilderService);
   private fb = inject(NonNullableFormBuilder);
+  private modalService = inject(NgbModal)
 
   playerProfile = signal<Player | null>(null);
   showEditForms = signal<boolean>(false);
@@ -64,12 +67,30 @@ export class ProfileComponent {
     this.showEditForms.set(!this.showEditForms())
   }
 
-  submitEditForm() {
+  openAvatarModal() {
+    const modalRef = this.modalService.open(AvatarModalComponent, {
+      size: 'lg',
+      backdrop: 'static',
+    });
+
+    modalRef.componentInstance.currentAvatar = this.playerProfile()!.photo;
+
+    modalRef.result
+      .then((newAvatar: string) => {
+        if (newAvatar) {
+          this.submitEditForm(newAvatar);
+        }
+      })
+      .catch(() => { });
+  }
+
+  submitEditForm(avatar?: string): void {
     const raw = this.editForm.getRawValue();
 
-    const newProfileData: { username?: string; password?: string } = {};
+    const newProfileData: { username?: string; password?: string, photo?: string } = {};
     if (raw.username && raw.username.trim()) newProfileData.username = raw.username.trim();
     if (raw.password && raw.password.trim()) newProfileData.password = raw.password.trim();
+    if (avatar) newProfileData.photo = avatar;
 
     if (Object.keys(newProfileData).length === 0) {
       alert('No data given to update profile');
@@ -84,7 +105,6 @@ export class ProfileComponent {
           ...updated
         });
 
-        alert('Profile successfully updated');
         this.showEditForms.set(false);
         this.editForm.reset();
       },

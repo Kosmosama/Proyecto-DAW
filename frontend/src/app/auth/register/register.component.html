@@ -76,14 +76,9 @@
 
       <div class="mb-3">
         <label>Choose your avatar:</label>
-        <div class="row mt-2">
-          @for (avatar of availableAvatars(); track $index) {
-          <div class="col-3 d-flex justify-content-center mb-3 avatar-option">
-            <img [src]="'/images/avatars/' + avatar" class="img-thumbnail avatar-option"
-              [class.border-primary]="selectedAvatar() === avatar" (click)="selectAvatar(avatar)" [alt]="avatar" />
-          </div>
-          }
-        </div>
+
+        <avatar-selector [selectedAvatar]="selectedAvatar()" (avatarSelected)="selectAvatar($event)" />
+
         @if (!selectedAvatar()) {
         <div class="text-danger mt-2">You must select an avatar</div>
         }
@@ -91,7 +86,8 @@
 
 
       <div class="d-flex justify-content-between">
-        <button (click)="currentStep.set(1)" class="btn btn-sm btn-secondary me-2" style="background-color: #e0e0e0; color: #333;">Go back</button>
+        <button (click)="currentStep.set(1)" class="btn btn-sm btn-secondary me-2"
+          style="background-color: #e0e0e0; color: #333;">Go back</button>
         <button (click)="addPlayer()" class="btn" [disabled]="registerForm.invalid">Create account</button>
       </div>
       }

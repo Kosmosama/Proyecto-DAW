@@ -1,0 +1,13 @@
+<div class="row mt-2">
+  @for (avatar of avatars(); track $index) {
+    <div class="col-3 d-flex justify-content-center mb-3 avatar-option">
+      <img
+        [src]="'/images/avatars/' + avatar"
+        class="img-thumbnail avatar-option"
+        [class.border-primary]="selectedAvatar() === avatar"
+        (click)="selectAvatar(avatar)"
+        [alt]="avatar"
+      />
+    </div>
+  }
+</div>
