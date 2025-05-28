@@ -1,0 +1,13 @@
+.avatar-option {
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 2px solid transparent;
+
+  &.border-primary {
+    border-color: #dc3545;
+  }
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}

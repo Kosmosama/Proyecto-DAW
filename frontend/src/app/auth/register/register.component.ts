@@ -11,11 +11,11 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CanComponentDeactivate } from '../../core/guards/leave-page.guard';
 import { Player } from '../../core/interfaces/player.model';
 import { AuthService } from '../../core/services/auth.service';
-import { CatModalComponent } from '../../shared/components/modals/cat-modal/cat-modal.component'; // Importa CatModalComponent
+import { PlayerService } from '../../core/services/player.service';
 import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
 import { ValidationClassesDirective } from '../../shared/directives/validation-classes.directive';
 import { matchPassword } from '../../shared/validators/match-password.validator';
-import { PlayerService } from '../../core/services/player.service';
+import { AvatarSelectorComponent } from '../../shared/components/avatar-selector/avatar-selector.component';
 
 @Component({
   standalone: true,
@@ -24,7 +24,8 @@ import { PlayerService } from '../../core/services/player.service';
     FormsModule,
     ReactiveFormsModule,
     ValidationClassesDirective,
-    RouterLink
+    RouterLink,
+    AvatarSelectorComponent
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],

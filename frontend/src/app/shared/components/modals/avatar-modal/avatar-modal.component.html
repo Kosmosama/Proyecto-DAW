@@ -1,0 +1,13 @@
+<div class="modal-header">
+    <h5 class="modal-title">Choose a new avatar</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="cancel()"></button>
+</div>
+
+<div class="modal-body">
+    <avatar-selector [selectedAvatar]="selectedAvatar()" (avatarSelected)="onAvatarSelected($event)" />
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    <button type="button" class="btn btn-danger" [disabled]="!selectedAvatar" (click)="save()">Save</button>
+</div>
