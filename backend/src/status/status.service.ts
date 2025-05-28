@@ -26,12 +26,14 @@ export class StatusService {
         await this.redis.hset(SOCKET_TO_PLAYER, client.id, playerId.toString());
         await this.redis.sadd(`${PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
 
+        // If there's a pending disconnect timer, cancel it because the player reconnected
         if (this.disconnectTimers.has(playerId)) {
             clearTimeout(this.disconnectTimers.get(playerId)!);
             this.disconnectTimers.delete(playerId);
             this.logger.debug(`Cancelled offline timer for player ${playerId} due to new connection.`);
         }
 
+        // If this is the first active socket for the player, mark them as online
         const socketCount = await this.redis.scard(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
         if (socketCount === 1) {
             await this.redis.sadd(ONLINE_PLAYERS, playerId.toString());
@@ -57,14 +59,16 @@ export class StatusService {
         await this.redis.hdel(SOCKET_TO_PLAYER, client.id);
         await this.redis.srem(`${PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
 
+        // Check if the player has any sockets left
         const remaining = await this.redis.scard(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
-
         if (remaining === 0) {
             this.logger.debug(`Starting offline timer for player ${playerId}`);
 
+            // Wait 5 seconds before officially marking the player offline (grace period)
             const timer = setTimeout(async () => {
                 const stillRemaining = await this.redis.scard(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
                 if (stillRemaining === 0) {
+                    // Confirmed: no reconnects, clean up state and notify friends
                     await this.redis.del(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
                     await this.redis.srem(ONLINE_PLAYERS, playerId.toString());
                     await this.broadcastOfflineStatusToFriends(playerId, server);
@@ -94,17 +98,19 @@ export class StatusService {
         const friends = await this.playerService.getFriends(playerId);
         const friendIds: number[] = (friends?.data ?? []).map((f: { id: number }) => f.id);
 
+        // Cache the friend list in Redis for use when going offline
         if (friendIds.length > 0) {
             const friendIdStrings: string[] = friendIds.map(String);
             await this.redis.sadd(`${PLAYER_FRIENDS_PREFIX}${playerId}`, ...friendIdStrings);
         }
 
+        // Check which friends are currently online
         const pipeline = this.redis.pipeline();
         friendIds.forEach(id => {
             pipeline.sismember(ONLINE_PLAYERS, id.toString());
         });
-
         const results = await pipeline.exec();
+
         const onlineFriendIds = friendIds.filter((_, i) => results?.[i]?.[1] === 1);
 
         await this.emitToPlayer(server, playerId, 'friends:online', onlineFriendIds);
@@ -123,6 +129,7 @@ export class StatusService {
     private async broadcastOfflineStatusToFriends(playerId: number, server: Server) {
         this.logger.debug(`Broadcasting offline status for player ${playerId} to friends`);
 
+        // Retrieve and remove cached friend IDs from Redis
         const friendIdStrings = await this.redis.smembers(`${PLAYER_FRIENDS_PREFIX}${playerId}`);
         await this.redis.del(`${PLAYER_FRIENDS_PREFIX}${playerId}`);
 
@@ -130,14 +137,18 @@ export class StatusService {
 
         const friendIds = friendIdStrings.map(id => parseInt(id, 10));
 
+        // Check which friends are currently online
         const pipeline = this.redis.pipeline();
         friendIdStrings.forEach(id => pipeline.sismember(ONLINE_PLAYERS, id));
-        
         const results = await pipeline.exec();
+
         const onlineFriendIds = friendIds.filter((_, i) => results?.[i]?.[1] === 1);
 
+        // Notify each online friend that this player has gone offline
         await Promise.all(
-            onlineFriendIds.map(friendId => this.emitToPlayer(server, friendId, 'friend:offline', playerId))
+            onlineFriendIds.map(friendId =>
+                this.emitToPlayer(server, friendId, 'friend:offline', playerId)
+            )
         );
     }
 
@@ -150,7 +161,10 @@ export class StatusService {
      * @returns {Promise<void>} No return value.
      */
     public async emitToPlayer(server: Server, playerId: number, event: string, data: any) {
+        // Get all socket IDs associated with the player
         const sockets = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
+
+        // Emit the event to each socket individually
         for (const socketId of sockets) {
             server.to(socketId).emit(event, data);
         }

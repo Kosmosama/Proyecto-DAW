@@ -20,6 +20,12 @@ export class TeamService {
         private readonly playerService: PlayerService,
     ) { }
 
+    /**
+     * Creates a new team for the specified player.
+     * @param {number} playerId The ID of the player creating the team.
+     * @param {CreateTeamDto} dto The data transfer object containing team details.
+     * @returns {Promise<Team>} The created team.
+     */
     async create(playerId: number, dto: CreateTeamDto): Promise<Team> {
         const player = await this.playerService.findOnePrivate(playerId);
         if (!player) throw new NotFoundException('Player not found');
@@ -39,6 +45,13 @@ export class TeamService {
         return this.teamRepository.save(newTeam);
     }
 
+    /**
+     * Updates an existing team for the specified player.
+     * @param {number} playerId The ID of the player updating the team.
+     * @param {number} teamId The ID of the team to update.
+     * @param {UpdateTeamDto} dto The data transfer object containing updated team details.
+     * @returns {Promise<void>}
+     */
     async update(playerId: number, teamId: number, dto: UpdateTeamDto): Promise<void> {
         const team = await this.findOne(playerId, teamId);
 
@@ -56,6 +69,11 @@ export class TeamService {
         await this.teamRepository.save(team);
     }
 
+    /**
+     * Finds all teams for a specific player.
+     * @param {number} playerId The ID of the player whose teams to find.
+     * @returns {Promise<Team[]>} An array of teams belonging to the player.
+     */
     async findAllByPlayer(playerId: number): Promise<Team[]> {
         return this.teamRepository.find({
             where: { player: { id: playerId } },
@@ -63,6 +81,12 @@ export class TeamService {
         });
     }
 
+    /**
+     * Finds a specific team by its ID for a given player.
+     * @param {number} playerId The ID of the player who owns the team.
+     * @param {number} teamId The ID of the team to find.
+     * @returns {Promise<Team>} The found team.
+     */
     async findOne(playerId: number, teamId: number): Promise<Team> {
         const team = await this.teamRepository.findOne({
             where: { id: teamId, player: { id: playerId } },
@@ -71,6 +95,12 @@ export class TeamService {
         return team;
     }
 
+    /**
+     * Deletes a team for a specific player.
+     * @param {number} playerId The ID of the player who owns the team.
+     * @param {number} teamId The ID of the team to delete.
+     * @returns {Promise<void>}
+     */
     async delete(playerId: number, teamId: number): Promise<void> {
         const result = await this.teamRepository.delete({ id: teamId, player: { id: playerId } });
         if (!result.affected) throw new NotFoundException('Team not found or not owned by player');
@@ -91,6 +121,13 @@ export class TeamService {
         }
     }
 
+    /**
+     * Validates and parses a Showdown team string.
+     * @param {string} data The raw team data as a string.
+     * @param {string} format The format to validate against (e.g., 'gen9ou').
+     * @param {boolean} strict Whether to enforce strict legality checks.
+     * @returns {Promise<PokemonSet[]>} An array of parsed Pokémon sets.
+     */
     private async validateAndParseTeam(
         data: string,
         format: string,

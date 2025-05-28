@@ -178,6 +178,12 @@ export class AuthService {
         return token;
     }
 
+    /**
+     * Authenticates a socket client using JWT.
+     * @param {Socket} client The socket client object.
+     * @returns {Promise<PlayerPrivate>} The authenticated player's private information.
+     * @throws {Error} If the token is missing or invalid.
+     */
     async authenticateClient(client: Socket): Promise<PlayerPrivate> {
         // const token = client.handshake.headers.authorization?.split(' ')[1];
         const token = client.handshake.auth.token?.replace('Bearer ', '');
@@ -188,7 +194,13 @@ export class AuthService {
         return this.validatePayload(payload);
     }
 
-    verifyJwt(token: string): JwtPayload {
+    /**
+     * Verifies a JWT token and returns the payload.
+     * @param {string} token The JWT token to verify.
+     * @returns {JwtPayload} The decoded JWT payload.
+     * @throws {Error} If the token is invalid or expired.
+     */
+    private verifyJwt(token: string): JwtPayload {
         try {
             return this.jwtService.verify<JwtPayload>(token);
         } catch {
@@ -196,7 +208,13 @@ export class AuthService {
         }
     }
 
-    async validatePayload(payload: JwtPayload): Promise<PlayerPrivate> {
+    /**
+     * Validates the JWT payload and retrieves the player's private information.
+     * @param {JwtPayload} payload The decoded JWT payload.
+     * @returns {Promise<PlayerPrivate>} The player's private information.
+     * @throws {Error} If the player is not found.
+     */
+    private async validatePayload(payload: JwtPayload): Promise<PlayerPrivate> {
         const player = await this.playerService.findOnePrivate(payload.id);
         if (!player) {
             throw new Error('Player not found');
