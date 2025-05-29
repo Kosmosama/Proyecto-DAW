@@ -34,12 +34,22 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async handleConnection(client: Socket) {
         try {
             const player = await this.authService.authenticateClient(client);
-            client.data.playerId = player.id;
-            this.logger.debug(`Player ${player.id} connected to game gateway`);
+
+            this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
+            // await this.statusService.handleNewConnection(client, player.id, this.server);
         } catch (err) {
-            this.logger.warn(`Unauthorized connection: ${err.message}`);
+            this.logger.warn(`Unauthorized socket connection: ${err.message}`);
             client.disconnect();
         }
+        
+        // try {
+        //     const player = await this.authService.authenticateClient(client);
+        //     client.data.playerId = player.id;
+        //     this.logger.debug(`Player ${player.id} connected to game gateway`);
+        // } catch (err) {
+        //     this.logger.warn(`Unauthorized connection: ${err.message}`);
+        //     client.disconnect();
+        // }
     }
 
     async handleDisconnect(client: Socket) {

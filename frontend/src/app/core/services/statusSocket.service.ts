@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 })
 export class StatusSocketService {
     private socket: Socket | null = null;
+    private socket2: Socket | null = null;
     private authService = inject(AuthService);
     private onlineFriendIds = signal<number[]>([]);
 
@@ -20,6 +21,12 @@ export class StatusSocketService {
 
 
         this.socket = io(`${environment.apiUrl}/status`, {
+            auth: {
+                token: this.authService.getAccessToken(),
+            }
+        });
+
+        this.socket2 = io(`${environment.apiUrl}/game`, {
             auth: {
                 token: this.authService.getAccessToken(),
             }
