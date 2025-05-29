@@ -26,12 +26,6 @@ export class StatusSocketService {
             }
         });
 
-        this.socket2 = io(`${environment.apiUrl}/game`, {
-            auth: {
-                token: this.authService.getAccessToken(),
-            }
-        });
-
         this.socket.on('connect', () => {
             console.log('Connected to status namespace');
         });
