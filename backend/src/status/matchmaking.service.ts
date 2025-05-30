@@ -4,7 +4,7 @@ import { Redis } from 'ioredis';
 import { Server } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
 import { StatusService } from './status.service';
-import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_PENDING_REQUESTS } from 'src/config/redis.constants';
+import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_PENDING_REQUESTS } from 'src/config/redis.constants';
 
 @Injectable()
 export class MatchmakingService {
@@ -45,24 +45,25 @@ export class MatchmakingService {
     }
 
     async sendBattleRequest(from: number, to: number, server: Server): Promise<void> {
-        const areFriends = await this.playerService.areFriends(from, to);
-        const toOnline = await this.redis.sismember(ONLINE_PLAYERS, to.toString());
+        if (from === to) throw new Error("Cannot send battle request to self");
 
-        if (!areFriends) throw new Error('Not friends');
-        if (!toOnline) throw new Error('Target player is not online');
+        const areFriends = await this.ensureFriendshipCached(from, to);
+        if (!areFriends) throw new Error("Players are not friends");
 
-        const reverseKey = `${BATTLE_REQUEST_PREFIX}${to}:${from}`;
-        const exists = await this.redis.exists(reverseKey);
-        if (exists) throw new Error('Mutual battle request exists');
+        const isOnline = await this.redis.sismember(ONLINE_PLAYERS, to.toString());
+        if (!isOnline) throw new Error("Target player is not online");
 
-        const key = `${BATTLE_REQUEST_PREFIX}${from}:${to}`;
-        const ttl = 30;
+        const [fwdKey, revKey] = this.getBattleRequestKeys(from, to);
+        const [fwdExists, revExists] = await Promise.all([
+            this.redis.exists(fwdKey),
+            this.redis.exists(revKey),
+        ]);
+        if (fwdExists || revExists) throw new Error("A pending request already exists");
 
-        await this.redis.set(key, 'pending', 'EX', ttl);
-        await this.redis.sadd(`${PLAYER_PENDING_REQUESTS}${from}`, key);
+        await this.redis.set(fwdKey, 'pending', 'EX', 30);
+        await this.redis.sadd(`${PLAYER_PENDING_REQUESTS}${from}`, fwdKey);
 
         await this.statusService.emitToPlayer(server, to, 'battle:request:received', { from });
-
         this.logger.debug(`Battle request sent from ${from} to ${to}`);
     }
 
@@ -129,5 +130,22 @@ export class MatchmakingService {
 
         this.logger.debug(`Friend battle match: Player ${player1} /vs/ Player ${player2}`);
         return true;
+    }
+
+    private async ensureFriendshipCached(from: number, to: number): Promise<boolean> {
+        const key = `${PLAYER_FRIENDS_PREFIX}${from}`;
+        const cached = await this.redis.sismember(key, to.toString());
+        if (cached) return true;
+
+        const areFriends = await this.playerService.areFriends(from, to);
+        if (areFriends) await this.redis.sadd(key, to.toString());
+        return areFriends;
+    }
+
+    private getBattleRequestKeys(from: number, to: number): [string, string] {
+        return [
+            `${BATTLE_REQUEST_PREFIX}${from}:${to}`,
+            `${BATTLE_REQUEST_PREFIX}${to}:${from}`,
+        ];
     }
 }
