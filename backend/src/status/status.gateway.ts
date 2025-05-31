@@ -1,12 +1,10 @@
-import { Logger, UseGuards } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
+import { MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
-import { StatusService } from './status.service';
-import { JwtWsGuard } from 'src/auth/guards/jwt-ws.guard';
-import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
-import { PlayerWs } from 'src/auth/decorators/player-ws.decorator';
 import { MatchmakingService } from './matchmaking.service';
+import { StatusService } from './status.service';
+import { PlayerIdWs } from './decorators/player-ws.decorator';
 
 @WebSocketGateway({
     namespace: 'status',
@@ -32,11 +30,7 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
      * Handles a new WebSocket connection.
      * Authenticates the player, associates the socket, and registers them as online.
      */
-    // @UseGuards(JwtWsGuard)
-    async handleConnection(
-        client: Socket,
-        //,
-    ) {
+    async handleConnection(client: Socket) {
         try {
             const player = await this.authService.authenticateClient(client);
             client.data.playerId = player.id;
@@ -60,47 +54,34 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
             return;
         }
 
-        await this.matchmakingService.cleanupPlayerRequests(playerId);
-        await this.matchmakingService.leaveMatchmaking(playerId);
-
         this.logger.debug(`Player ${playerId} with socket id ${client.id} disconnected.`);
     }
 
     @SubscribeMessage('matchmaking:join')
-    async onJoinMatchmaking(client: Socket,) {
-        const playerId = client.data.playerId;
+    async onJoinMatchmaking(@PlayerIdWs() playerId: number) {
         await this.matchmakingService.joinMatchmaking(playerId, this.server);
     }
 
     @SubscribeMessage('matchmaking:leave')
-    async onLeaveMatchmaking(client: Socket,) {
-        const playerId = client.data.playerId;
+    async onLeaveMatchmaking(@PlayerIdWs() playerId: number) {
         await this.matchmakingService.leaveMatchmaking(playerId);
     }
 
     @SubscribeMessage('battle:request')
-    async onBattleRequest(client: Socket, @MessageBody() data: { to: number }) {
-        if (!client.data || typeof client.data.playerId !== 'number') {
-            this.logger.warn(`battle:request - playerId is undefined for client ${client.id}`);
-            client.emit('error', { message: 'No autorizado' });
-            return;
-        }
-
-        const playerId = client.data.playerId;
+    async onBattleRequest(@MessageBody() data: { to: number }, @PlayerIdWs() playerId: number) {
         await this.matchmakingService.sendBattleRequest(playerId, data.to, this.server);
     }
 
-
-
     @SubscribeMessage('battle:cancel')
-    async onBattleCancel(client: Socket, @MessageBody() data: { to: number }) {
-        const playerId = client.data.playerId;
+    async onBattleCancel(@MessageBody() data: { to: number }, @PlayerIdWs() playerId: number) {
         await this.matchmakingService.cancelBattleRequest(playerId, data.to, this.server);
     }
 
     @SubscribeMessage('battle:accept')
-    async onBattleAccept(client: Socket, @MessageBody() data: { from: number }) {
-        const playerId = client.data.playerId;
+    async onBattleAccept(
+        @MessageBody() data: { from: number },
+        @PlayerIdWs() playerId: number
+    ) {
         await this.matchmakingService.acceptBattleRequest(data.from, playerId, this.server);
     }
 }

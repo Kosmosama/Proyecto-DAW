@@ -10,7 +10,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
 import { IsEmailUniqueConstraint } from './validators/is-email-unique.validator';
-import { JwtWsGuard } from './guards/jwt-ws.guard';
 
 @Module({
     imports: [
@@ -24,7 +23,7 @@ import { JwtWsGuard } from './guards/jwt-ws.guard';
             }),
         }),
     ],
-    providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, LocalStrategy, RefreshJwtStrategy, IsEmailUniqueConstraint, JwtWsGuard],
+    providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, LocalStrategy, RefreshJwtStrategy, IsEmailUniqueConstraint],
     controllers: [AuthController],
     exports: [AuthService, JwtModule],
 })

@@ -4,6 +4,7 @@ import { Socket, Server } from 'socket.io';
 import { Redis } from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { PlayerService } from 'src/player/player.service';
+import { MatchmakingService } from './matchmaking.service';
 
 @Injectable()
 export class StatusService {
@@ -71,6 +72,11 @@ export class StatusService {
                     // Confirmed: no reconnects, clean up state and notify friends
                     await this.redis.del(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
                     await this.redis.srem(ONLINE_PLAYERS, playerId.toString());
+
+                    // HOW TO DO THIS? If i add it here, an error occurs {UndefinedDependencyException}
+                    // await this.matchmakingService.cleanupPlayerRequests(playerId);
+                    // await this.matchmakingService.leaveMatchmaking(playerId);
+
                     await this.broadcastOfflineStatusToFriends(playerId, server);
                     this.logger.debug(`Player ${playerId} is no longer online.`);
                 } else {
