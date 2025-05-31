@@ -80,9 +80,17 @@ export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('battle:request')
     async onBattleRequest(client: Socket, @MessageBody() data: { to: number }) {
+        if (!client.data || typeof client.data.playerId !== 'number') {
+            this.logger.warn(`battle:request - playerId is undefined for client ${client.id}`);
+            client.emit('error', { message: 'No autorizado' });
+            return;
+        }
+
         const playerId = client.data.playerId;
         await this.matchmakingService.sendBattleRequest(playerId, data.to, this.server);
     }
+
+
 
     @SubscribeMessage('battle:cancel')
     async onBattleCancel(client: Socket, @MessageBody() data: { to: number }) {

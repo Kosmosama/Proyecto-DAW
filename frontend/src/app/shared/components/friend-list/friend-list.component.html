@@ -3,7 +3,7 @@
         <div class="card-header">
 
             <h2>{{ title() }}</h2>
-            
+
 
         </div>
         <div class="card-body">
@@ -25,6 +25,10 @@
                             <i class="bi bi-info-square"></i>
                             }
                         </span>
+                        <button (click)="sendBattleRequest(friend.id!)" [disabled]="!friend.online"
+                            title="Enviar solicitud de batalla">
+                            ⚔️ ShowDAW!
+                        </button>
                     </div>
                     <div class="friend-photo">
                         <img [src]="friend.photo ? '/images/avatars/' + friend.photo : '/images/icons/default-avatar.jpg'"

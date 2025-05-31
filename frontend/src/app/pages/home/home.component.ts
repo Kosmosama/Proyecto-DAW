@@ -1,10 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { Player } from '../../core/interfaces/player.model';
 import { StatusSocketService } from '../../core/services/statusSocket.service';
+import { MatchmakingPanelComponent } from '../../shared/components/matchmaking-panel/matchmaking-panel.component';
 
 @Component({
   selector: 'home',
-  imports: [],
+  imports: [MatchmakingPanelComponent],
   templateUrl: './home.component.html',
   styles: ``
 })

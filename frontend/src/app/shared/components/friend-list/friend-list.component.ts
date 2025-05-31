@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Player } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 import { StatusSocketService } from '../../../core/services/statusSocket.service';
+import { MatchmakingService } from '../../../core/services/matchMaking.service';
 
 @Component({
   selector: 'app-friends-list',
@@ -13,6 +14,12 @@ import { StatusSocketService } from '../../../core/services/statusSocket.service
   standalone: true,
 })
 export class FriendListComponent implements OnInit {
+
+  private playerService = inject(PlayerService);
+  private statusSocket = inject(StatusSocketService);
+  private currentPlayerId = signal<number | null>(null);
+  private matchmakingService = inject(MatchmakingService);
+
   friends = signal<Player[]>([]);
   onlineFriends = signal<number[]>([]);
 
@@ -22,9 +29,6 @@ export class FriendListComponent implements OnInit {
 
   loading = signal<boolean>(true);
 
-  private playerService = inject(PlayerService);
-  private statusSocket = inject(StatusSocketService);
-  private currentPlayerId = signal<number | null>(null);
 
   constructor() {
     effect(() => {
@@ -61,7 +65,11 @@ export class FriendListComponent implements OnInit {
     });
   }
 
-   get friendsWithStatus(): Player[] {
+  sendBattleRequest(friendId: number): void {
+    this.matchmakingService.requestBattle(friendId);
+  }
+
+  get friendsWithStatus(): Player[] {
     const onlineIds = this.onlineFriends();
     let friendsList = [...this.friends()].map(friend => ({
       ...friend,
@@ -77,7 +85,7 @@ export class FriendListComponent implements OnInit {
     return friendsList;
   }
 
-  onImageError(event: Event){
+  onImageError(event: Event) {
     this.playerService.setDefaultAvatar(event);
   }
 
