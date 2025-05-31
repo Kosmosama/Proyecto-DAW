@@ -164,9 +164,12 @@ export class StatusService {
         // Get all socket IDs associated with the player
         const sockets = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
 
-        // Emit the event to each socket individually
-        for (const socketId of sockets) {
-            server.to(socketId).emit(event, data);
-        }
+        // Emit the event to each socket in parallel
+        await Promise.all(
+            sockets.map(socketId => {
+                server.to(socketId).emit(event, data);
+                return Promise.resolve();
+            })
+        );
     }
 }
