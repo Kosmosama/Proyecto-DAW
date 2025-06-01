@@ -14,8 +14,8 @@ import { PlayerIdWs } from './decorators/player-ws.decorator';
         credentials: true,
     },
 })
-export class StatusGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    private readonly logger = new Logger(StatusGateway.name);
+export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    private readonly logger = new Logger(RealtimeGateway.name);
 
     @WebSocketServer()
     server: Server;

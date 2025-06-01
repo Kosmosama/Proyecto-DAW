@@ -7,13 +7,13 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtGuard } from './auth/guards/jwt-auth.guard';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
+import { RedisFlushService } from './common/redis-flush.service';
 import { redisAsyncConfig } from './config/redis.config';
 import { typeOrmAsyncConfig } from './config/typeorm.config';
 import { GameModule } from './game/game.module';
 import { PlayerModule } from './player/player.module';
-import { StatusModule } from './status/status.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { TeamsModule } from './teams/teams.module';
-import { RedisFlushService } from './common/redis-flush.service';
 
 @Module({
     imports: [
@@ -21,7 +21,7 @@ import { RedisFlushService } from './common/redis-flush.service';
         TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
         RedisModule.forRootAsync(redisAsyncConfig),
         PlayerModule,
-        StatusModule,
+        RealtimeModule,
         GameModule,
         AuthModule,
         TeamsModule,

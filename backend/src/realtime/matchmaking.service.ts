@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
+import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Server } from 'socket.io';
+import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_PENDING_REQUESTS } from 'src/config/redis.constants';
 import { PlayerService } from 'src/player/player.service';
 import { StatusService } from './status.service';
-import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_PENDING_REQUESTS } from 'src/config/redis.constants';
+import { emitToPlayer } from 'src/common/utils/emit.util';
 
 @Injectable()
 export class MatchmakingService {
@@ -13,7 +14,6 @@ export class MatchmakingService {
     constructor(
         @InjectRedis() private readonly redis: Redis,
         private readonly playerService: PlayerService,
-        private readonly statusService: StatusService,
     ) { }
 
     async joinMatchmaking(playerId: number, server: Server): Promise<void> {
@@ -63,7 +63,7 @@ export class MatchmakingService {
         await this.redis.set(fwdKey, 'pending', 'EX', 30);
         await this.redis.sadd(`${PLAYER_PENDING_REQUESTS}${from}`, fwdKey);
 
-        await this.statusService.emitToPlayer(server, to, 'battle:request:received', { from });
+        await emitToPlayer(this.redis, server, to, 'battle:request:received', { from });
         this.logger.debug(`Battle request sent from ${from} to ${to}`);
     }
 
@@ -72,7 +72,7 @@ export class MatchmakingService {
         await this.redis.del(key);
         await this.redis.srem(`${PLAYER_PENDING_REQUESTS}${from}`, key);
 
-        await this.statusService.emitToPlayer(server, to, 'battle:request:cancelled', { from });
+        await emitToPlayer(this.redis, server, to, 'battle:request:cancelled', { from });
 
         this.logger.debug(`Battle request from ${from} to ${to} cancelled`);
     }
@@ -93,8 +93,8 @@ export class MatchmakingService {
 
         this.logger.debug(`Friend battle match: Player {from} ${from}  /vs/ {to} Player ${to}`);
 
-        await this.statusService.emitToPlayer(server, from, 'match:found', { opponent: to, mode: 'friend' });
-        await this.statusService.emitToPlayer(server, to, 'match:found', { opponent: from, mode: 'friend' });
+        await emitToPlayer(this.redis, server, from, 'match:found', { opponent: to, mode: 'friend' });
+        await emitToPlayer(this.redis, server, to, 'match:found', { opponent: from, mode: 'friend' });
     }
 
     async cleanupPlayerRequests(playerId: number): Promise<void> {
@@ -125,8 +125,8 @@ export class MatchmakingService {
             return false;
         }
 
-        await this.statusService.emitToPlayer(server, player1, 'match:found', { opponent: player2, mode: 'matchmaking' });
-        await this.statusService.emitToPlayer(server, player2, 'match:found', { opponent: player1, mode: 'matchmaking' });
+        await emitToPlayer(this.redis, server, player1, 'match:found', { opponent: player2, mode: 'matchmaking' });
+        await emitToPlayer(this.redis, server, player2, 'match:found', { opponent: player1, mode: 'matchmaking' });
 
         this.logger.debug(`Friend battle match: Player ${player1} /vs/ Player ${player2}`);
         return true;

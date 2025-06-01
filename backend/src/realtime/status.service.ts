@@ -1,9 +1,10 @@
-import { SOCKET_TO_PLAYER, PLAYER_SOCKETS_PREFIX, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX } from '../config/redis.constants';
-import { Injectable, Logger } from '@nestjs/common';
-import { Socket, Server } from 'socket.io';
-import { Redis } from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
+import { Injectable, Logger } from '@nestjs/common';
+import { Redis } from 'ioredis';
+import { Server, Socket } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
+import { ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_SOCKETS_PREFIX, SOCKET_TO_PLAYER } from '../config/redis.constants';
+import { emitToPlayer } from 'src/common/utils/emit.util';
 import { MatchmakingService } from './matchmaking.service';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class StatusService {
 
     constructor(
         private readonly playerService: PlayerService,
+        private readonly matchmakingService: MatchmakingService,
         @InjectRedis() private readonly redis: Redis,
     ) { }
 
@@ -73,9 +75,8 @@ export class StatusService {
                     await this.redis.del(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
                     await this.redis.srem(ONLINE_PLAYERS, playerId.toString());
 
-                    // HOW TO DO THIS? If i add it here, an error occurs {UndefinedDependencyException}
-                    // await this.matchmakingService.cleanupPlayerRequests(playerId);
-                    // await this.matchmakingService.leaveMatchmaking(playerId);
+                    await this.matchmakingService.cleanupPlayerRequests(playerId);
+                    await this.matchmakingService.leaveMatchmaking(playerId);
 
                     await this.broadcastOfflineStatusToFriends(playerId, server);
                     this.logger.debug(`Player ${playerId} is no longer online.`);
@@ -119,10 +120,10 @@ export class StatusService {
 
         const onlineFriendIds = friendIds.filter((_, i) => results?.[i]?.[1] === 1);
 
-        await this.emitToPlayer(server, playerId, 'friends:online', onlineFriendIds);
+        await emitToPlayer(this.redis, server, playerId, 'friends:online', onlineFriendIds);
 
         await Promise.all(
-            onlineFriendIds.map(id => this.emitToPlayer(server, id, 'friend:online', playerId))
+            onlineFriendIds.map(id => emitToPlayer(this.redis, server, id, 'friend:online', playerId))
         );
     }
 
@@ -153,29 +154,8 @@ export class StatusService {
         // Notify each online friend that this player has gone offline
         await Promise.all(
             onlineFriendIds.map(friendId =>
-                this.emitToPlayer(server, friendId, 'friend:offline', playerId)
+                emitToPlayer(this.redis, server, friendId, 'friend:offline', playerId)
             )
-        );
-    }
-
-    /**
-     * Emits an event to a specific player.
-     * @param {Server} server The Socket.IO server instance.
-     * @param {number} playerId The ID of the player.
-     * @param {string} event The event name to emit.
-     * @param {any} data The data to send with the event.
-     * @returns {Promise<void>} No return value.
-     */
-    public async emitToPlayer(server: Server, playerId: number, event: string, data: any) {
-        // Get all socket IDs associated with the player
-        const sockets = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
-
-        // Emit the event to each socket in parallel
-        await Promise.all(
-            sockets.map(socketId => {
-                server.to(socketId).emit(event, data);
-                return Promise.resolve();
-            })
         );
     }
 }
