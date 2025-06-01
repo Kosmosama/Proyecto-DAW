@@ -2,39 +2,50 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Server } from 'socket.io';
+import { emitToPlayer } from 'src/common/utils/emit.util';
 import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_PENDING_REQUESTS } from 'src/config/redis.constants';
 import { PlayerService } from 'src/player/player.service';
-import { StatusService } from './status.service';
-import { emitToPlayer } from 'src/common/utils/emit.util';
+import { TeamService } from 'src/teams/teams.service';
+
+interface BattleRequest {
+    playerId: number;
+    teamId: number;
+}
 
 @Injectable()
 export class MatchmakingService {
     private readonly logger = new Logger(MatchmakingService.name);
 
     constructor(
-        @InjectRedis() private readonly redis: Redis,
         private readonly playerService: PlayerService,
+        private readonly teamService: TeamService,
+        @InjectRedis() private readonly redis: Redis,
     ) { }
 
-    async joinMatchmaking(playerId: number, server: Server): Promise<void> {
+    async joinMatchmaking(playerId: number, teamId: number, server: Server): Promise<void> {
         const inQueue = await this.redis.lrange(MATCHMAKING_QUEUE, 0, -1);
-        if (inQueue.includes(playerId.toString())) {
+        const playerKey = JSON.stringify({ playerId, teamId });
+
+        if (inQueue.includes(playerKey)) {
             this.logger.warn(`Player ${playerId} is already in matchmaking`);
             return;
         }
 
-        const otherPlayerIdStr = await this.redis.lpop(MATCHMAKING_QUEUE);
+        const opponentEntry = await this.redis.lpop(MATCHMAKING_QUEUE);
 
-        if (otherPlayerIdStr) {
-            const otherPlayerId = parseInt(otherPlayerIdStr);
-            const matched = await this.tryMatchPlayers(playerId, otherPlayerId, server);
+        if (opponentEntry) {
+            const opponent = JSON.parse(opponentEntry) as BattleRequest;
+            const matched = await this.tryMatchPlayers(
+                { playerId, teamId },
+                opponent,
+                server
+            );
 
             if (!matched) {
-                // One of them was offline. Retry matchmaking for the current player.
-                await this.redis.rpush(MATCHMAKING_QUEUE, playerId.toString());
+                await this.redis.rpush(MATCHMAKING_QUEUE, playerKey);
             }
         } else {
-            await this.redis.rpush(MATCHMAKING_QUEUE, playerId.toString());
+            await this.redis.rpush(MATCHMAKING_QUEUE, playerKey);
             this.logger.debug(`Player ${playerId} placed in matchmaking queue`);
         }
     }
@@ -44,7 +55,7 @@ export class MatchmakingService {
         this.logger.debug(`Player ${playerId} left matchmaking`);
     }
 
-    async sendBattleRequest(from: number, to: number, server: Server): Promise<void> {
+    async sendBattleRequest(from: number, to: number, teamId: number, server: Server): Promise<void> {
         if (from === to) throw new Error("Cannot send battle request to self");
 
         const areFriends = await this.ensureFriendshipCached(from, to);
@@ -58,29 +69,36 @@ export class MatchmakingService {
             this.redis.exists(fwdKey),
             this.redis.exists(revKey),
         ]);
+
         if (fwdExists || revExists) throw new Error("A pending request already exists");
 
-        await this.redis.set(fwdKey, 'pending', 'EX', 30);
+        await this.redis.set(fwdKey, teamId.toString(), 'EX', 30); // store teamId in value
         await this.redis.sadd(`${PLAYER_PENDING_REQUESTS}${from}`, fwdKey);
 
         await emitToPlayer(this.redis, server, to, 'battle:request:received', { from });
+
         this.logger.debug(`Battle request sent from ${from} to ${to}`);
     }
 
     async cancelBattleRequest(from: number, to: number, server: Server): Promise<void> {
         const key = `${BATTLE_REQUEST_PREFIX}${from}:${to}`;
-        await this.redis.del(key);
+
+        const existed = await this.redis.del(key);
         await this.redis.srem(`${PLAYER_PENDING_REQUESTS}${from}`, key);
 
-        await emitToPlayer(this.redis, server, to, 'battle:request:cancelled', { from });
-
-        this.logger.debug(`Battle request from ${from} to ${to} cancelled`);
+        if (existed) {
+            await emitToPlayer(this.redis, server, to, 'battle:request:cancelled', { from });
+            this.logger.debug(`Battle request from ${from} to ${to} cancelled`);
+        } else {
+            this.logger.warn(`Attempted to cancel non-existent battle request from ${from} to ${to}`);
+        }
     }
 
-    async acceptBattleRequest(from: number, to: number, server: Server): Promise<void> {
+    async acceptBattleRequest(from: number, to: number, teamId: number, server: Server): Promise<void> {
         const key = `${BATTLE_REQUEST_PREFIX}${from}:${to}`;
-        const exists = await this.redis.exists(key);
-        if (!exists) throw new Error('Request expired or invalid');
+        const fromTeamIdStr = await this.redis.get(key);
+
+        if (!fromTeamIdStr) throw new Error('Request expired or invalid');
 
         await this.redis.del(key);
         await this.redis.srem(`${PLAYER_PENDING_REQUESTS}${from}`, key);
@@ -89,13 +107,24 @@ export class MatchmakingService {
             this.redis.sismember(ONLINE_PLAYERS, from.toString()),
             this.redis.sismember(ONLINE_PLAYERS, to.toString()),
         ]);
+
         if (!fromOnline || !toOnline) throw new Error('One or both players are not available');
 
-        this.logger.debug(`Friend battle match: Player {from} ${from}  /vs/ {to} Player ${to}`);
+        const fromTeamId = parseInt(fromTeamIdStr, 10);
+        const [fromTeam, toTeam] = await Promise.all([
+            this.teamService.findOne(from, fromTeamId),
+            this.teamService.findOne(to, teamId),
+        ]);
+
+        this.logger.debug(`Friend battle match accepted:
+        Player ${from} (Team: ${fromTeamId})
+        vs
+        Player ${to} (Team: ${teamId})`);
 
         await emitToPlayer(this.redis, server, from, 'match:found', { opponent: to, mode: 'friend' });
         await emitToPlayer(this.redis, server, to, 'match:found', { opponent: from, mode: 'friend' });
     }
+
 
     async cleanupPlayerRequests(playerId: number): Promise<void> {
         const keys = await this.redis.smembers(`${PLAYER_PENDING_REQUESTS}${playerId}`);
@@ -108,27 +137,34 @@ export class MatchmakingService {
         }
     }
 
-    private async tryMatchPlayers(player1: number, player2: number, server: Server): Promise<boolean> {
+    private async tryMatchPlayers(p1: BattleRequest, p2: BattleRequest, server: Server): Promise<boolean> {
         const [p1Online, p2Online] = await Promise.all([
-            this.redis.sismember(ONLINE_PLAYERS, player1.toString()),
-            this.redis.sismember(ONLINE_PLAYERS, player2.toString()),
+            this.redis.sismember(ONLINE_PLAYERS, p1.playerId.toString()),
+            this.redis.sismember(ONLINE_PLAYERS, p2.playerId.toString()),
         ]);
 
         if (!p1Online || !p2Online) {
-            const offlinePlayer = !p1Online ? player1 : player2;
-            await this.leaveMatchmaking(offlinePlayer);
-            this.logger.debug(`Match failed: Player ${offlinePlayer} is offline. Requeuing other.`);
+            const offline = !p1Online ? p1 : p2;
+            const online = p1Online ? p1 : p2;
 
-            // Requeue the player who is still online
-            const onlinePlayer = p1Online ? player1 : player2;
-            await this.redis.rpush(MATCHMAKING_QUEUE, onlinePlayer.toString());
+            await this.leaveMatchmaking(offline.playerId);
+            await this.redis.rpush(MATCHMAKING_QUEUE, JSON.stringify(online));
             return false;
         }
 
-        await emitToPlayer(this.redis, server, player1, 'match:found', { opponent: player2, mode: 'matchmaking' });
-        await emitToPlayer(this.redis, server, player2, 'match:found', { opponent: player1, mode: 'matchmaking' });
+        const [team1, team2] = await Promise.all([
+            this.teamService.findOne(p1.playerId, p1.teamId),
+            this.teamService.findOne(p2.playerId, p2.teamId),
+        ]);
 
-        this.logger.debug(`Friend battle match: Player ${player1} /vs/ Player ${player2}`);
+        this.logger.debug(`MATCH READY:
+            Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
+            /VS/
+            Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
+
+        await emitToPlayer(this.redis, server, p1.playerId, 'match:found', { opponent: p2.playerId, mode: 'matchmaking' });
+        await emitToPlayer(this.redis, server, p2.playerId, 'match:found', { opponent: p1.playerId, mode: 'matchmaking' });
+
         return true;
     }
 

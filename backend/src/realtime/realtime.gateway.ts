@@ -58,8 +58,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     @SubscribeMessage('matchmaking:join')
-    async onJoinMatchmaking(@PlayerIdWs() playerId: number) {
-        await this.matchmakingService.joinMatchmaking(playerId, this.server);
+    async onJoinMatchmaking(
+        @MessageBody() data: { teamId: number },
+        @PlayerIdWs() playerId: number
+    ) {
+        await this.matchmakingService.joinMatchmaking(playerId, data.teamId, this.server);
     }
 
     @SubscribeMessage('matchmaking:leave')
@@ -68,20 +71,23 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     @SubscribeMessage('battle:request')
-    async onBattleRequest(@MessageBody() data: { to: number }, @PlayerIdWs() playerId: number) {
-        await this.matchmakingService.sendBattleRequest(playerId, data.to, this.server);
-    }
-
-    @SubscribeMessage('battle:cancel')
-    async onBattleCancel(@MessageBody() data: { to: number }, @PlayerIdWs() playerId: number) {
-        await this.matchmakingService.cancelBattleRequest(playerId, data.to, this.server);
+    async onBattleRequest(
+        @MessageBody() data: { to: number; teamId: number },
+        @PlayerIdWs() playerId: number
+    ) {
+        await this.matchmakingService.sendBattleRequest(playerId, data.to, data.teamId, this.server);
     }
 
     @SubscribeMessage('battle:accept')
     async onBattleAccept(
-        @MessageBody() data: { from: number },
+        @MessageBody() data: { to: number; teamId: number },
         @PlayerIdWs() playerId: number
     ) {
-        await this.matchmakingService.acceptBattleRequest(data.from, playerId, this.server);
+        await this.matchmakingService.acceptBattleRequest(data.to, playerId, data.teamId, this.server);
+    }
+
+    @SubscribeMessage('battle:cancel')
+    async onBattleCancel(@MessageBody() data: { from: number }, @PlayerIdWs() playerId: number) {
+        await this.matchmakingService.cancelBattleRequest(playerId, data.from, this.server);
     }
 }
