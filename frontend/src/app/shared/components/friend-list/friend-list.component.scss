@@ -1,43 +1,53 @@
 .friends-card {
-    width: 90%;
-    max-width: 600px;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-    background-color: #212529;
-  }
-  
-  .friends-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .friend-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #f9f9f9;
-  }
-  
-  .friend-info {
-    flex: 1;
-  }
-  
-  .friend-name {
-    font-weight: bold;
-  }
-  
-  .friend-status {
-    font-size: 0.9em;
-    color: #888;
-  }
-  
-  .friend-photo img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-  }
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friend-card {
+  background-color: #f9f9f9;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.friend-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.friend-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.friend-name {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friend-status {
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.btn-outline-dark {
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  line-height: 1.2;
+  white-space: nowrap;
+}

@@ -1,44 +1,45 @@
 <div class="friends-card container">
     <div class="card text-center">
         <div class="card-header">
-
             <h2>{{ title() }}</h2>
-
-
         </div>
+
         <div class="card-body">
             <div class="friends-list">
                 @if (loading()) {
-                loading friends
+                Loading friends...
                 }
                 @if (!loading()) {
                 @for (friend of friendsWithStatus; track $index) {
-                <div class="friend-card d-flex justify-content-between align-items-center border p-1 rounded mb-1"
-                    [routerLink]="[`/player/profile/${friend.id}`]" style="cursor: pointer;"
+                <div class="friend-card d-flex align-items-center border rounded p-2 mb-2"
                     [attr.title]="!friend.online ? ('Last login: ' + (friend.lastLogin | date:'medium')) : null">
-                    <div class="friend-info">
-                        <h5 class="friend-name mb-0" style="font-size: 1rem;">{{ friend.username }}</h5>
-                        <span class="friend-status"
+
+                    <a [routerLink]="[`/player/profile/${friend.id}`]">
+                        <img [src]="friend.photo ? '/images/avatars/' + friend.photo : '/images/icons/default-avatar.jpg'"
+                            (error)="onImageError($event)" alt="{{ friend.username }}'s photo"
+                            class="img-fluid rounded-circle friend-avatar me-2" />
+                    </a>
+
+                    <div class="friend-info flex-grow-1">
+                        <a [routerLink]="[`/player/profile/${friend.id}`]"
+                            class="fw-bold text-dark text-decoration-none friend-name d-block">
+                            {{ friend.username }}
+                        </a>
+                        <span class="friend-status d-block"
                             [ngClass]="{'text-success': friend.online, 'text-danger last-login-info': !friend.online}">
                             {{ friend.online ? 'Online' : 'Offline ' }}
                             @if (!friend.online) {
                             <i class="bi bi-info-square"></i>
                             }
                         </span>
-                        <button (click)="sendBattleRequest(friend.id!)" [disabled]="!friend.online"
-                            title="Enviar solicitud de batalla">
-                            ⚔️ ShowDAW!
-                        </button>
-                    </div>
-                    <div class="friend-photo">
-                        <img [src]="friend.photo ? '/images/avatars/' + friend.photo : '/images/icons/default-avatar.jpg'"
-                            (error)="onImageError($event)" alt="{{ friend.username }}'s photo"
-                            class="img-fluid rounded-circle friend-avatar" />
-
                     </div>
 
+                    <button (click)="sendBattleRequest(friend.id!); $event.stopPropagation(); $event.preventDefault();"
+                        [disabled]="!friend.online" class="btn btn-sm btn-outline-dark py-2 ms-2"
+                        title="Enviar solicitud de batalla">
+                        <i class="bi bi-controller fs-3"></i>
+                    </button>
                 </div>
-
                 }
                 }
             </div>

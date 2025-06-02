@@ -13,7 +13,6 @@ export class HomeComponent {
 
   player = signal<Player | null>(null);
   private socketService = inject(StatusSocketService);
-  ngOnInit(): void {
-
+  constructor() {
   }
 }

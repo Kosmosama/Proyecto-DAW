@@ -11,6 +11,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 import { TokenResponse } from './interfaces/token-response.interface';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
+import { JwtGuard } from './guards/jwt-auth.guard';
 
 @Public()
 @Controller('auth')
@@ -40,6 +41,7 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
+    @UseGuards(JwtGuard)
     @HttpCode(204)
     @Post('logout')
     @ApiOperation({ summary: 'Logout the current player' })

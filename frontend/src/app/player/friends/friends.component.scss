@@ -7,9 +7,7 @@
 }
 
 app-friends-list {
-  flex: 1;
   min-width: 250px;
-  max-width: 68%;
 }
 
 app-friend-search {
@@ -17,18 +15,4 @@ app-friend-search {
   min-width: 250px;
   max-width: 38%;
   margin-right: 10%;
-}
-
-
-
-@media (max-width: 768px) {
-  .parent-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  app-friends-list,
-  app-friend-search {
-    width: 100%;
-  }
 }

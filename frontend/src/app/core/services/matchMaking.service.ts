@@ -1,5 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { StatusSocketService } from './statusSocket.service';
+import { BattleRequest } from '../interfaces/battle-request.model';
 
 @Injectable({
   providedIn: 'root',
@@ -8,6 +9,7 @@ export class MatchmakingService {
 
   private statusSocket = inject(StatusSocketService);
   battleRequestReceived = signal<{ from: number } | null>(null);
+  battleRequests = signal<BattleRequest[]>([]);
 
   constructor() {
     const socket = this.statusSocket['socket'];
@@ -20,8 +22,8 @@ export class MatchmakingService {
     });
   }
 
-  joinMatchmaking() {
-    this.statusSocket['socket']?.emit('matchmaking:join');
+  joinMatchmaking(teamId: number) {
+    this.statusSocket['socket']?.emit('matchmaking:join', { teamId });
   }
 
   leaveMatchmaking() {
