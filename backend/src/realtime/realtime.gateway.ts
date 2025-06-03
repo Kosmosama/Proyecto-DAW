@@ -2,9 +2,9 @@ import { Logger } from '@nestjs/common';
 import { MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
+import { PlayerIdWs } from './decorators/player-ws.decorator';
 import { MatchmakingService } from './matchmaking.service';
 import { StatusService } from './status.service';
-import { PlayerIdWs } from './decorators/player-ws.decorator';
 
 @WebSocketGateway({
     namespace: 'status',
@@ -57,37 +57,103 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         this.logger.debug(`Player ${playerId} with socket id ${client.id} disconnected.`);
     }
 
+    /**
+     * Handles a request to join the matchmaking queue.
+     * @param {Socket} client - The socket client making the request.
+     * @param {Object} data - The data containing the team ID.
+     * @param {number} playerId - The ID of the player joining the queue.
+     */
     @SubscribeMessage('matchmaking:join')
     async onJoinMatchmaking(
+        client: Socket,
         @MessageBody() data: { teamId: number },
         @PlayerIdWs() playerId: number
     ) {
-        await this.matchmakingService.joinMatchmaking(playerId, data.teamId, this.server);
+        try {
+            await this.matchmakingService.joinMatchmaking(playerId, data.teamId, this.server);
+        } catch (err) {
+            client.emit('matchmaking:join', { error: err.message });
+        }
     }
 
+    /**
+     * Handles a request to leave the matchmaking queue.
+     * @param {Socket} client - The socket client making the request.
+     * @param {number} playerId - The ID of the player leaving the queue.
+     */
     @SubscribeMessage('matchmaking:leave')
-    async onLeaveMatchmaking(@PlayerIdWs() playerId: number) {
-        await this.matchmakingService.leaveMatchmaking(playerId);
+    async onLeaveMatchmaking(
+        client: Socket,
+        @PlayerIdWs() playerId: number
+    ) {
+        try {
+            await this.matchmakingService.leaveMatchmaking(playerId);
+        } catch (err) {
+            client.emit('matchmaking:leave', { error: err.message });
+        }
     }
 
+    /**
+     * Handles a battle request from one player to another.
+     * @param {Socket} client - The socket client making the request.
+     * @param {Object} data - The data containing the target player ID and self team ID.
+     * @param {number} playerId - The ID of the player sending the request.
+     */
     @SubscribeMessage('battle:request')
     async onBattleRequest(
+        client: Socket,
         @MessageBody() data: { to: number; teamId: number },
         @PlayerIdWs() playerId: number
     ) {
-        await this.matchmakingService.sendBattleRequest(playerId, data.to, data.teamId, this.server);
+        try {
+            await this.matchmakingService.sendBattleRequest(playerId, data.to, data.teamId, this.server);
+        } catch (err) {
+            client.emit('battle:request', { error: err.message });
+        }
     }
 
+    /**
+     * Handles a battle request acceptance.
+     * @param {Socket} client - The socket client responding to the request.
+     * @param {Object} data - The data containing the target player ID and self team ID.
+     * @param {number} playerId - The ID of the player responding to the request.
+     */
     @SubscribeMessage('battle:accept')
     async onBattleAccept(
+        client: Socket,
         @MessageBody() data: { to: number; teamId: number },
         @PlayerIdWs() playerId: number
     ) {
-        await this.matchmakingService.acceptBattleRequest(data.to, playerId, data.teamId, this.server);
+        try {
+            await this.matchmakingService.acceptBattleRequest(data.to, playerId, data.teamId, this.server);
+        } catch (err) {
+            client.emit('battle:accept', { error: err.message });
+        }
     }
 
+    /**
+     * Handles a battle request cancellation.
+     * @param {Socket} client - The socket client responding to the request.
+     * @param {} data - The data containing the target player ID and self team ID.
+     * @param {number} playerId - The ID of the player responding to the request.
+     */
     @SubscribeMessage('battle:cancel')
-    async onBattleCancel(@MessageBody() data: { from: number }, @PlayerIdWs() playerId: number) {
-        await this.matchmakingService.cancelBattleRequest(playerId, data.from, this.server);
+    async onBattleCancel(
+        client: Socket,
+        @MessageBody() data: { from: number },
+        @PlayerIdWs() playerId: number
+    ) {
+        try {
+            await this.matchmakingService.cancelBattleRequest(playerId, data.from, this.server);
+        } catch (err) {
+            client.emit('battle:cancel', { error: err.message });
+        }
     }
+
+    // Maybe do it
+    // @SubscribeMessage('battle:requests:get')
+    // async onGetBattleRequests(@PlayerIdWs() playerId: number) {
+    //     const requests = await this.matchmakingService.getPendingBattleRequests(playerId);
+    //     return requests;
+    // }
 }

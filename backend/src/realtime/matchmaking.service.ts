@@ -28,6 +28,15 @@ export class MatchmakingService {
         @InjectRedis() private readonly redis: Redis,
     ) { }
 
+    /**
+     * Joins a player to the matchmaking queue.
+     * If an opponent is found, both players are notified and matched.
+     * If not, the player is added to the queue.
+     * @param {number} playerId - The ID of the player joining matchmaking.
+     * @param {number} teamId - The ID of the player's team.
+     * @param {Server} server - The Socket.IO server instance for emitting events.
+     * @return {Promise<void>} No return value.
+     */
     async joinMatchmaking(playerId: number, teamId: number, server: Server): Promise<void> {
         const entry: MatchmakingEntry = { playerId, teamId };
         const entryStr = JSON.stringify(entry);
@@ -51,6 +60,12 @@ export class MatchmakingService {
         if (!matched) await this.redis.rpush(MATCHMAKING_QUEUE, entryStr);
     }
 
+    /**
+     * Leaves the matchmaking queue for a player.
+     * Removes the player from the queue if they are present.
+     * @param {number} playerId - The ID of the player leaving matchmaking.
+     * @return {Promise<void>} No return value.
+     */
     async leaveMatchmaking(playerId: number): Promise<void> {
         const items = await this.redis.lrange(MATCHMAKING_QUEUE, 0, -1);
         const target = items.find(i => JSON.parse(i).playerId === playerId);
@@ -58,6 +73,15 @@ export class MatchmakingService {
         this.logger.debug(`Player ${playerId} left matchmaking`);
     }
 
+    /**
+     * Sends a battle request to another player.
+     * Checks friendship status and online status before sending the request.
+     * @param {number} from - The ID of the player sending the request.
+     * @param {number} to - The ID of the player receiving the request.
+     * @param {number} teamId - The ID of the team of the sender.
+     * @param {Server} server - The Socket.IO server instance for emitting events.
+     * @return {Promise<void>} No return value.
+     */
     async sendBattleRequest(from: number, to: number, teamId: number, server: Server): Promise<void> {
         if (from === to) throw new Error('Cannot send battle request to self');
 
@@ -86,6 +110,14 @@ export class MatchmakingService {
         this.logger.debug(`Battle request sent from ${from} to ${to}`);
     }
 
+    /**
+     * Cancels a battle request sent by a player.
+     * Removes the request from Redis and notifies the target player.
+     * @param {number} from - The ID of the player who sent the request.
+     * @param {number} to - The ID of the player who received the request.
+     * @param {Server} server - The Socket.IO server instance for emitting events.
+     * @return {Promise<void>} No return value.
+     */
     async cancelBattleRequest(from: number, to: number, server: Server): Promise<void> {
         const key = `${BATTLE_REQUEST_PREFIX}${from}:${to}`;
         const existed = await this.redis.del(key);
@@ -101,6 +133,15 @@ export class MatchmakingService {
         }
     }
 
+    /**
+     * Accepts a battle request from another player.
+     * Validates the request and notifies both players of the match.
+     * @param {number} from - The ID of the player accepting the request.
+     * @param {number} to - The ID of the player who sent the request.
+     * @param {number} toTeamId - The ID of the team of the target player.
+     * @param {Server} server - The Socket.IO server instance for emitting events.
+     * @return {Promise<void>} No return value.
+     */
     async acceptBattleRequest(from: number, to: number, toTeamId: number, server: Server): Promise<void> {
         const key = `${BATTLE_REQUEST_PREFIX}${from}:${to}`;
         const value = await this.redis.get(key);
@@ -136,6 +177,12 @@ export class MatchmakingService {
         await emitToPlayer(this.redis, server, to, 'match:found', { opponent: from, mode: 'friend' });
     }
 
+    /**
+     * Cleans up all pending and incoming battle requests for a player.
+     * Deletes all requests from Redis and logs the cleanup.
+     * @param {number} playerId - The ID of the player whose requests are being cleaned up.
+     * @return {Promise<void>} No return value.
+     */
     async cleanupPlayerRequests(playerId: number): Promise<void> {
         const outgoing = await this.redis.smembers(`${PLAYER_PENDING_REQUESTS}:${playerId}`);
         const incoming = await this.redis.smembers(`${PLAYER_INCOMING_REQUESTS}:${playerId}`);
@@ -149,6 +196,15 @@ export class MatchmakingService {
         this.logger.debug(`Cleaned up ${outgoing.length + incoming.length} battle requests for player ${playerId}`);
     }
 
+    /**
+     * Attempts to match two players in the matchmaking queue.
+     * Checks if both players are online and their teams are valid.
+     * If successful, notifies both players of the match.
+     * @param {MatchmakingEntry} p1 - The first player entry.
+     * @param {MatchmakingEntry} p2 - The second player entry.
+     * @param {Server} server - The Socket.IO server instance for emitting events.
+     * @return {Promise<boolean>} Returns true if players were matched, false otherwise.
+     */
     private async tryMatchPlayers(p1: MatchmakingEntry, p2: MatchmakingEntry, server: Server): Promise<boolean> {
         const [p1Online, p2Online] = await Promise.all([
             this.redis.sismember(ONLINE_PLAYERS, p1.playerId.toString()),
@@ -180,6 +236,13 @@ export class MatchmakingService {
         return true;
     }
 
+    /**
+     * Ensures that a friendship between two players is cached in Redis.
+     * Checks if the friendship exists in Redis, and if not, verifies it via the player service.
+     * @param {number} from - The ID of the player initiating the check.
+     * @param {number} to - The ID of the player being checked.
+     * @return {Promise<boolean>} Returns true if they are friends, false otherwise.
+     */
     private async ensureFriendshipCached(from: number, to: number): Promise<boolean> {
         const key = `${PLAYER_FRIENDS_PREFIX}${from}`;
         const cached = await this.redis.sismember(key, to.toString());
@@ -189,4 +252,6 @@ export class MatchmakingService {
         if (areFriends) await this.redis.sadd(key, to.toString());
         return areFriends;
     }
+
+    // #TODO Create method to GET pending requests? outgoing and incoming
 }
