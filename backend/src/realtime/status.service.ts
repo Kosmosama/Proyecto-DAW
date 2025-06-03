@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Server, Socket } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
-import { ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_SOCKETS_PREFIX, SOCKET_TO_PLAYER } from '../config/redis.constants';
+import { ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_SOCKETS_PREFIX, SOCKET_TO_PLAYER } from '../common/constants/redis.constants';
 import { emitToPlayer } from 'src/common/utils/emit.util';
 import { MatchmakingService } from './matchmaking.service';
 

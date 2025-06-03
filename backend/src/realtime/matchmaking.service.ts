@@ -2,21 +2,13 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Server } from 'socket.io';
+import { SocketEvents } from 'src/common/constants/events.constants';
+import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_INCOMING_REQUESTS, PLAYER_PENDING_REQUESTS } from 'src/common/constants/redis.constants';
 import { emitToPlayer } from 'src/common/utils/emit.util';
-import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_INCOMING_REQUESTS, PLAYER_PENDING_REQUESTS } from 'src/config/redis.constants';
 import { PlayerService } from 'src/player/player.service';
 import { TeamService } from 'src/teams/teams.service';
-
-interface MatchmakingEntry { // entry stored in the MM queue
-    playerId: number;
-    teamId: number;
-}
-
-interface FriendBattleRequest { // value stored under battle:request:<from>:<to>
-    from: number;
-    to: number;
-    fromTeamId: number;
-}
+import { FriendBattleRequest } from './interfaces/friend-battle-request.interface';
+import { MatchmakingEntry } from './interfaces/matchmaking-entry.interface';
 
 @Injectable()
 export class MatchmakingService {
@@ -106,7 +98,7 @@ export class MatchmakingService {
         await this.redis.sadd(`${PLAYER_PENDING_REQUESTS}:${from}`, key);
         await this.redis.sadd(`${PLAYER_INCOMING_REQUESTS}:${to}`, key);
 
-        await emitToPlayer(this.redis, server, to, 'battle:request:received', { from });
+        await emitToPlayer(this.redis, server, to, SocketEvents.Battle.Emit.RequestReceived, { from });
         this.logger.debug(`Battle request sent from ${from} to ${to}`);
     }
 
@@ -126,7 +118,7 @@ export class MatchmakingService {
         await this.redis.srem(`${PLAYER_INCOMING_REQUESTS}:${to}`, key);
 
         if (existed) {
-            await emitToPlayer(this.redis, server, to, 'battle:request:cancelled', { from });
+            await emitToPlayer(this.redis, server, to, SocketEvents.Battle.Emit.RequestCancelled, { from });
             this.logger.debug(`Battle request from ${from} to ${to} cancelled`);
         } else {
             this.logger.warn(`Attempted to cancel non-existent battle request from ${from} to ${to}`);
@@ -147,7 +139,7 @@ export class MatchmakingService {
         const value = await this.redis.get(key);
 
         if (!value) {
-            await emitToPlayer(this.redis, server, to, 'battle:request:expired', { from });
+            await emitToPlayer(this.redis, server, to, SocketEvents.Battle.Emit.RequestExpired, { from });
             throw new Error('Request expired or invalid');
         }
 
@@ -173,8 +165,8 @@ export class MatchmakingService {
             vs  
             Player ${to} (Team ${toTeamId})`);
 
-        await emitToPlayer(this.redis, server, from, 'match:found', { opponent: to, mode: 'friend' });
-        await emitToPlayer(this.redis, server, to, 'match:found', { opponent: from, mode: 'friend' });
+        await emitToPlayer(this.redis, server, from, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: to, mode: 'friend' });
+        await emitToPlayer(this.redis, server, to, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: from, mode: 'friend' });
     }
 
     /**
@@ -230,8 +222,8 @@ export class MatchmakingService {
             /VS/
             Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
 
-        await emitToPlayer(this.redis, server, p1.playerId, 'match:found', { opponent: p2.playerId, mode: 'matchmaking' });
-        await emitToPlayer(this.redis, server, p2.playerId, 'match:found', { opponent: p1.playerId, mode: 'matchmaking' });
+        await emitToPlayer(this.redis, server, p1.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p2.playerId, mode: 'matchmaking' });
+        await emitToPlayer(this.redis, server, p2.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p1.playerId, mode: 'matchmaking' });
 
         return true;
     }

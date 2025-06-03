@@ -1,6 +1,6 @@
 import { Server as SocketIOServer } from "socket.io";
 import Redis from "ioredis";
-import { PLAYER_SOCKETS_PREFIX } from "src/config/redis.constants";
+import { PLAYER_SOCKETS_PREFIX } from "src/common/constants/redis.constants";
 
 /**
  * Emits an event to a specific player.

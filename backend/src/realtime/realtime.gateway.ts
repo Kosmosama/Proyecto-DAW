@@ -2,7 +2,11 @@ import { Logger } from '@nestjs/common';
 import { MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
+import { SocketEvents } from 'src/common/constants/events.constants';
 import { PlayerIdWs } from './decorators/player-ws.decorator';
+import { BattleRequestCancelDto } from './dto/battle-request-cancel.dto';
+import { BattleRequestDto } from './dto/battle-request.dto';
+import { MatchmakingJoinDto } from './dto/matchmaking-join.dto';
 import { MatchmakingService } from './matchmaking.service';
 import { StatusService } from './status.service';
 
@@ -60,19 +64,19 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     /**
      * Handles a request to join the matchmaking queue.
      * @param {Socket} client - The socket client making the request.
-     * @param {Object} data - The data containing the team ID.
+     * @param {MatchmakingJoinDto} data - The data containing the team ID.
      * @param {number} playerId - The ID of the player joining the queue.
      */
-    @SubscribeMessage('matchmaking:join')
+    @SubscribeMessage(SocketEvents.Matchmaking.Listen.Join)
     async onJoinMatchmaking(
         client: Socket,
-        @MessageBody() data: { teamId: number },
+        @MessageBody() data: MatchmakingJoinDto,
         @PlayerIdWs() playerId: number
     ) {
         try {
             await this.matchmakingService.joinMatchmaking(playerId, data.teamId, this.server);
         } catch (err) {
-            client.emit('matchmaking:join', { error: err.message });
+            client.emit(SocketEvents.Matchmaking.Listen.Join, { error: err.message });
         }
     }
 
@@ -81,7 +85,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
      * @param {Socket} client - The socket client making the request.
      * @param {number} playerId - The ID of the player leaving the queue.
      */
-    @SubscribeMessage('matchmaking:leave')
+    @SubscribeMessage(SocketEvents.Matchmaking.Listen.Leave)
     async onLeaveMatchmaking(
         client: Socket,
         @PlayerIdWs() playerId: number
@@ -89,64 +93,64 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         try {
             await this.matchmakingService.leaveMatchmaking(playerId);
         } catch (err) {
-            client.emit('matchmaking:leave', { error: err.message });
+            client.emit(SocketEvents.Matchmaking.Listen.Leave, { error: err.message });
         }
     }
 
     /**
      * Handles a battle request from one player to another.
      * @param {Socket} client - The socket client making the request.
-     * @param {Object} data - The data containing the target player ID and self team ID.
+     * @param {BattleRequestDto} data - The data containing the target player ID and self team ID.
      * @param {number} playerId - The ID of the player sending the request.
      */
-    @SubscribeMessage('battle:request')
+    @SubscribeMessage(SocketEvents.Battle.Listen.Request)
     async onBattleRequest(
         client: Socket,
-        @MessageBody() data: { to: number; teamId: number },
+        @MessageBody() data: BattleRequestDto,
         @PlayerIdWs() playerId: number
     ) {
         try {
             await this.matchmakingService.sendBattleRequest(playerId, data.to, data.teamId, this.server);
         } catch (err) {
-            client.emit('battle:request', { error: err.message });
+            client.emit(SocketEvents.Battle.Listen.Request, { error: err.message });
         }
     }
 
     /**
      * Handles a battle request acceptance.
      * @param {Socket} client - The socket client responding to the request.
-     * @param {Object} data - The data containing the target player ID and self team ID.
+     * @param {BattleRequestDto} data - The data containing the target player ID and self team ID.
      * @param {number} playerId - The ID of the player responding to the request.
      */
-    @SubscribeMessage('battle:accept')
+    @SubscribeMessage(SocketEvents.Battle.Listen.Accept)
     async onBattleAccept(
         client: Socket,
-        @MessageBody() data: { to: number; teamId: number },
+        @MessageBody() data: BattleRequestDto,
         @PlayerIdWs() playerId: number
     ) {
         try {
             await this.matchmakingService.acceptBattleRequest(data.to, playerId, data.teamId, this.server);
         } catch (err) {
-            client.emit('battle:accept', { error: err.message });
+            client.emit(SocketEvents.Battle.Listen.Accept, { error: err.message });
         }
     }
 
     /**
      * Handles a battle request cancellation.
      * @param {Socket} client - The socket client responding to the request.
-     * @param {} data - The data containing the target player ID and self team ID.
+     * @param {BattleRequestCancelDto} data - The data containing the target player ID and self team ID.
      * @param {number} playerId - The ID of the player responding to the request.
      */
-    @SubscribeMessage('battle:cancel')
+    @SubscribeMessage(SocketEvents.Battle.Listen.Cancel)
     async onBattleCancel(
         client: Socket,
-        @MessageBody() data: { from: number },
+        @MessageBody() data: BattleRequestCancelDto,
         @PlayerIdWs() playerId: number
     ) {
         try {
             await this.matchmakingService.cancelBattleRequest(playerId, data.from, this.server);
         } catch (err) {
-            client.emit('battle:cancel', { error: err.message });
+            client.emit(SocketEvents.Battle.Listen.Cancel, { error: err.message });
         }
     }
 
