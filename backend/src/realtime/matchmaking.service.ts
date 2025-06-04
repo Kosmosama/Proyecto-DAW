@@ -9,6 +9,7 @@ import { PlayerService } from 'src/player/player.service';
 import { TeamService } from 'src/teams/teams.service';
 import { FriendBattleRequest } from './interfaces/friend-battle-request.interface';
 import { MatchmakingEntry } from './interfaces/matchmaking-entry.interface';
+import { generateBattleRoomId } from 'src/common/utils/roomId.util';
 
 @Injectable()
 export class MatchmakingService {
@@ -145,28 +146,44 @@ export class MatchmakingService {
 
         const request = JSON.parse(value) as FriendBattleRequest;
 
-        await this.redis.del(key);
-        await this.redis.srem(`${PLAYER_PENDING_REQUESTS}:${from}`, key);
-        await this.redis.srem(`${PLAYER_INCOMING_REQUESTS}:${to}`, key);
-
         const [fromOnline, toOnline] = await Promise.all([
             this.redis.sismember(ONLINE_PLAYERS, from.toString()),
             this.redis.sismember(ONLINE_PLAYERS, to.toString()),
         ]);
-        if (!fromOnline || !toOnline) throw new Error('One or both players are not available');
+        if (!fromOnline || !toOnline) {
+            throw new Error('One or both players are not available');
+        }
 
         const [fromTeam, toTeam] = await Promise.all([
             this.teamService.findOne(from, request.fromTeamId),
             this.teamService.findOne(to, toTeamId),
         ]);
 
-        this.logger.debug(`Friend battle accepted:
-            Player ${from} (Team ${request.fromTeamId})  
-            vs  
-            Player ${to} (Team ${toTeamId})`);
+        if (!fromTeam || !toTeam) {
+            throw new Error('One or both teams are invalid');
+        }
 
-        await emitToPlayer(this.redis, server, from, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: to, mode: 'friend' });
-        await emitToPlayer(this.redis, server, to, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: from, mode: 'friend' });
+        this.logger.debug(`Friend battle accepted:
+        Player ${from} (Team ${request.fromTeamId})  
+        vs  
+        Player ${to} (Team ${toTeamId})`);
+
+        await this.redis.del(key);
+        await this.redis.srem(`${PLAYER_PENDING_REQUESTS}:${from}`, key);
+        await this.redis.srem(`${PLAYER_INCOMING_REQUESTS}:${to}`, key);
+
+        const roomId = await this.createBattleRoomAndJoinPlayers(server, from, to);
+
+        await emitToPlayer(this.redis, server, from, SocketEvents.Matchmaking.Emit.MatchFound, {
+            opponent: to,
+            mode: 'friend',
+            roomId
+        });
+        await emitToPlayer(this.redis, server, to, SocketEvents.Matchmaking.Emit.MatchFound, {
+            opponent: from,
+            mode: 'friend',
+            roomId
+        });
     }
 
     /**
@@ -222,8 +239,18 @@ export class MatchmakingService {
             /VS/
             Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
 
-        await emitToPlayer(this.redis, server, p1.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p2.playerId, mode: 'matchmaking' });
-        await emitToPlayer(this.redis, server, p2.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p1.playerId, mode: 'matchmaking' });
+        const roomId = await this.createBattleRoomAndJoinPlayers(server, p1.playerId, p2.playerId);
+
+        await emitToPlayer(this.redis, server, p1.playerId, SocketEvents.Matchmaking.Emit.MatchFound, {
+            opponent: p2.playerId,
+            mode: 'matchmaking',
+            roomId
+        });
+        await emitToPlayer(this.redis, server, p2.playerId, SocketEvents.Matchmaking.Emit.MatchFound, {
+            opponent: p1.playerId,
+            mode: 'matchmaking',
+            roomId
+        });
 
         return true;
     }
@@ -244,6 +271,29 @@ export class MatchmakingService {
         if (areFriends) await this.redis.sadd(key, to.toString());
         return areFriends;
     }
+
+    /**
+     * Creates a new battle room for two players and adds their sockets to the room.
+     *
+     * @param server - The Socket.IO server instance used to fetch connected sockets.
+     * @param player1Id - The unique identifier of the first player.
+     * @param player2Id - The unique identifier of the second player.
+     * @returns A promise that resolves to the generated room ID as a string.
+     */
+    private async createBattleRoomAndJoinPlayers(server: Server, player1Id: number, player2Id: number): Promise<string> {
+        const roomId = generateBattleRoomId(player1Id.toString(), player2Id.toString());
+
+        const sockets = await server.fetchSockets();
+        const p1Socket = sockets.find(s => s.data?.playerId === player1Id);
+        const p2Socket = sockets.find(s => s.data?.playerId === player2Id);
+
+        if (p1Socket) p1Socket.join(roomId);
+        if (p2Socket) p2Socket.join(roomId);
+
+        this.logger.debug(`Room ${roomId} created for players ${player1Id} and ${player2Id}`);
+        return roomId;
+    }
+
 
     // #TODO Create method to GET pending requests? outgoing and incoming
 }

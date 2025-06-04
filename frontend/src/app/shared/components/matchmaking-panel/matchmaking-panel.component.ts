@@ -4,6 +4,7 @@ import { TeamsService } from '../../../core/services/teams.service';
 import { Team } from '../../../core/interfaces/team.model';
 import { FormsModule } from '@angular/forms';
 import { TeamBuilderService } from '../../../core/services/teamBuilder.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'matchmaking-panel',
@@ -17,6 +18,7 @@ export class MatchmakingPanelComponent {
   private matchmakingService = inject(MatchmakingService);
   private teamsService = inject(TeamsService);
   private teamBuilderService = inject(TeamBuilderService)
+  private router = inject(Router);
 
   playerTeams = signal<Team[]>([]);
   selectedTeamId = signal<number | null>(null);
@@ -37,10 +39,12 @@ export class MatchmakingPanelComponent {
         console.error('Error fetching teams:', error);
       }
     });
-    this.matchmakingService.onMatchFound((data) => {
-      this.isSearching = false;
-      console.log('Match found!', data);
+    this.matchmakingService.onMatchFound(({ opponent, roomId }) => {
+      console.log('Matched against', opponent, 'in room', roomId);
+
+      this.router.navigate(['pages/battle', roomId]);
     });
+
   }
 
   startSearch() {
