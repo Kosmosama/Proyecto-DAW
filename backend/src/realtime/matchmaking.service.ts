@@ -10,7 +10,6 @@ import { TeamService } from 'src/teams/teams.service';
 import { FriendBattleRequest } from './interfaces/friend-battle-request.interface';
 import { MatchmakingEntry } from './interfaces/matchmaking-entry.interface';
 import { GameService } from './game.service';
-import { BattleService } from './battle.service';
 
 @Injectable()
 export class MatchmakingService {
@@ -97,7 +96,7 @@ export class MatchmakingService {
             fromTeamId: teamId
         };
 
-        await this.redis.set(key, JSON.stringify(request), 'EX', 1);
+        await this.redis.set(key, JSON.stringify(request), 'EX', 30);
         await this.redis.sadd(`${PLAYER_PENDING_REQUESTS}:${from}`, key);
         await this.redis.sadd(`${PLAYER_INCOMING_REQUESTS}:${to}`, key);
 
@@ -224,16 +223,15 @@ export class MatchmakingService {
         ]);
 
         this.logger.debug(`MATCH READY:
-        Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
-        /VS/
-        Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
+            Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
+            /VS/
+            Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
 
         await emitToPlayer(this.redis, server, p1.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p2.playerId, mode: 'matchmaking' });
         await emitToPlayer(this.redis, server, p2.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p1.playerId, mode: 'matchmaking' });
 
         return true;
     }
-
 
     /**
      * Ensures that a friendship between two players is cached in Redis.

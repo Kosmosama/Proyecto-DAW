@@ -5,7 +5,7 @@
     <div class="card-body">
       <h2 class="card-title text-center text-danger mb-4">Login and begin the showDAW!</h2>
 
-      @if(errors() === 401) {
+      @if(errors() === 401 || errors() === 404) {
       <div class="alert alert-danger">A user with that email + password doesn't exist!</div>
       }
 

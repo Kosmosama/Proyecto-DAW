@@ -151,21 +151,15 @@ export class BuildToolComponent {
       }))
       .filter(p =>
         p.name && p.item && p.ability &&
-        p.moves.move1 && p.moves.move2 && p.moves.move3 && p.moves.move4
+        Object.values(p.moves).some(move => move)
       );
-
-    if (rawTeam.length === 0) {
-      console.warn('Debes completar al menos un Pokémon para guardar el equipo.');
-      return;
-    }
 
     const parsed = this.teamsService.parseTeam(rawTeam);
     this.teamsService.postTeam(teamName, parsed).subscribe(() => {
-      console.log('Equipo guardado correctamente');
       this.teamName.reset();
       this.pokemonForms.forEach(form => form.reset());
       this.team.set(Array(6).fill(''));
-      // this.router.navigate(['/team-builder']);
+      this.router.navigate(['/team-builder']);
     });
   }
 

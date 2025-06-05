@@ -9,7 +9,6 @@
           placeholder="Nombre del equipo" />
       </div>
 
-      <!-- GRID DE 2 COLUMNAS -->
       <div class="pokemon-grid mb-4">
         @for (pokemon of team(); track $index) {
         <div class="pokemon-card p-3">
@@ -19,7 +18,6 @@
           </div>
 
           @if (isFormVisible($index)) {
-          <!-- Nombre + Sprite -->
           <div class="form-group mb-2 d-flex align-items-center justify-content-between gap-2">
             <input type="text" class="form-control form-control-sm flex-grow-1" style="max-width: 75%;"
               [formControl]="pokemonForms[$index].controls.name" [attr.list]="'speciesList' + $index"
@@ -30,7 +28,6 @@
               }
             </datalist>
 
-            <!-- Sprite -->
             <div class="pokemon-sprite">
               @if (pokemonSprites[$index]) {
               <img [src]="pokemonSprites[$index]" alt="Sprite" />
@@ -38,7 +35,6 @@
             </div>
           </div>
 
-          <!-- Objeto y Habilidad -->
           <div class="row g-2 mb-2">
             <div class="col-6">
               <input class="form-control form-control-sm" type="text"
@@ -62,7 +58,6 @@
             </div>
           </div>
 
-          <!-- Tera Tipo y Naturaleza (debajo) -->
           <div class="row g-2 mb-2">
             <div class="col-6">
               <select class="form-select form-select-sm"
@@ -84,7 +79,6 @@
             </div>
           </div>
 
-          <!-- Movimientos en 2 columnas -->
           <div class="form-group mb-2">
             <div class="row g-2">
               <div class="col-6">

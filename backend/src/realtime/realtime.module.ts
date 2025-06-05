@@ -6,7 +6,6 @@ import { MatchmakingService } from './matchmaking.service';
 import { RealtimeGateway } from './realtime.gateway';
 import { StatusService } from './status.service';
 import { TeamsModule } from 'src/teams/teams.module';
-import { BattleService } from './battle.service';
 import { GameService } from './game.service';
 
 @Module({
