@@ -1,9 +1,9 @@
 import { IsInt, IsNotEmpty } from 'class-validator';
 
-export class BattleRequestDto {
+export class BattleRequestAcceptDto {
     @IsNotEmpty()
     @IsInt()
-    to: number;
+    from: number;
 
     @IsNotEmpty()
     @IsInt()

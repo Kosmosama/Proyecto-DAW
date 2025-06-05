@@ -1,9 +1,10 @@
 import { Logger } from '@nestjs/common';
-import { MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { SocketEvents } from 'src/common/constants/events.constants';
 import { PlayerIdWs } from './decorators/player-ws.decorator';
+import { BattleRequestAcceptDto } from './dto/battle-request-accept.dto';
 import { BattleRequestCancelDto } from './dto/battle-request-cancel.dto';
 import { BattleRequestDto } from './dto/battle-request.dto';
 import { MatchmakingJoinDto } from './dto/matchmaking-join.dto';
@@ -71,7 +72,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
      */
     @SubscribeMessage(SocketEvents.Matchmaking.Listen.Join)
     async onJoinMatchmaking(
-        client: Socket,
+        @ConnectedSocket() client: Socket,
         @MessageBody() data: MatchmakingJoinDto,
         @PlayerIdWs() playerId: number
     ) {
@@ -89,7 +90,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
      */
     @SubscribeMessage(SocketEvents.Matchmaking.Listen.Leave)
     async onLeaveMatchmaking(
-        client: Socket,
+        @ConnectedSocket() client: Socket,
         @PlayerIdWs() playerId: number
     ) {
         try {
@@ -107,7 +108,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
      */
     @SubscribeMessage(SocketEvents.Battle.Listen.Request)
     async onBattleRequest(
-        client: Socket,
+        @ConnectedSocket() client: Socket,
         @MessageBody() data: BattleRequestDto,
         @PlayerIdWs() playerId: number
     ) {
@@ -121,19 +122,25 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     /**
      * Handles a battle request acceptance.
      * @param {Socket} client - The socket client responding to the request.
-     * @param {BattleRequestDto} data - The data containing the target player ID and self team ID.
+     * @param {BattleRequestAcceptDto} data - The data containing the target player ID and self team ID.
      * @param {number} playerId - The ID of the player responding to the request.
      */
     @SubscribeMessage(SocketEvents.Battle.Listen.Accept)
     async onBattleAccept(
-        client: Socket,
-        @MessageBody() data: BattleRequestDto,
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: BattleRequestAcceptDto,
         @PlayerIdWs() playerId: number
     ) {
-        try {
-            await this.matchmakingService.acceptBattleRequest(data.to, playerId, data.teamId, this.server);
-        } catch (err) {
-            client.emit(SocketEvents.Battle.Listen.Accept, { error: err.message });
+        if (!data.teamId) {
+            this.logger.warn(`Missing teamId in battle request accept data: ${JSON.stringify(data)}. Battle not accepted.`);
+            client.emit(SocketEvents.Battle.Listen.Accept, { error: 'Missing team ID' });
+            return;
+        } else {
+            try {
+                await this.matchmakingService.acceptBattleRequest(data.from, playerId, data.teamId, this.server);
+            } catch (err) {
+                client.emit(SocketEvents.Battle.Listen.Accept, { error: err.message });
+            }
         }
     }
 
@@ -145,7 +152,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
      */
     @SubscribeMessage(SocketEvents.Battle.Listen.Cancel)
     async onBattleCancel(
-        client: Socket,
+        @ConnectedSocket() client: Socket,
         @MessageBody() data: BattleRequestCancelDto,
         @PlayerIdWs() playerId: number
     ) {
