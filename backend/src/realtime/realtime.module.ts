@@ -6,9 +6,10 @@ import { MatchmakingService } from './matchmaking.service';
 import { RealtimeGateway } from './realtime.gateway';
 import { StatusService } from './status.service';
 import { TeamsModule } from 'src/teams/teams.module';
+import { GameService } from './game.service';
 
 @Module({
     imports: [PlayerModule, RedisModule, AuthModule, TeamsModule],
-    providers: [RealtimeGateway, StatusService, MatchmakingService],
+    providers: [RealtimeGateway, StatusService, MatchmakingService, GameService],
 })
 export class RealtimeModule { }

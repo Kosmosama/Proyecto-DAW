@@ -1,6 +1,7 @@
-import { IsInt } from 'class-validator';
+import { IsInt, IsNotEmpty } from 'class-validator';
 
 export class BattleRequestCancelDto {
+    @IsNotEmpty()
     @IsInt()
     from: number;
 }

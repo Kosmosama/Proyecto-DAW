@@ -11,7 +11,6 @@ export class StatusSocketService {
     private socket2: Socket | null = null;
     private authService = inject(AuthService);
     private onlineFriendIds = signal<number[]>([]);
-
     constructor() {
         this.connect();
     }
