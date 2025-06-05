@@ -10,6 +10,7 @@ import { TeamService } from 'src/teams/teams.service';
 import { FriendBattleRequest } from './interfaces/friend-battle-request.interface';
 import { MatchmakingEntry } from './interfaces/matchmaking-entry.interface';
 import { generateBattleRoomId } from 'src/common/utils/roomId.util';
+import { BattleService } from './battle.service';
 
 @Injectable()
 export class MatchmakingService {
@@ -18,6 +19,7 @@ export class MatchmakingService {
     constructor(
         private readonly playerService: PlayerService,
         private readonly teamService: TeamService,
+        private readonly battleService: BattleService,
         @InjectRedis() private readonly redis: Redis,
     ) { }
 
@@ -95,7 +97,7 @@ export class MatchmakingService {
             fromTeamId: teamId
         };
 
-        await this.redis.set(key, JSON.stringify(request), 'EX', 30);
+        await this.redis.set(key, JSON.stringify(request), 'EX', 1);
         await this.redis.sadd(`${PLAYER_PENDING_REQUESTS}:${from}`, key);
         await this.redis.sadd(`${PLAYER_INCOMING_REQUESTS}:${to}`, key);
 
@@ -235,25 +237,40 @@ export class MatchmakingService {
         ]);
 
         this.logger.debug(`MATCH READY:
-            Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
-            /VS/
-            Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
+        Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
+        /VS/
+        Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
 
         const roomId = await this.createBattleRoomAndJoinPlayers(server, p1.playerId, p2.playerId);
 
+        // Emitir evento de matchmaking (opcional, para frontend)
         await emitToPlayer(this.redis, server, p1.playerId, SocketEvents.Matchmaking.Emit.MatchFound, {
             opponent: p2.playerId,
             mode: 'matchmaking',
-            roomId
+            roomId,
         });
         await emitToPlayer(this.redis, server, p2.playerId, SocketEvents.Matchmaking.Emit.MatchFound, {
             opponent: p1.playerId,
             mode: 'matchmaking',
-            roomId
+            roomId,
         });
+
+        // 👇 Crear batalla con @pkmn/sim y asignar jugadores
+        this.battleService.createBattle(roomId);
+        this.battleService.setPlayer(roomId, 'p1', { name: `Player ${p1.playerId}` });
+        this.battleService.setPlayer(roomId, 'p2', { name: `Player ${p2.playerId}` });
+
+        // 👇 Buscar sockets y emitir evento 'battle:ready'
+        const sockets = await server.fetchSockets();
+        const p1Socket = sockets.find(s => s.data.playerId === p1.playerId);
+        const p2Socket = sockets.find(s => s.data.playerId === p2.playerId);
+
+        if (p1Socket) p1Socket.emit('battle:ready', { roomId, as: 'p1' });
+        if (p2Socket) p2Socket.emit('battle:ready', { roomId, as: 'p2' });
 
         return true;
     }
+
 
     /**
      * Ensures that a friendship between two players is cached in Redis.

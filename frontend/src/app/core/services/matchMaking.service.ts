@@ -1,6 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { StatusSocketService } from './statusSocket.service';
 import { BattleRequest } from '../interfaces/battle-request.model';
+import { Team } from '../interfaces/team.model';
 
 @Injectable({
   providedIn: 'root',
@@ -59,15 +60,15 @@ export class MatchmakingService {
     this.statusSocket['socket']?.on('match:found', callback);
   }
 
-  requestBattle(to: number) {
-    this.statusSocket['socket']?.emit('battle:request', { to });
+  requestBattle(to: number, teamId: number) {
+    this.statusSocket['socket']?.emit('battle:request', { to, teamId });
   }
 
   cancelBattle(to: number) {
     this.statusSocket['socket']?.emit('battle:cancel', { to });
   }
 
-  acceptBattle(from: number) {
-    this.statusSocket['socket']?.emit('battle:accept', { from });
+  acceptBattle(from: number, teamId: number) {
+    this.statusSocket['socket']?.emit('battle:accept', { from, teamId });
   }
 }

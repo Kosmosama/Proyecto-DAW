@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Generation, Generations } from '@pkmn/data';
 import { Dex, PokemonSet } from '@pkmn/dex';
 import { Sets } from '@pkmn/sets';
-import { TeamValidator } from '@pkmn/sim';
+import { TeamValidator } from 'pokemon-showdown';
 import { PlayerService } from 'src/player/player.service';
 import { Repository } from 'typeorm';
 import { CreateTeamDto } from './dto/create-team.dto';

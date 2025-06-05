@@ -7,6 +7,13 @@
       <router-outlet></router-outlet>
     </div>
   </div>
-  <battle-request></battle-request>
+  <battle-request (onAccept)="openBattleModal($event)"></battle-request>
+
+  <friend-battle-checkout-modal
+  [opponentId]="selectedOpponentId()!"
+  [show]="showBattleModal()"
+  (close)="showBattleModal.set(false)"
+  (confirmed)="onTeamConfirmed($event)">
+</friend-battle-checkout-modal>
 
 </div>

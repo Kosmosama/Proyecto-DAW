@@ -9,6 +9,7 @@ import { BattleRequestDto } from './dto/battle-request.dto';
 import { MatchmakingJoinDto } from './dto/matchmaking-join.dto';
 import { MatchmakingService } from './matchmaking.service';
 import { StatusService } from './status.service';
+import { BattleService } from './battle.service';
 
 @WebSocketGateway({
     namespace: 'status',
@@ -28,6 +29,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         private readonly statusService: StatusService,
         private readonly matchmakingService: MatchmakingService,
         private readonly authService: AuthService,
+        private readonly battleService: BattleService
     ) { }
 
     /**
@@ -160,4 +162,56 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     //     const requests = await this.matchmakingService.getPendingBattleRequests(playerId);
     //     return requests;
     // }
+
+    /**
+     * Initializes a battle between two players.
+     * @param {Socket} client - The socket client initiating the battle.
+     * @param {Object} data - The data containing the opponent's player ID.
+     * @param {number} playerId - The ID of the player initiating the battle.
+     */
+
+    @SubscribeMessage('battle:init')
+    async onBattleInit(client: Socket, @MessageBody() data: { opponentId: number }, @PlayerIdWs() playerId: number) {
+
+        const roomId = `battle-${playerId}-${data.opponentId}`;
+
+        const battle = this.battleService.createBattle(roomId);
+
+        battle.setPlayer('p1', { name: `Player ${playerId}` });
+        battle.setPlayer('p2', { name: `Player ${data.opponentId}` });
+
+        this.server.to(client.id).emit('battle:ready', { roomId, as: 'p1' });
+
+        const sockets = await this.server.fetchSockets();
+        const opponentSocket = sockets.find(s => s.data.playerId === data.opponentId);
+        if (opponentSocket) {
+            opponentSocket.emit('battle:ready', { roomId, as: 'p2' });
+        }
+    }
+
+    /**
+     * Handles a player's action in the battle (like move, switch, etc.).
+     * @param {Socket} client - The socket client making the request.
+     * @param {Object} data - The data containing the room ID, player role, and input command.
+     * @param {number} playerId - The ID of the player making the action.
+     */
+    @SubscribeMessage('battle:choose')
+    async onBattleChoose(client: Socket, @MessageBody() data: { roomId: string; as: 'p1' | 'p2'; input: string }, @PlayerIdWs() playerId: number) {
+        try {
+            const log = this.battleService.handleInput(data.roomId, data.as, data.input);
+
+            const battle = this.battleService.getBattle(data.roomId);
+            if (!battle) throw new Error('Battle not found');
+
+            const sockets = await this.server.fetchSockets();
+            for (const socket of sockets) {
+                const pid = socket.data.playerId;
+                if (data.roomId.includes(pid)) {
+                    socket.emit('battle:log', { roomId: data.roomId, log });
+                }
+            }
+        } catch (err) {
+            client.emit('battle:error', { error: err.message });
+        }
+    }
 }
