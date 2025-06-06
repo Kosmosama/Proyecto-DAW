@@ -7,6 +7,7 @@ import { PlayerService } from 'src/player/player.service';
 import { ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_SOCKETS_PREFIX, SOCKET_TO_PLAYER } from '../common/constants/redis.constants';
 import { GameService } from './game.service';
 import { MatchmakingService } from './matchmaking.service';
+import { SocketEvents } from 'src/common/constants/events.constants';
 
 @Injectable()
 export class StatusService {
@@ -124,10 +125,10 @@ export class StatusService {
 
         const onlineFriendIds = friendIds.filter((_, i) => results?.[i]?.[1] === 1);
 
-        await emitToPlayer(this.redis, server, playerId, 'friends:online', onlineFriendIds);
+        await emitToPlayer(this.redis, server, playerId, SocketEvents.Friends.Emit.FriendsOnline, onlineFriendIds);
 
         await Promise.all(
-            onlineFriendIds.map(id => emitToPlayer(this.redis, server, id, 'friend:online', playerId))
+            onlineFriendIds.map(id => emitToPlayer(this.redis, server, id, SocketEvents.Friends.Emit.FriendOnline, playerId))
         );
     }
 
@@ -158,7 +159,7 @@ export class StatusService {
         // Notify each online friend that this player has gone offline
         await Promise.all(
             onlineFriendIds.map(friendId =>
-                emitToPlayer(this.redis, server, friendId, 'friend:offline', playerId)
+                emitToPlayer(this.redis, server, friendId, SocketEvents.Friends.Emit.FriendOffline, playerId)
             )
         );
     }
