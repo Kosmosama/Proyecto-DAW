@@ -7,11 +7,6 @@ export const pagesRoutes: Routes = [
         title: "Home | ShowDAW"
     },
     {
-        path: "battle",
-        loadComponent: () => import("./battle/battle.component").then((c) => c.BattleComponent),
-        title: "Battle | ShowDAW"
-    },
-    {
         path: "team-builder",
         loadComponent: () => import("./team-builder/team-builder.component").then((c) => c.TeamBuilderComponent),
         title: "Team Builder | ShowDAW"

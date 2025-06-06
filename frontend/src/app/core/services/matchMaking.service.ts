@@ -71,13 +71,6 @@ export class MatchmakingService {
 
   acceptBattle(from: number, teamId: number) {
     this.statusSocket['socket']?.emit(SocketEvents.Matchmaking.Emit.BattleAccept, { from, teamId });
-
-    this.teamsService.getTeamById(teamId.toString()).subscribe(team => {
-      this.statusSocket['socket']?.emit('battle:create', {
-        opponentId: from,
-        team: JSON.stringify(this.teamsService.parseTeam(team.data))
-      });
-    });
   }
 
 }
