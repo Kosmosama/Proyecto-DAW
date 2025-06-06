@@ -19,6 +19,18 @@ export class TeamsService {
         return this.http.get<{ data: Team[] }>('teams');
     }
 
+    getTeamById(id: string): Observable<Team> {
+        return this.http.get<Team>(`teams/${id}`);
+    }
+
+    editTeam(id: string, teamName: string, teamData: string): Observable<void> {
+        return this.http.patch<void>(`teams/${id}`, { name: teamName, data: { team: teamData } });
+    }
+
+    deleteTeam(id: string): Observable<void> {
+        return this.http.delete<void>(`teams/${id}`);
+    }
+
     parseTeam(team: {
         name: string;
         item: string;

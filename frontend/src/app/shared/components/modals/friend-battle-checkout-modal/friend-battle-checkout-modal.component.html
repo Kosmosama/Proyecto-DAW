@@ -1,0 +1,58 @@
+@if (show()) {
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(255, 255, 255, 0.75);">
+        <div class="modal-dialog modal-l modal-dialog-centered">
+            <div class="modal-content bg-light text-dark border border-danger shadow-lg overflow-hidden">
+                <div class="modal-header border-bottom border-danger">
+                    <h5 class="modal-title text-danger">Choose Your Team</h5>
+                    <button type="button" class="btn-close" aria-label="Close" (click)="cancel()"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    @if (playerTeams().length === 0) {
+                        <div class="text-center py-5">
+                            <p class="text-secondary">You don’t have any teams. Build one before accepting a battle.</p>
+                        </div>
+                    }
+
+                    @if (playerTeams().length > 0) {
+                        <div class="team-scroll-container" style="max-height: 500px; overflow-y: auto;">
+                            <div class="container py-4">
+                                <div class="d-flex flex-column gap-3">
+                                    @for (team of playerTeams(); track team.id) {
+                                        <div class="team-card card bg-white text-dark border border-danger cursor-pointer px-3 py-2"
+                                            (click)="selectTeam(team)"
+                                            [ngClass]="{'border-success border-3': selectedTeamId() === team.id, 'border-danger': selectedTeamId() !== team.id}"
+                                            style="transition: border-color 0.2s;">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <strong class="fs-5">{{ team.name }}</strong>
+                                            </div>
+                                            <div class="mt-2 d-flex flex-row gap-2 flex-wrap">
+                                                @for (poke of team.data; track $index) {
+                                                    <img [src]="getSpriteUrl(poke.species)"
+                                                        [alt]="poke.species"
+                                                        width="48"
+                                                        height="48"
+                                                        class="bg-light rounded shadow-sm border border-secondary" />
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer border-top border-warning d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-dark" (click)="cancel()">Cancel</button>
+                    <button type="button"
+                                    class="btn btn-success px-4"
+                                    [disabled]="!selectedTeamId()"
+                                    (click)="confirm()">
+                        Confirm Team & Battle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

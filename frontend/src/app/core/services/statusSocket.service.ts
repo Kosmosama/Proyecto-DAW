@@ -8,7 +8,6 @@ import { AuthService } from './auth.service';
 })
 export class StatusSocketService {
     private socket: Socket | null = null;
-    private socket2: Socket | null = null;
     private authService = inject(AuthService);
     private onlineFriendIds = signal<number[]>([]);
     constructor() {
@@ -51,10 +50,6 @@ export class StatusSocketService {
         });
     }
 
-    // public listen<T = any>(event: string, callback: (data: T) => void): void {
-    //     this.socket?.on(event, callback);
-    // }
-
     getOnlineFriends(): number[] {
         return this.onlineFriendIds();
     }
@@ -66,8 +61,4 @@ export class StatusSocketService {
             this.socket = null;
         }
     }
-
-    // ngOnDestroy(): void {
-    //     this.disconnect();
-    // }
 }

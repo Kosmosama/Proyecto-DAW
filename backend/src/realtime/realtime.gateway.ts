@@ -167,4 +167,5 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     //     const requests = await this.matchmakingService.getPendingBattleRequests(playerId);
     //     return requests;
     // }
+
 }

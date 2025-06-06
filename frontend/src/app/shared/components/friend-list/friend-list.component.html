@@ -45,4 +45,10 @@
             </div>
         </div>
     </div>
+    <friend-battle-checkout-modal
+  [friendId]="pendingBattleFriendId()!"
+  [show]="showBattleModal()"
+  (close)="showBattleModal.set(false)"
+  (confirmed)="onTeamConfirmed($event)">
+</friend-battle-checkout-modal>
 </div>

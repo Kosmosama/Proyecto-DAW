@@ -55,17 +55,4 @@ export class FriendRequestsModalComponent {
   }
 
 
-  //TODO : Uncomment and implement the cancelRequest method if needed
-  // cancelRequest(id: number) {
-  //   this.playerService.removeFriendRequest(id).subscribe({
-  //     next: () => {
-  //       this.fetchIncomingRequests();
-  //       this.fetchOutgoingRequests();
-  //     },
-  //     error: (err) => {
-  //       console.error('Error removing request:', err);
-  //     }
-  //   });
-  // }
-
 }

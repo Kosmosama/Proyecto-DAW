@@ -5,12 +5,14 @@ import { Player } from '../../../core/interfaces/player.model';
 import { PlayerService } from '../../../core/services/player.service';
 import { StatusSocketService } from '../../../core/services/statusSocket.service';
 import { MatchmakingService } from '../../../core/services/matchMaking.service';
+import { FriendBattleCheckoutModalComponent } from "../modals/friend-battle-checkout-modal/friend-battle-checkout-modal.component";
+import { Team } from '../../../core/interfaces/team.model';
 
 @Component({
   selector: 'app-friends-list',
   templateUrl: './friend-list.component.html',
   styleUrls: ['./friend-list.component.scss'],
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FriendBattleCheckoutModalComponent],
   standalone: true,
 })
 export class FriendListComponent implements OnInit {
@@ -22,6 +24,9 @@ export class FriendListComponent implements OnInit {
 
   friends = signal<Player[]>([]);
   onlineFriends = signal<number[]>([]);
+  showBattleModal = signal(false);
+  pendingBattleFriendId = signal<number | null>(null);
+
 
 
   title = input<string>('');
@@ -66,7 +71,25 @@ export class FriendListComponent implements OnInit {
   }
 
   sendBattleRequest(friendId: number): void {
-    this.matchmakingService.requestBattle(friendId);
+    this.pendingBattleFriendId.set(friendId);
+    this.showBattleModal.set(true);
+  }
+
+  onTeamConfirmed(teamId: number): void {
+    const friendId = this.pendingBattleFriendId();
+    if (friendId != null) {
+      this.matchmakingService.requestBattle(friendId, teamId);
+    }
+    this.resetBattleModal();
+  }
+
+  cancelBattleRequest(): void {
+    this.resetBattleModal();
+  }
+
+  private resetBattleModal(): void {
+    this.showBattleModal.set(false);
+    this.pendingBattleFriendId.set(null);
   }
 
   get friendsWithStatus(): Player[] {

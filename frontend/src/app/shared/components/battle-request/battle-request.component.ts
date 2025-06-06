@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import { Component, inject, signal, effect, output } from '@angular/core';
 import { MatchmakingService } from '../../../core/services/matchMaking.service';
 
 @Component({
@@ -12,6 +12,8 @@ export class BattleRequestComponent {
   private matchmakingService = inject(MatchmakingService);
 
   currentRequest = signal<{ from: number } | null>(null);
+
+  onAccept = output<number>();
 
   timeoutId?: ReturnType<typeof setTimeout>;
   progress = signal(100);
@@ -50,15 +52,17 @@ export class BattleRequestComponent {
   }
 
   acceptRequest() {
-    if (this.currentRequest()) {
-      this.matchmakingService.acceptBattle(this.currentRequest()!.from);
+    const req = this.currentRequest();
+    if (req) {
+      this.onAccept.emit(req.from);
       this.clearRequest();
     }
   }
 
   rejectRequest() {
-    if (this.currentRequest()) {
-      this.matchmakingService.cancelBattle(this.currentRequest()!.from);
+    const req = this.currentRequest();
+    if (req) {
+      this.matchmakingService.cancelBattle(req.from);
       this.clearRequest();
     }
   }
