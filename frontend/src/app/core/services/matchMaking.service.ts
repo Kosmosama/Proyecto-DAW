@@ -1,7 +1,8 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { StatusSocketService } from './statusSocket.service';
 import { BattleRequest } from '../interfaces/battle-request.model';
-import { Team } from '../interfaces/team.model';
+import { SocketEvents } from '../constants/socket-events';
+import { TeamsService } from './teams.service';
 
 @Injectable({
   providedIn: 'root',
@@ -9,6 +10,7 @@ import { Team } from '../interfaces/team.model';
 export class MatchmakingService {
 
   private statusSocket = inject(StatusSocketService);
+  private teamsService = inject(TeamsService);
 
   battleRequestReceived = signal<{ from: number } | null>(null);
   battleRequests = signal<BattleRequest[]>([]);
@@ -17,12 +19,12 @@ export class MatchmakingService {
   constructor() {
     const socket = this.statusSocket['socket'];
 
-    socket?.on('battle:request:received', (data: { from: number }) => {
+    socket?.on(SocketEvents.Matchmaking.Listen.BattleRequestReceived, (data: { from: number }) => {
       this.battleRequestReceived.set(data);
       this.error.set(null);
     });
 
-    socket?.on('battle:request:cancelled', (data: { from: number }) => {
+    socket?.on(SocketEvents.Matchmaking.Listen.BattleRequestCancelled, () => {
       this.battleRequestReceived.set(null);
       this.error.set(null);
     });
@@ -38,37 +40,44 @@ export class MatchmakingService {
       }
     };
 
+    socket?.on(SocketEvents.Matchmaking.Listen.BattleRequest, (data) => errorHandler(data, SocketEvents.Matchmaking.Listen.BattleRequest));
+    socket?.on(SocketEvents.Matchmaking.Listen.BattleAccept, (data) => errorHandler(data, SocketEvents.Matchmaking.Listen.BattleAccept));
+    socket?.on(SocketEvents.Matchmaking.Listen.BattleCancel, (data) => errorHandler(data, SocketEvents.Matchmaking.Listen.BattleCancel));
+    socket?.on(SocketEvents.Matchmaking.Listen.Join, (data) => errorHandler(data, SocketEvents.Matchmaking.Listen.Join));
+    socket?.on(SocketEvents.Matchmaking.Listen.Leave, (data) => errorHandler(data, SocketEvents.Matchmaking.Listen.Leave));
 
-    socket?.on('battle:request', (data) => errorHandler(data, 'battle:request'));
-    socket?.on('battle:accept', (data) => errorHandler(data, 'battle:accept'));
-    socket?.on('battle:cancel', (data) => errorHandler(data, 'battle:cancel'));
-    socket?.on('matchmaking:join', (data) => errorHandler(data, 'matchmaking:join'));
-    socket?.on('matchmaking:leave', (data) => errorHandler(data, 'matchmaking:leave'));
-
-    socket?.on('match:found', () => this.error.set(null));
+    socket?.on(SocketEvents.Matchmaking.Listen.MatchFound, () => this.error.set(null));
   }
 
   joinMatchmaking(teamId: number) {
-    this.statusSocket['socket']?.emit('matchmaking:join', { teamId });
+    this.statusSocket['socket']?.emit(SocketEvents.Matchmaking.Emit.Join, { teamId });
   }
 
   leaveMatchmaking() {
-    this.statusSocket['socket']?.emit('matchmaking:leave');
+    this.statusSocket['socket']?.emit(SocketEvents.Matchmaking.Emit.Leave);
   }
 
-  onMatchFound(callback: (data: { opponent: number; mode: string; roomId: string }) => void) {
-    this.statusSocket['socket']?.on('match:found', callback);
+  onMatchFound(callback: (data: { opponent: number; mode: string }) => void) {
+    this.statusSocket['socket']?.on(SocketEvents.Matchmaking.Emit.MatchFound, callback);
   }
 
   requestBattle(to: number, teamId: number) {
-    this.statusSocket['socket']?.emit('battle:request', { to, teamId });
+    this.statusSocket['socket']?.emit(SocketEvents.Matchmaking.Emit.BattleRequest, { to, teamId });
   }
 
   cancelBattle(to: number) {
-    this.statusSocket['socket']?.emit('battle:cancel', { to });
+    this.statusSocket['socket']?.emit(SocketEvents.Matchmaking.Emit.BattleCancel, { to });
   }
 
   acceptBattle(from: number, teamId: number) {
-    this.statusSocket['socket']?.emit('battle:accept', { from, teamId });
+    this.statusSocket['socket']?.emit(SocketEvents.Matchmaking.Emit.BattleAccept, { from, teamId });
+
+    this.teamsService.getTeamById(teamId.toString()).subscribe(team => {
+      this.statusSocket['socket']?.emit('battle:create', {
+        opponentId: from,
+        team: JSON.stringify(this.teamsService.parseTeam(team.data))
+      });
+    });
   }
+
 }

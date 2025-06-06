@@ -1,4 +1,4 @@
-export function generateBattleRoomId(playerId1: string, playerId2: string): string {
+export function generateBattleRoomId(playerId1: number, playerId2: number): string {
     const [a, b] = [playerId1, playerId2].sort();
 
     const now = new Date();

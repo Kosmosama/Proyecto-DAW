@@ -39,10 +39,10 @@ export class MatchmakingPanelComponent {
         console.error('Error fetching teams:', error);
       }
     });
-    this.matchmakingService.onMatchFound(({ opponent, roomId }) => {
-      console.log('Matched against', opponent, 'in room', roomId);
+    this.matchmakingService.onMatchFound(({ opponent }) => {
+      console.log('Matched against', opponent);
 
-      this.router.navigate(['pages/battle', roomId]);
+      this.router.navigate(['pages/battle']);
     });
 
   }

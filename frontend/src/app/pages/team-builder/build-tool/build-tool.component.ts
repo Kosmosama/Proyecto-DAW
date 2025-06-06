@@ -166,9 +166,15 @@ export class BuildToolComponent {
   }
 
   async loadTeamToEdit(teamId: string) {
-    const team = await this.teamsService.getTeamById(teamId).toPromise();
-    if (team) {
-      await this.setTeamToEdit(team);
+    try {
+      const team = await this.teamsService.getTeamById(teamId).toPromise();
+      if (team) {
+        await this.setTeamToEdit(team);
+      }
+    } catch (error) {
+      alert('Este equipo no existe o no te pertenece');
+
+      this.router.navigate(['/team-builder']);
     }
   }
 
