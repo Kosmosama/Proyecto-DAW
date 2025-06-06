@@ -1,4 +1,11 @@
 export const SocketEvents = {
+    Friends: {
+        Emit: {
+            FriendsOnline: 'friends:online',
+            FriendOnline: 'friend:online',
+            FriendOffline: 'friend:offline',
+        },
+    },
     Matchmaking: {
         Listen: {
             Join: 'matchmaking:join',

@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Server } from 'socket.io';
 import { SocketEvents } from 'src/common/constants/events.constants';
-import { BATTLE_REQUEST_PREFIX, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_INCOMING_REQUESTS, PLAYER_PENDING_REQUESTS } from 'src/common/constants/redis.constants';
+import { BATTLE_REQUEST_PREFIX, MATCHMAKING_DATA_PREFIX, MATCHMAKING_PLAYERS, MATCHMAKING_QUEUE, ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_INCOMING_REQUESTS, PLAYER_PENDING_REQUESTS } from 'src/common/constants/redis.constants';
 import { emitToPlayer } from 'src/common/utils/emit.util';
 import { PlayerService } from 'src/player/player.service';
 import { TeamService } from 'src/teams/teams.service';
@@ -24,46 +24,78 @@ export class MatchmakingService {
 
     /**
      * Joins a player to the matchmaking queue.
-     * If an opponent is found, both players are notified and matched.
-     * If not, the player is added to the queue.
+     * If an opponent is found, it attempts to match them.
+     * If no opponent is found, the player is added to the queue.
      * @param {number} playerId - The ID of the player joining matchmaking.
      * @param {number} teamId - The ID of the player's team.
      * @param {Server} server - The Socket.IO server instance for emitting events.
      * @return {Promise<void>} No return value.
      */
     async joinMatchmaking(playerId: number, teamId: number, server: Server): Promise<void> {
-        const entry: MatchmakingEntry = { playerId, teamId };
-        const entryStr = JSON.stringify(entry);
-
-        const alreadyIn = (await this.redis.lrange(MATCHMAKING_QUEUE, 0, -1)).includes(entryStr);
+        const alreadyIn = await this.redis.sismember(MATCHMAKING_PLAYERS, playerId.toString());
         if (alreadyIn) {
             this.logger.warn(`Player ${playerId} is already in matchmaking`);
             return;
         }
 
-        const opponentStr = await this.redis.lpop(MATCHMAKING_QUEUE);
-        if (!opponentStr) {
-            await this.redis.rpush(MATCHMAKING_QUEUE, entryStr);
+        const opponentIds = await this.redis.zrange(MATCHMAKING_QUEUE, 0, 0);
+        if (opponentIds.length === 0) {
+            const now = Date.now();
+            const pipeline = this.redis.pipeline();
+            pipeline.zadd(MATCHMAKING_QUEUE, now, playerId.toString());
+            pipeline.hset(`${MATCHMAKING_DATA_PREFIX}${playerId}`, 'teamId', teamId.toString());
+            pipeline.sadd(MATCHMAKING_PLAYERS, playerId.toString());
+            await pipeline.exec();
             this.logger.debug(`Player ${playerId} placed in matchmaking queue`);
             return;
         }
 
-        const opponent = JSON.parse(opponentStr) as MatchmakingEntry;
-        const matched = await this.tryMatchPlayers(entry, opponent, server);
+        const opponentId = opponentIds[0];
+        const pipeline = this.redis.pipeline();
+        pipeline.zrem(MATCHMAKING_QUEUE, opponentId);
+        pipeline.srem(MATCHMAKING_PLAYERS, opponentId);
+        const opponentDataPromise = this.redis.hget(`${MATCHMAKING_DATA_PREFIX}${opponentId}`, 'teamId');
+        pipeline.del(`${MATCHMAKING_DATA_PREFIX}${opponentId}`);
+        await pipeline.exec();
 
-        if (!matched) await this.redis.rpush(MATCHMAKING_QUEUE, entryStr);
+        const opponentTeamIdStr = await opponentDataPromise;
+        if (!opponentTeamIdStr) {
+            const now = Date.now();
+            await Promise.all([
+                this.redis.zadd(MATCHMAKING_QUEUE, now, playerId.toString()),
+                this.redis.hset(`${MATCHMAKING_DATA_PREFIX}${playerId}`, 'teamId', teamId.toString()),
+                this.redis.sadd(MATCHMAKING_PLAYERS, playerId.toString()),
+            ]);
+            this.logger.warn(`Opponent data missing for player ${opponentId}, re-queued player ${playerId}`);
+            return;
+        }
+
+        const opponent: MatchmakingEntry = { playerId: parseInt(opponentId, 10), teamId: parseInt(opponentTeamIdStr, 10) };
+        const entry: MatchmakingEntry = { playerId, teamId };
+
+        const matched = await this.tryMatchPlayers(entry, opponent, server);
+        if (!matched) {
+            const now = Date.now();
+            await Promise.all([
+                this.redis.zadd(MATCHMAKING_QUEUE, now, playerId.toString()),
+                this.redis.hset(`${MATCHMAKING_DATA_PREFIX}${playerId}`, 'teamId', teamId.toString()),
+                this.redis.sadd(MATCHMAKING_PLAYERS, playerId.toString()),
+            ]);
+        }
     }
 
     /**
      * Leaves the matchmaking queue for a player.
-     * Removes the player from the queue if they are present.
+     * Removes the player from the queue and deletes their matchmaking data.
      * @param {number} playerId - The ID of the player leaving matchmaking.
      * @return {Promise<void>} No return value.
      */
     async leaveMatchmaking(playerId: number): Promise<void> {
-        const items = await this.redis.lrange(MATCHMAKING_QUEUE, 0, -1);
-        const target = items.find(i => JSON.parse(i).playerId === playerId);
-        if (target) await this.redis.lrem(MATCHMAKING_QUEUE, 0, target);
+        const pipeline = this.redis.pipeline();
+        pipeline.zrem(MATCHMAKING_QUEUE, playerId.toString());
+        pipeline.srem(MATCHMAKING_PLAYERS, playerId.toString());
+        pipeline.del(`${MATCHMAKING_DATA_PREFIX}${playerId}`);
+        await pipeline.exec();
         this.logger.debug(`Player ${playerId} left matchmaking`);
     }
 

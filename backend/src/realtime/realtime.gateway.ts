@@ -74,8 +74,13 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         @MessageBody() data: MatchmakingJoinDto,
         @PlayerIdWs() playerId: number
     ) {
+        if (!data?.teamId || isNaN(Number(data.teamId))) {
+            client.emit(SocketEvents.Matchmaking.Listen.Join, { error: 'Invalid or missing team ID' });
+            return;
+        }
+
         try {
-            await this.matchmakingService.joinMatchmaking(playerId, data.teamId, this.server);
+            await this.matchmakingService.joinMatchmaking(playerId, Number(data.teamId), this.server);
         } catch (err) {
             client.emit(SocketEvents.Matchmaking.Listen.Join, { error: err.message });
         }
@@ -110,6 +115,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         @MessageBody() data: BattleRequestDto,
         @PlayerIdWs() playerId: number
     ) {
+        if (!data?.teamId || isNaN(Number(data.teamId)) || !data.to || isNaN(Number(data.to))) {
+            client.emit(SocketEvents.Battle.Listen.Request, { error: 'Invalid team or target player ID' });
+            return;
+        }
+
         try {
             await this.matchmakingService.sendBattleRequest(playerId, data.to, data.teamId, this.server);
         } catch (err) {
@@ -129,16 +139,15 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         @MessageBody() data: BattleRequestAcceptDto,
         @PlayerIdWs() playerId: number
     ) {
-        if (!data.teamId) {
-            this.logger.warn(`Missing teamId in battle request accept data: ${JSON.stringify(data)}. Battle not accepted.`);
-            client.emit(SocketEvents.Battle.Listen.Accept, { error: 'Missing team ID' });
+        if (!data?.teamId || isNaN(Number(data.teamId)) || !data.from || isNaN(Number(data.from))) {
+            client.emit(SocketEvents.Battle.Listen.Accept, { error: 'Invalid request. Team ID and player ID required.' });
             return;
-        } else {
-            try {
-                await this.matchmakingService.acceptBattleRequest(data.from, playerId, data.teamId, this.server);
-            } catch (err) {
-                client.emit(SocketEvents.Battle.Listen.Accept, { error: err.message });
-            }
+        }
+
+        try {
+            await this.matchmakingService.acceptBattleRequest(data.from, playerId, data.teamId, this.server);
+        } catch (err) {
+            client.emit(SocketEvents.Battle.Listen.Accept, { error: err.message });
         }
     }
 
