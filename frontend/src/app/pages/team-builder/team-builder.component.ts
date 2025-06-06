@@ -1,13 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Team } from '../../core/interfaces/team.model';
 import { TeamsService } from '../../core/services/teams.service';
 import { PokemonData } from '../../core/interfaces/pokemon.model';
 import { TeamBuilderService } from '../../core/services/teamBuilder.service';
+import { BuildToolComponent } from "./build-tool/build-tool.component";
 
 @Component({
   selector: 'team-builder',
-  imports: [RouterModule],
+  imports: [RouterModule, BuildToolComponent],
   templateUrl: './team-builder.component.html',
   styleUrl: `team-builder.component.scss`,
 })
@@ -15,6 +16,7 @@ export class TeamBuilderComponent {
 
   private teamService = inject(TeamsService);
   private teamBuilderService = inject(TeamBuilderService);
+  private router = inject(Router);
 
   playerTeams = signal<Team[]>([]);
   selectedTeam = signal<Team | null>(null);
@@ -41,4 +43,22 @@ export class TeamBuilderComponent {
     return this.teamBuilderService.getPokemonSprite(species);
   }
 
+  editTeam(team: Team) {
+  this.router.navigate(['/pages/team-builder/builder'], {
+    queryParams: { id: team.id }
+  });
+}
+
+  bounce(event: Event) {
+    const target = event.target as HTMLElement;
+    target.classList.add('bounce');
+
+    const boCount = Math.floor(Math.random() * 5) + 1;
+    const boString = 'bo'.repeat(boCount) + 'ing';
+    console.log(boString);
+
+    setTimeout(() => {
+      target.classList.remove('bounce');
+    }, 300);
+  }
 }

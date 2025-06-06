@@ -1,9 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TeamBuilderService } from '../../../core/services/teamBuilder.service';
 import { pokemonNameValidator } from '../../../shared/validators/pokemon-builder.validator';
 import { TeamsService } from '../../../core/services/teams.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Team } from '../../../core/interfaces/team.model';
 
 @Component({
   selector: 'build-tool',
@@ -16,21 +17,22 @@ export class BuildToolComponent {
   private tbService = inject(TeamBuilderService);
   private teamsService = inject(TeamsService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
-  team = signal<string[]>(Array(6).fill(''));
-  pokemonSprites: string[] = [];
+  teamToEdit = input<Team>();
+  team = signal(Array(6).fill(0));
 
-  speciesList = signal<string[]>([]);
-  abilitiesList = signal<string[]>([]);
-  itemsList = signal<string[]>([]);
-  movesList = signal<string[]>([]);
+  speciesList = signal<string[]>(this.tbService.getSpecies());
+  abilitiesList = signal<string[]>(this.tbService.getAbilities());
+  itemsList = signal<string[]>(this.tbService.getItems());
+  movesList = signal<string[]>(this.tbService.getMoves());
 
-  teraTypes = signal<string[]>([
+  teraTypes = signal([
     'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison',
     'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'
   ]);
 
-  natures = signal<string[]>([
+  natures = signal([
     'Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty',
     'Bold', 'Docile', 'Relaxed', 'Impish', 'Lax',
     'Timid', 'Hasty', 'Serious', 'Jolly', 'Naive',
@@ -42,6 +44,7 @@ export class BuildToolComponent {
   legalMoves: string[][] = Array.from({ length: 6 }, () => []);
 
   teamName = new FormControl('', { nonNullable: true, validators: [Validators.required] });
+
   pokemonForms: FormGroup<{
     name: FormControl<string>;
     item: FormControl<string>;
@@ -64,13 +67,16 @@ export class BuildToolComponent {
     }>;
   }>[] = [];
 
-  constructor() {
-    this.speciesList.set(this.tbService.getSpecies());
-    this.abilitiesList.set(this.tbService.getAbilities());
-    this.itemsList.set(this.tbService.getItems());
-    this.movesList.set(this.tbService.getMoves());
+  pokemonSprites: string[] = [];
+  visibleForms: boolean[] = Array(6).fill(false);
 
-    this.pokemonForms = Array.from({ length: 6 }, (_, index) => {
+  constructor() {
+    this.route.queryParams.subscribe(params => {
+      const teamId = params['id'];
+      if (teamId) this.loadTeamToEdit(teamId);
+    });
+
+    this.pokemonForms = Array.from({ length: 6 }, (_, i) => {
       const form = new FormGroup({
         name: new FormControl('', {
           nonNullable: true,
@@ -85,7 +91,7 @@ export class BuildToolComponent {
           Def: new FormControl(0, { nonNullable: true }),
           SpA: new FormControl(0, { nonNullable: true }),
           SpD: new FormControl(0, { nonNullable: true }),
-          Spe: new FormControl(0, { nonNullable: true })
+          Spe: new FormControl(0, { nonNullable: true }),
         }),
         nature: new FormControl('', { nonNullable: true }),
         moves: new FormGroup({
@@ -100,13 +106,13 @@ export class BuildToolComponent {
         const species = this.speciesList().find(s => s.toLowerCase() === value.toLowerCase());
         if (species) {
           const data = await this.tbService.getSpeciesData(species);
-          const sprite = this.tbService.getPokemonSprite(species);
-          this.pokemonSprites[index] = sprite;
-          this.legalAbilities[index] = data.abilities;
-          this.legalMoves[index] = data.moves;
+          this.pokemonSprites[i] = this.tbService.getPokemonSprite(species);
+          this.legalAbilities[i] = data.abilities;
+          this.legalMoves[i] = data.moves;
         } else {
-          this.legalAbilities[index] = [];
-          this.legalMoves[index] = [];
+          this.pokemonSprites[i] = '';
+          this.legalAbilities[i] = [];
+          this.legalMoves[i] = [];
         }
       });
 
@@ -114,53 +120,81 @@ export class BuildToolComponent {
     });
   }
 
-  visibleForms: boolean[] = Array(6).fill(false);
-
   toggleForm(index: number) {
     this.visibleForms[index] = !this.visibleForms[index];
   }
 
-  isFormVisible(index: number): boolean {
+  isFormVisible(index: number) {
     return this.visibleForms[index];
   }
 
   saveTeam() {
-    const teamName = this.teamName.value.trim();
+    const teamName = (this.teamName.value ?? '').trim();
+    if (!teamName) return;
 
     const rawTeam = this.pokemonForms
       .map(f => ({
-        name: f.get('name')?.value?.trim() ?? '',
-        item: f.get('item')?.value?.trim() ?? '',
-        ability: f.get('ability')?.value?.trim() ?? '',
-        teraType: f.get('teraType')?.value?.trim() ?? '',
+        name: (f.get('name')?.value ?? '').trim(),
+        item: (f.get('item')?.value ?? '').trim(),
+        ability: (f.get('ability')?.value ?? '').trim(),
+        teraType: (f.get('teraType')?.value ?? '').trim(),
         EVs: {
           HP: f.get('EVs.HP')?.value ?? 1,
           Atk: f.get('EVs.Atk')?.value ?? 0,
           Def: f.get('EVs.Def')?.value ?? 0,
           SpA: f.get('EVs.SpA')?.value ?? 0,
           SpD: f.get('EVs.SpD')?.value ?? 0,
-          Spe: f.get('EVs.Spe')?.value ?? 0
+          Spe: f.get('EVs.Spe')?.value ?? 0,
         },
-        nature: f.get('nature')?.value?.trim() ?? '',
+        nature: (f.get('nature')?.value ?? '').trim(),
         moves: {
-          move1: f.get('moves.move1')?.value?.trim() ?? '',
-          move2: f.get('moves.move2')?.value?.trim() ?? '',
-          move3: f.get('moves.move3')?.value?.trim() ?? '',
-          move4: f.get('moves.move4')?.value?.trim() ?? '',
+          move1: (f.get('moves.move1')?.value ?? '').trim(),
+          move2: (f.get('moves.move2')?.value ?? '').trim(),
+          move3: (f.get('moves.move3')?.value ?? '').trim(),
+          move4: (f.get('moves.move4')?.value ?? '').trim(),
         }
       }))
-      .filter(p =>
-        p.name && p.item && p.ability &&
-        Object.values(p.moves).some(move => move)
-      );
+      .filter(p => p.name && p.item && p.ability && Object.values(p.moves).some(m => m));
 
     const parsed = this.teamsService.parseTeam(rawTeam);
     this.teamsService.postTeam(teamName, parsed).subscribe(() => {
       this.teamName.reset();
-      this.pokemonForms.forEach(form => form.reset());
-      this.team.set(Array(6).fill(''));
+      this.pokemonForms.forEach(f => f.reset());
+      this.pokemonSprites = [];
       this.router.navigate(['/team-builder']);
     });
   }
 
+  async loadTeamToEdit(teamId: string) {
+    const team = await this.teamsService.getTeamById(teamId).toPromise();
+    if (team) {
+      await this.setTeamToEdit(team);
+    }
+  }
+
+  private async setTeamToEdit(team: Team) {
+    this.teamName.setValue(team.name);
+
+    for (let i = 0; i < team.data.length; i++) {
+      const p = team.data[i];
+      this.pokemonForms[i].patchValue({
+        name: p.species,
+        item: p.item,
+        ability: p.ability,
+        teraType: p.teraType,
+        nature: p.nature,
+        moves: {
+          move1: p.moves[0] || '',
+          move2: p.moves[1] || '',
+          move3: p.moves[2] || '',
+          move4: p.moves[3] || '',
+        }
+      });
+
+      const data = await this.tbService.getSpeciesData(p.species);
+      this.pokemonSprites[i] = this.tbService.getPokemonSprite(p.species);
+      this.legalAbilities[i] = data.abilities;
+      this.legalMoves[i] = data.moves;
+    }
+  }
 }

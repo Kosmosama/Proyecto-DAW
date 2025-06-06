@@ -1,134 +1,129 @@
-<div class="team-builder-wrapper d-flex flex-column align-items-center justify-content-center">
-  <div class="card shadow-lg w-100 mb-4" style="max-width: 1200px; background-color: white; border-radius: 1rem;">
-    <div class="card-body">
-      <h2 class="card-title text-danger text-center mb-4">Crear equipo</h2>
+<div class="build-tool-container container">
+  <h2 class="text-center text-danger">
+    {{ teamToEdit() ? 'Edit team' : 'Create team' }}
+  </h2>
 
-      <div class="form-group mb-4">
-        <label for="teamName" class="form-label">Nombre del equipo</label>
-        <input type="text" class="form-control form-control-sm" id="teamName" [formControl]="teamName"
-          placeholder="Nombre del equipo" />
+  <div class="form-group mb-4">
+    <label for="name" class="form-label">Team name</label>
+    <input type="text" class="form-control form-control-sm" [formControl]="teamName"
+      placeholder="Team name" />
+  </div>
+
+  <div class="pokemon-list">
+
+    @for (pokemon of team(); track $index) {
+    <div class="pokemon-card d-flex gap-3 p-3 bg-light border rounded shadow-sm">
+      <div class="sprite-wrapper">
+        @if (pokemonSprites[$index]) {
+        <img [src]="pokemonSprites[$index]" alt="Sprite" width="64" height="64" />
+        }
       </div>
 
-      <div class="pokemon-grid mb-4">
-        @for (pokemon of team(); track $index) {
-        <div class="pokemon-card p-3">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Pokémon {{ $index + 1 }}</strong>
-            <button class="btn btn-outline-danger btn-sm" type="button" (click)="toggleForm($index)">Editar</button>
-          </div>
-
-          @if (isFormVisible($index)) {
-          <div class="form-group mb-2 d-flex align-items-center justify-content-between gap-2">
-            <input type="text" class="form-control form-control-sm flex-grow-1" style="max-width: 75%;"
-              [formControl]="pokemonForms[$index].controls.name" [attr.list]="'speciesList' + $index"
-              placeholder="Nombre del Pokémon" />
+      <div class="flex-grow-1">
+        <div class="row g-2 mb-2 align-items-center">
+          <div class="col-md-6">
+            <input type="text" class="form-control form-control-sm" placeholder="Pokémon"
+              [formControl]="pokemonForms[$index].controls.name" [attr.list]="'speciesList' + $index" />
             <datalist [id]="'speciesList' + $index">
               @for (name of speciesList(); track name) {
               <option [value]="name"></option>
               }
             </datalist>
+          </div>
 
-            <div class="pokemon-sprite">
-              @if (pokemonSprites[$index]) {
-              <img [src]="pokemonSprites[$index]" alt="Sprite" />
+          <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm" placeholder="Item"
+              [formControl]="pokemonForms[$index].controls.item" [attr.list]="'items' + $index" />
+            <datalist [id]="'items' + $index">
+              @for (item of itemsList(); track item) {
+              <option [value]="item"></option>
               }
-            </div>
+            </datalist>
           </div>
 
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <input class="form-control form-control-sm" type="text"
-                [formControl]="pokemonForms[$index].controls.item" placeholder="Objeto"
-                [attr.list]="'items' + $index" />
-              <datalist [id]="'items' + $index">
-                @for (item of itemsList(); track item) {
-                <option [value]="item"></option>
-                }
-              </datalist>
-            </div>
-            <div class="col-6">
-              <input class="form-control form-control-sm" type="text"
-                [formControl]="pokemonForms[$index].controls.ability" placeholder="Habilidad"
-                [attr.list]="'abilities' + $index" />
-              <datalist [id]="'abilities' + $index">
-                @for (ability of legalAbilities[$index]; track ability) {
-                <option [value]="ability"></option>
-                }
-              </datalist>
-            </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm" placeholder="Ability"
+              [formControl]="pokemonForms[$index].controls.ability" [attr.list]="'abilities' + $index" />
+            <datalist [id]="'abilities' + $index">
+              @for (ability of legalAbilities[$index]; track ability) {
+              <option [value]="ability"></option>
+              }
+            </datalist>
           </div>
-
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <select class="form-select form-select-sm"
-                [formControl]="pokemonForms[$index].controls.teraType" id="teraType{{$index}}">
-                <option value="">Selecciona Tera Tipo</option>
-                @for (type of teraTypes(); track type) {
-                <option [value]="type">{{ type }}</option>
-                }
-              </select>
-            </div>
-            <div class="col-6">
-              <select class="form-select form-select-sm"
-                [formControl]="pokemonForms[$index].controls.nature" id="nature{{$index}}">
-                <option value="">Selecciona Naturaleza</option>
-                @for (nature of natures(); track nature) {
-                <option [value]="nature">{{ nature }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group mb-2">
-            <div class="row g-2">
-              <div class="col-6">
-                <input class="form-control form-control-sm" type="text"
-                  [formControl]="pokemonForms[$index].controls.moves.controls.move1" placeholder="Movimiento 1"
-                  [attr.list]="'moves' + $index + '-1'" />
-                <datalist [id]="'moves' + $index + '-1'">
-                  @for (move of legalMoves[$index]; track move) {
-                  <option [value]="move"></option>
-                  }
-                </datalist>
-              </div>
-              <div class="col-6">
-                <input class="form-control form-control-sm" type="text"
-                  [formControl]="pokemonForms[$index].controls.moves.controls.move2" placeholder="Movimiento 2"
-                  [attr.list]="'moves' + $index + '-2'" />
-                <datalist [id]="'moves' + $index + '-2'">
-                  @for (move of legalMoves[$index]; track move) {
-                  <option [value]="move"></option>
-                  }
-                </datalist>
-              </div>
-              <div class="col-6">
-                <input class="form-control form-control-sm" type="text"
-                  [formControl]="pokemonForms[$index].controls.moves.controls.move3" placeholder="Movimiento 3"
-                  [attr.list]="'moves' + $index + '-3'" />
-                <datalist [id]="'moves' + $index + '-3'">
-                  @for (move of legalMoves[$index]; track move) {
-                  <option [value]="move"></option>
-                  }
-                </datalist>
-              </div>
-              <div class="col-6">
-                <input class="form-control form-control-sm" type="text"
-                  [formControl]="pokemonForms[$index].controls.moves.controls.move4" placeholder="Movimiento 4"
-                  [attr.list]="'moves' + $index + '-4'" />
-                <datalist [id]="'moves' + $index + '-4'">
-                  @for (move of legalMoves[$index]; track move) {
-                  <option [value]="move"></option>
-                  }
-                </datalist>
-              </div>
-            </div>
-          </div>
-          }
         </div>
-        }
-      </div>
 
-      <button class="btn btn-danger btn-lg px-5 mt-3" (click)="saveTeam()">Guardar equipo</button>
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">
+            <select class="form-select form-select-sm" [formControl]="pokemonForms[$index].controls.teraType">
+              <option value="">Tera Type</option>
+              @for (type of teraTypes(); track type) {
+              <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <select class="form-select form-select-sm" [formControl]="pokemonForms[$index].controls.nature">
+              <option value="">Nature</option>
+              @for (nature of natures(); track nature) {
+              <option [value]="nature">{{ nature }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm"
+              [formControl]="pokemonForms[$index].controls.moves.controls['move1']" placeholder="Move 1"
+              [attr.list]="'moves' + $index + '-1'" />
+            <datalist [id]="'moves' + $index + '-1'">
+              @for (move of legalMoves[$index]; track move) {
+              <option [value]="move"></option>
+              }
+            </datalist>
+          </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm"
+              [formControl]="pokemonForms[$index].controls.moves.controls['move2']" placeholder="Move 2"
+              [attr.list]="'moves' + $index + '-2'" />
+            <datalist [id]="'moves' + $index + '-2'">
+              @for (move of legalMoves[$index]; track move) {
+              <option [value]="move"></option>
+              }
+            </datalist>
+          </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm"
+              [formControl]="pokemonForms[$index].controls.moves.controls['move3']" placeholder="Move 3"
+              [attr.list]="'moves' + $index + '-3'" />
+            <datalist [id]="'moves' + $index + '-3'">
+              @for (move of legalMoves[$index]; track move) {
+              <option [value]="move"></option>
+              }
+            </datalist>
+          </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm"
+              [formControl]="pokemonForms[$index].controls.moves.controls['move4']" placeholder="Move 4"
+              [attr.list]="'moves' + $index + '-4'" />
+            <datalist [id]="'moves' + $index + '-4'">
+              @for (move of legalMoves[$index]; track move) {
+              <option [value]="move"></option>
+              }
+            </datalist>
+          </div>
+        </div>
+
+
+      </div>
     </div>
+    }
+  </div>
+
+
+
+  <div class="d-flex justify-content-center">
+    <button class="btn btn-danger px-5 py-3 mt-4" (click)="saveTeam()">Save Team</button>
   </div>
 </div>

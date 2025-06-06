@@ -1,6 +1,53 @@
+.team-card {
+  border-radius: 1rem;
+}
+
 .team-box {
+  width: 220px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  position: relative;
+}
+
+.pokemon-sprite {
+  width: 64px;
+  height: 64px;
+  margin: 2px;
+  image-rendering: pixelated;
   transition: transform 0.2s ease;
-  &:hover {
-    transform: scale(1.03);
+  cursor: pointer;
+
+  &.bounce {
+    animation: bounce 0.3s ease;
   }
+}
+
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
+  }
+
+  30% {
+    transform: translateY(-10px);
+  }
+
+  60% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(-5px);
+  }
+}
+
+
+.edit-btn {
+  top: 0.5rem;
+  right: 0.5rem;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  z-index: 1;
 }

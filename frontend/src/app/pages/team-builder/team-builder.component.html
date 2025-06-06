@@ -1,19 +1,23 @@
 <div class="team-builder-wrapper container my-5">
-  <div class="card shadow-lg p-4" style="border-radius: 1rem;">
-    <h2 class="text-danger text-center mb-4">Tus equipos</h2>
+  <div class="card shadow-lg p-4 team-card">
+    <h2 class="text-danger text-center mb-4">Your teams</h2>
 
     @if (playerTeams().length === 0) {
-      <p class="text-muted text-center">Aún no has creado ningún equipo.</p>
+      <p class="text-muted text-center">You have no teams yet</p>
     } @else {
       <div class="d-flex flex-wrap justify-content-center gap-4">
         @for (team of playerTeams(); track $index) {
-          <div class="team-box border rounded p-3" style="width: 220px; background-color: #f8f9fa;">
+          <div class="team-box position-relative">
+            <button class="edit-btn btn btn-sm btn-light position-absolute"
+                    (click)="editTeam(team)">
+              ✎
+            </button>
+
             <h5 class="text-center mb-3">{{ team.name }}</h5>
             <div class="d-flex justify-content-center flex-wrap">
               @for (pokemon of team.data; track $index) {
                 <img [src]="getSpriteUrl(pokemon.species)" alt="{{ pokemon.species }}"
-                  width="64" height="64"
-                  style="image-rendering: pixelated; margin: 2px;" />
+                  class="pokemon-sprite" (click)="bounce($event)" />
               }
             </div>
           </div>
@@ -23,8 +27,15 @@
 
     <div class="text-center mt-4">
       <button class="btn btn-danger btn-lg px-5" [routerLink]="['builder']">
-        + Crear nuevo equipo
+        + Create new team
       </button>
     </div>
   </div>
+
+  @if (selectedTeam()) {
+  <build-tool
+    [teamToEdit]="selectedTeam()!"
+    (closeEditor)="selectedTeam.set(null)">
+  </build-tool>
+}
 </div>
