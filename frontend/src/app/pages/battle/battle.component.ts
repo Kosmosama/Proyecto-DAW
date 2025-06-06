@@ -4,8 +4,11 @@ import { Component } from '@angular/core';
   selector: 'battle',
   imports: [],
   templateUrl: './battle.component.html',
-  styleUrl: ``
+  styleUrl: `battle.component.scss`,
 })
 export class BattleComponent {
 
+  constructor() {
+    console.log("A");
+  }
 }
