@@ -2,9 +2,10 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { Server, Socket } from 'socket.io';
+import { emitToPlayer } from 'src/common/utils/emit.util';
 import { PlayerService } from 'src/player/player.service';
 import { ONLINE_PLAYERS, PLAYER_FRIENDS_PREFIX, PLAYER_SOCKETS_PREFIX, SOCKET_TO_PLAYER } from '../common/constants/redis.constants';
-import { emitToPlayer } from 'src/common/utils/emit.util';
+import { GameService } from './game.service';
 import { MatchmakingService } from './matchmaking.service';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class StatusService {
     constructor(
         private readonly playerService: PlayerService,
         private readonly matchmakingService: MatchmakingService,
+        private readonly gameService: GameService,
         @InjectRedis() private readonly redis: Redis,
     ) { }
 
@@ -28,6 +30,7 @@ export class StatusService {
     async handleNewConnection(client: Socket, playerId: number, server: Server) {
         await this.redis.hset(SOCKET_TO_PLAYER, client.id, playerId.toString());
         await this.redis.sadd(`${PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
+        await this.gameService.restoreActiveMatches(playerId, server);
 
         // If there's a pending disconnect timer, cancel it because the player reconnected
         if (this.disconnectTimers.has(playerId)) {
@@ -77,6 +80,7 @@ export class StatusService {
 
                     await this.matchmakingService.cleanupPlayerRequests(playerId);
                     await this.matchmakingService.leaveMatchmaking(playerId);
+                    await this.gameService.handlePlayerDisconnect(playerId, server);
 
                     await this.broadcastOfflineStatusToFriends(playerId, server);
                     this.logger.debug(`Player ${playerId} is no longer online.`);
