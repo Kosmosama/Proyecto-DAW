@@ -78,6 +78,7 @@ export class MatchmakingService {
      */
     async sendBattleRequest(from: number, to: number, teamId: number, server: Server): Promise<void> {
         if (from === to) throw new Error('Cannot send battle request to self');
+        this.logger.debug(`Battle request from ${from} to ${to} with team ID ${teamId}`);
 
         if (!(await this.ensureFriendshipCached(from, to)))
             throw new Error('Players are not friends');
@@ -170,8 +171,13 @@ export class MatchmakingService {
             vs  
             Player ${to} (Team ${toTeamId})`);
 
-        await emitToPlayer(this.redis, server, from, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: to, mode: 'friend' });
-        await emitToPlayer(this.redis, server, to, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: from, mode: 'friend' });
+        this.gameService.createMatch(
+            from,
+            request.fromTeamId,
+            to,
+            toTeamId,
+            server
+        );
     }
 
     /**
@@ -227,8 +233,13 @@ export class MatchmakingService {
             /VS/
             Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
 
-        await emitToPlayer(this.redis, server, p1.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p2.playerId, mode: 'matchmaking' });
-        await emitToPlayer(this.redis, server, p2.playerId, SocketEvents.Matchmaking.Emit.MatchFound, { opponent: p1.playerId, mode: 'matchmaking' });
+        this.gameService.createMatch(
+            p1.playerId,
+            p1.teamId,
+            p2.playerId,
+            p2.teamId,
+            server
+        );
 
         return true;
     }
