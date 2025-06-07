@@ -46,7 +46,7 @@ export class AuthService {
      * @param {PlayerPublic} player The player object containing ID and username.
      * @returns {Promise<void>} No return value.
      */
-    async logout(player: PlayerPublic): Promise<void> {
+    async logout(player: PlayerPrivate): Promise<void> {
         await this.clearRefreshToken(player.id);
     }
 

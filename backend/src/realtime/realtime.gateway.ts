@@ -10,6 +10,7 @@ import { BattleRequestDto } from './dto/battle-request.dto';
 import { MatchmakingJoinDto } from './dto/matchmaking-join.dto';
 import { MatchmakingService } from './matchmaking.service';
 import { StatusService } from './status.service';
+import { GameService } from './game.service';
 
 @WebSocketGateway({
     namespace: 'status',
@@ -26,9 +27,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     server: Server;
 
     constructor(
+        private readonly authService: AuthService,
         private readonly statusService: StatusService,
         private readonly matchmakingService: MatchmakingService,
-        private readonly authService: AuthService,
+        private readonly gameService: GameService,
     ) { }
 
     /**
@@ -167,6 +169,31 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
             await this.matchmakingService.cancelBattleRequest(playerId, data.from, this.server);
         } catch (err) {
             client.emit(SocketEvents.Battle.Listen.Cancel, { error: err.message });
+        }
+    }
+
+    /**
+     * Handles a chat message from a player.
+     * @param {Socket} client - The socket client sending the message.
+     * @param {Object} data - The chat message data.
+     * @param {number} playerId - The ID of the player sending the message.
+     * @returns 
+     */
+    @SubscribeMessage(SocketEvents.Game.Listen.ChatMessage)
+    async onChatMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { roomId: string; message: string },
+        @PlayerIdWs() playerId: number,
+    ) {
+        if (!data?.roomId || typeof data.message !== 'string') {
+            client.emit(SocketEvents.Game.Listen.ChatMessage, { error: 'Invalid chat message data' });
+            return;
+        }
+
+        try {
+            await this.gameService.handleChatMessage(this.server, playerId, data.roomId, data.message);
+        } catch (err) {
+            client.emit(SocketEvents.Game.Listen.ChatMessage, { error: err.message });
         }
     }
 

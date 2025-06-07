@@ -13,7 +13,6 @@ import { TokenResponse } from './interfaces/token-response.interface';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 import { JwtGuard } from './guards/jwt-auth.guard';
 
-@Public()
 @Controller('auth')
 export class AuthController {
     constructor(
@@ -47,6 +46,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Logout the current player' })
     @ApiResponse({ status: 204, description: 'Logout successful.' })
     logout(@Player() player: PlayerPrivate): Promise<void> {
+        console.log(player);
         return this.authService.logout(player);
     }
 

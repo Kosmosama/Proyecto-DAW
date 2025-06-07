@@ -32,7 +32,8 @@ export class MatchmakingService {
      * @return {Promise<void>} No return value.
      */
     async joinMatchmaking(playerId: number, teamId: number, server: Server): Promise<void> {
-        const alreadyIn = await this.redis.sismember(MATCHMAKING_PLAYERS, playerId.toString());
+        const pid = playerId.toString();
+        const alreadyIn = await this.redis.sismember(MATCHMAKING_PLAYERS, pid);
         if (alreadyIn) {
             this.logger.warn(`Player ${playerId} is already in matchmaking`);
             return;
@@ -40,12 +41,7 @@ export class MatchmakingService {
 
         const opponentIds = await this.redis.zrange(MATCHMAKING_QUEUE, 0, 0);
         if (opponentIds.length === 0) {
-            const now = Date.now();
-            const pipeline = this.redis.pipeline();
-            pipeline.zadd(MATCHMAKING_QUEUE, now, playerId.toString());
-            pipeline.hset(`${MATCHMAKING_DATA_PREFIX}${playerId}`, 'teamId', teamId.toString());
-            pipeline.sadd(MATCHMAKING_PLAYERS, playerId.toString());
-            await pipeline.exec();
+            await this.addToQueue(playerId, teamId);
             this.logger.debug(`Player ${playerId} placed in matchmaking queue`);
             return;
         }
@@ -60,27 +56,21 @@ export class MatchmakingService {
 
         const opponentTeamIdStr = await opponentDataPromise;
         if (!opponentTeamIdStr) {
-            const now = Date.now();
-            await Promise.all([
-                this.redis.zadd(MATCHMAKING_QUEUE, now, playerId.toString()),
-                this.redis.hset(`${MATCHMAKING_DATA_PREFIX}${playerId}`, 'teamId', teamId.toString()),
-                this.redis.sadd(MATCHMAKING_PLAYERS, playerId.toString()),
-            ]);
-            this.logger.warn(`Opponent data missing for player ${opponentId}, re-queued player ${playerId}`);
+            this.logger.warn(`Opponent data missing for player ${opponentId}, re-queuing player ${playerId}`);
+            await this.addToQueue(playerId, teamId);
             return;
         }
 
-        const opponent: MatchmakingEntry = { playerId: parseInt(opponentId, 10), teamId: parseInt(opponentTeamIdStr, 10) };
+        const opponent: MatchmakingEntry = {
+            playerId: parseInt(opponentId, 10),
+            teamId: parseInt(opponentTeamIdStr, 10),
+        };
         const entry: MatchmakingEntry = { playerId, teamId };
 
         const matched = await this.tryMatchPlayers(entry, opponent, server);
         if (!matched) {
-            const now = Date.now();
-            await Promise.all([
-                this.redis.zadd(MATCHMAKING_QUEUE, now, playerId.toString()),
-                this.redis.hset(`${MATCHMAKING_DATA_PREFIX}${playerId}`, 'teamId', teamId.toString()),
-                this.redis.sadd(MATCHMAKING_PLAYERS, playerId.toString()),
-            ]);
+            await this.leaveMatchmaking(opponent.playerId);
+            await this.addToQueue(playerId, teamId);
         }
     }
 
@@ -91,10 +81,11 @@ export class MatchmakingService {
      * @return {Promise<void>} No return value.
      */
     async leaveMatchmaking(playerId: number): Promise<void> {
+        const pid = playerId.toString();
         const pipeline = this.redis.pipeline();
-        pipeline.zrem(MATCHMAKING_QUEUE, playerId.toString());
-        pipeline.srem(MATCHMAKING_PLAYERS, playerId.toString());
-        pipeline.del(`${MATCHMAKING_DATA_PREFIX}${playerId}`);
+        pipeline.zrem(MATCHMAKING_QUEUE, pid);
+        pipeline.srem(MATCHMAKING_PLAYERS, pid);
+        pipeline.del(`${MATCHMAKING_DATA_PREFIX}${pid}`);
         await pipeline.exec();
         this.logger.debug(`Player ${playerId} left matchmaking`);
     }
@@ -126,7 +117,7 @@ export class MatchmakingService {
         const request: FriendBattleRequest = {
             from,
             to,
-            fromTeamId: teamId
+            fromTeamId: teamId,
         };
 
         await this.redis.set(key, JSON.stringify(request), 'EX', 30);
@@ -208,27 +199,39 @@ export class MatchmakingService {
             request.fromTeamId,
             to,
             toTeamId,
-            server
+            server,
         );
     }
 
     /**
      * Cleans up all pending and incoming battle requests for a player.
- * Deletes all requests from Redis and logs the cleanup.
- * @param {number} playerId - The ID of the player whose requests are being cleaned up.
- * @return {Promise<void>} No return value.
- */
+     * Deletes all requests from Redis and logs the cleanup.
+     * @param {number} playerId - The ID of the player whose requests are being cleaned up.
+     * @return {Promise<void>} No return value.
+     */
     async cleanupPlayerRequests(playerId: number): Promise<void> {
-        const outgoing = await this.redis.smembers(`${PLAYER_PENDING_REQUESTS}:${playerId}`);
-        const incoming = await this.redis.smembers(`${PLAYER_INCOMING_REQUESTS}:${playerId}`);
+        const pid = playerId.toString();
+        const outgoing = await this.redis.smembers(`${PLAYER_PENDING_REQUESTS}:${pid}`);
+        const incoming = await this.redis.smembers(`${PLAYER_INCOMING_REQUESTS}:${pid}`);
 
         const pipeline = this.redis.pipeline();
         [...outgoing, ...incoming].forEach(k => pipeline.del(k));
-        pipeline.del(`${PLAYER_PENDING_REQUESTS}:${playerId}`);
-        pipeline.del(`${PLAYER_INCOMING_REQUESTS}:${playerId}`);
+        pipeline.del(`${PLAYER_PENDING_REQUESTS}:${pid}`);
+        pipeline.del(`${PLAYER_INCOMING_REQUESTS}:${pid}`);
         await pipeline.exec();
 
         this.logger.debug(`Cleaned up ${outgoing.length + incoming.length} battle requests for player ${playerId}`);
+    }
+
+    private async addToQueue(playerId: number, teamId: number): Promise<void> {
+        const pid = playerId.toString();
+        const now = Date.now();
+        const pipeline = this.redis.pipeline();
+        pipeline.zadd(MATCHMAKING_QUEUE, now, pid);
+        pipeline.hset(`${MATCHMAKING_DATA_PREFIX}${pid}`, 'teamId', teamId.toString());
+        pipeline.sadd(MATCHMAKING_PLAYERS, pid);
+        await pipeline.exec();
+        this.logger.debug(`Added player ${playerId} to matchmaking queue`);
     }
 
     /**
@@ -251,7 +254,7 @@ export class MatchmakingService {
             const online = p1Online ? p1 : p2;
 
             await this.leaveMatchmaking(offline.playerId);
-            await this.redis.rpush(MATCHMAKING_QUEUE, JSON.stringify(online));
+            await this.addToQueue(online.playerId, online.teamId);
             return false;
         }
 
@@ -270,7 +273,7 @@ export class MatchmakingService {
             p1.teamId,
             p2.playerId,
             p2.teamId,
-            server
+            server,
         );
 
         return true;

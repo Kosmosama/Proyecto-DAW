@@ -31,7 +31,7 @@ export class StatusService {
     async handleNewConnection(client: Socket, playerId: number, server: Server) {
         await this.redis.hset(SOCKET_TO_PLAYER, client.id, playerId.toString());
         await this.redis.sadd(`${PLAYER_SOCKETS_PREFIX}${playerId}`, client.id);
-        await this.gameService.restoreActiveMatches(playerId, server);
+        await this.gameService.restoreActiveMatches(playerId, server); //#TODO should be here?
 
         // If there's a pending disconnect timer, cancel it because the player reconnected
         if (this.disconnectTimers.has(playerId)) {
