@@ -1,5 +1,4 @@
-<div class="container-fluid p-3 d-flex justify-content-center"
-  style="max-height: 100vh; overflow: hidden; background-color: #fff8f0;">
+<div class="container-fluid p-3 d-flex justify-content-center background-container">
   <div class="d-flex flex-column flex-md-row h-100 gap-3" style="max-width: 900px; width: 100%;">
 
     <div class="sidebar p-3 flex-shrink-0">
@@ -65,7 +64,7 @@
 
     <div class="d-flex flex-column flex-grow-1 h-100 gap-3">
       <div class="teams-container flex-grow-1 overflow-auto p-3 rounded">
-        <h5 class="text-danger fw-bold mb-2">Teams</h5>
+        <h5 class="text-danger fw-bold mb-2 teams-link" [routerLink]="['/pages/team-builder']" routerLinkActive="router-link-active" >Teams</h5>
         <div class="team-scroll" style="max-height: calc(100vh - 150px); overflow-y: auto;">
           @if(!hasTeams()) {
           <p class="text-muted fst-italic m-0 p-2">
@@ -80,7 +79,7 @@
                 <div class="d-flex flex-wrap gap-1 flex-grow-1 overflow-auto" style="max-height: 60px;">
                   @for (pokemon of team.data; track $index) {
                   <img [src]="getSpriteUrl(pokemon.species)" alt="{{ pokemon.species }}" width="40" height="40"
-                    class="rounded" style="image-rendering: pixelated;" />
+                    class="rounded sprite" />
                   }
                 </div>
               </div>

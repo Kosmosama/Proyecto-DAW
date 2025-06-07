@@ -1,4 +1,4 @@
-import { Component, inject, input, model, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PokemonService } from '../../../core/services/pokemon.service';
 import { pokemonNameValidator } from '../../../shared/validators/pokemon-builder.validator';
@@ -20,8 +20,11 @@ export class BuildToolComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  teamToEdit = input<Team>();
   team = signal(Array(6).fill(0));
+  teamToEdit = signal<Team | null>(null);
+  teamToEditId = signal<string | null>(null);
+  editing = signal<boolean>(false);
+
 
   speciesList = signal<string[]>(this.pokemonService.getSpecies());
   abilitiesList = signal<string[]>(this.pokemonService.getAbilities());
@@ -74,8 +77,18 @@ export class BuildToolComponent {
   constructor() {
     this.route.queryParams.subscribe(params => {
       const teamId = params['id'];
-      if (teamId) this.loadTeamToEdit(teamId);
+      if (teamId) {
+        this.teamsService.getTeamById(teamId).subscribe(async (team) => {
+          this.teamToEdit.set(team);
+          this.teamToEditId.set(teamId);
+          await this.setTeamToEdit(team);
+          this.editing.set(true);
+        });
+      } else {
+        this.editing.set(false);
+      }
     });
+
 
     this.pokemonForms = Array.from({ length: 6 }, (_, i) => {
       const form = this.createPokemonForm();
@@ -184,33 +197,24 @@ export class BuildToolComponent {
       .filter(p => p.name && p.ability && Object.values(p.moves).some(m => m));
 
     const parsed = this.teamsService.parseTeam(rawTeam);
-
-    if (!this.teamToEdit()) {
+    if (!this.editing()) {
       this.teamsService.postTeam(teamName, parsed).subscribe(() => {
-        this.router.navigate(['/team-builder']);
+        this.router.navigate(['pages/team-builder']);
       });
     } else {
-      this.teamsService.editTeam(this.teamToEdit()!.id?.toString(), teamName, parsed).subscribe(() => {
-        this.router.navigate(['/team-builder']);
-      });
-    }
-  }
+      const teamToEdit = this.teamToEdit();
 
-  async loadTeamToEdit(teamId: string) {
-    try {
-      const team = await firstValueFrom(this.teamsService.getTeamById(teamId));
-      if (team) {
-        await this.setTeamToEdit(team);
-      }
-    } catch (error) {
-      alert('Este equipo no existe o no te pertenece');
-      this.router.navigate(['/team-builder']);
+      console.log('Editing team id:', this.teamToEditId());
+
+      this.teamsService.editTeam(this.teamToEditId()!, teamName, parsed).subscribe(() => {
+        this.router.navigate(['pages/team-builder']);
+      });
     }
   }
 
   private async setTeamToEdit(team: Team) {
-    // this.teamToEdit.set(team);
     this.teamName.setValue(team.name);
+    this.teamToEdit.set(team);
 
     for (let i = 0; i < team.data.length; i++) {
       const p = team.data[i];

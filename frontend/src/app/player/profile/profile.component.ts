@@ -9,11 +9,12 @@ import { TeamsService } from '../../core/services/teams.service';
 import { FriendListComponent } from '../../shared/components/friend-list/friend-list.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { AvatarModalComponent } from '../../shared/components/modals/avatar-modal/avatar-modal.component';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'profile',
   standalone: true,
-  imports: [ReactiveFormsModule, FriendListComponent],
+  imports: [ReactiveFormsModule, FriendListComponent, RouterLink],
   providers: [],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']

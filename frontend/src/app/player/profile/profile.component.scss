@@ -1,3 +1,37 @@
+.background-container {
+  position: relative;
+  padding: 0.5rem 1rem;
+  max-height: 85vh;
+  overflow-y: hidden;
+}
+
+.teams-link {
+  cursor: pointer;
+  border: 1px solid #d32f2f;
+  padding: 0.2em;
+  text-align: center;
+
+  &:hover {
+    border: 1px solid #4f6697;
+    color: #4f6697;
+  }
+}
+
+.background-container::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/images/backgrounds/teamBuilder_bg.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+  opacity: 0.7;
+}
+
 .avatar-wrapper.editable {
   cursor: pointer;
   position: relative;
@@ -32,7 +66,7 @@
 .sidebar {
   width: 280px;
   max-height: 100%;
-  background-color: #fef9f6;
+  background-color: #ffffff;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -42,6 +76,7 @@
   background-color: #fff4e6;
   border-radius: 8px;
   min-width: 100%;
+  max-height: fit-content;
 }
 
 .online-friends {
@@ -49,25 +84,37 @@
 }
 
 .teams-container {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #fff7e6;
+  background-color: #ffffff;
   border-radius: 10px;
   padding: 1rem;
+  overflow: hidden;
+  max-height: 100%;
 }
 
+
 .team-card {
-  background-color: #fff9f2;
+  background-color: #ececec;
   border-radius: 6px;
   max-height: 80px;
   overflow: hidden;
 }
 
+.sprite {
+  margin-left: 0.5rem;
+}
+
 .team-scroll {
-  flex: 1;
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
-  padding-right: 0.5rem;
+}
+
+
+
+.card-title {
+  width: 25%;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {

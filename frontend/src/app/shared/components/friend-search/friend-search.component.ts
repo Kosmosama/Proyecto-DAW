@@ -39,12 +39,7 @@ export class FriendSearchComponent implements OnInit {
       distinctUntilChanged(),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(() => {
-      const term = this.searchTerm().trim();
-      if (term) {
         this.loadPlayers();
-      } else {
-        this.visiblePlayers.set([]);
-      }
     });
 
     effect(() => {
