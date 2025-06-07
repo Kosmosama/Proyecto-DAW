@@ -1,22 +1,24 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { Team } from '../../core/interfaces/team.model';
-import { TeamsService } from '../../core/services/teams.service';
 import { PokemonData } from '../../core/interfaces/pokemon.model';
-import { TeamBuilderService } from '../../core/services/teamBuilder.service';
-import { BuildToolComponent } from "./build-tool/build-tool.component";
+import { Team } from '../../core/interfaces/team.model';
+import { PokemonService } from '../../core/services/pokemon.service';
+import { TeamsService } from '../../core/services/teams.service';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ConfirmModalComponent } from '../../shared/components/modals/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'team-builder',
-  imports: [RouterModule, BuildToolComponent],
+  imports: [RouterModule],
   templateUrl: './team-builder.component.html',
   styleUrl: `team-builder.component.scss`,
 })
 export class TeamBuilderComponent {
 
   private teamService = inject(TeamsService);
-  private teamBuilderService = inject(TeamBuilderService);
+  private pokemonService = inject(PokemonService);
   private router = inject(Router);
+  private modalService = inject(NgbModal);
 
   playerTeams = signal<Team[]>([]);
   selectedTeam = signal<Team | null>(null);
@@ -40,14 +42,30 @@ export class TeamBuilderComponent {
   }
 
   getSpriteUrl(species: string): string {
-    return this.teamBuilderService.getPokemonSprite(species);
+    return this.pokemonService.getPokemonSprite(species);
   }
 
   editTeam(team: Team) {
-  this.router.navigate(['/pages/team-builder/builder'], {
-    queryParams: { id: team.id }
-  });
-}
+    this.router.navigate(['/pages/team-builder/builder'], {
+      queryParams: { id: team.id }
+    });
+  }
+
+  deleteTeam(team: Team) {
+    const modalRef = this.modalService.open(ConfirmModalComponent);
+    modalRef.componentInstance.title = 'Delete team';
+    modalRef.componentInstance.body = `Are you sure you want to delete "${team.name}"?`;
+
+    modalRef.result.then((confirmed) => {
+      if (confirmed) {
+        this.teamService.deleteTeam(team.id?.toString()!).subscribe(() => {
+          this.loadTeams();
+        });
+      }
+    }).catch(() => {
+      console.log('Modal dismissed without confirmation');
+    });
+  }
 
   bounce(event: Event) {
     const target = event.target as HTMLElement;

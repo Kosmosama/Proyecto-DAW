@@ -1,7 +1,7 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 import { Team } from '../../../../core/interfaces/team.model';
 import { TeamsService } from '../../../../core/services/teams.service';
-import { TeamBuilderService } from '../../../../core/services/teamBuilder.service';
+import { PokemonService } from '../../../../core/services/pokemon.service';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 
@@ -24,7 +24,7 @@ export class FriendBattleCheckoutModalComponent {
   selectedTeamId = signal<number | null>(null);
 
   private teamsService = inject(TeamsService);
-  private teamBuilderService = inject(TeamBuilderService);
+  private pokemonService = inject(PokemonService);
 
   constructor() {
     this.teamsService.getTeams().subscribe({
@@ -62,7 +62,7 @@ export class FriendBattleCheckoutModalComponent {
   }
 
   getSpriteUrl(species: string): string {
-    return this.teamBuilderService.getPokemonSprite(species);
+    return this.pokemonService.getPokemonSprite(species);
   }
 
   isSelected(team: Team): boolean {

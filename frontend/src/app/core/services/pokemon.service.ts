@@ -5,7 +5,7 @@ import { Sprites } from '@pkmn/img';
 @Injectable({
     providedIn: 'root'
 })
-export class TeamBuilderService {
+export class PokemonService {
 
 
     constructor() {
@@ -26,7 +26,6 @@ export class TeamBuilderService {
     getMoves(): string[] {
         return Dex.moves.all().map(move => move.name);
     }
-
 
     getPokemonSprite(name: string, shiny = false): string {
         const { url, w, h, pixelated } = Sprites.getPokemon(name.toLowerCase(), { gen: 'ani', shiny });

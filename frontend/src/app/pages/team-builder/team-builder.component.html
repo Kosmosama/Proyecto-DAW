@@ -1,28 +1,43 @@
-<div class="team-builder-wrapper container my-5">
-  <div class="card shadow-lg p-4 team-card">
+<div class="team-builder-wrapper container my-3">
+
+  <div class="card shadow-lg p-2 team-card">
     <h2 class="text-danger text-center mb-4">Your teams</h2>
 
     @if (playerTeams().length === 0) {
-      <p class="text-muted text-center">You have no teams yet</p>
+    <p class="text-muted text-center">You have no teams yet</p>
     } @else {
-      <div class="d-flex flex-wrap justify-content-center gap-4">
+    <div class="team-list-scroll">
+      <div class="row g-4">
         @for (team of playerTeams(); track $index) {
-          <div class="team-box position-relative">
-            <button class="edit-btn btn btn-sm btn-light position-absolute"
-                    (click)="editTeam(team)">
-              ✎
-            </button>
+        <div class="col-12 col-md-6">
+          <div class="team-box d-flex shadow-sm">
+            <div class="pokeball-container position-relative">
+              <img src="/images/icons/pokeball.png" alt="Pokeball" class="pokeball-img" />
 
-            <h5 class="text-center mb-3">{{ team.name }}</h5>
-            <div class="d-flex justify-content-center flex-wrap">
-              @for (pokemon of team.data; track $index) {
-                <img [src]="getSpriteUrl(pokemon.species)" alt="{{ pokemon.species }}"
-                  class="pokemon-sprite" (click)="bounce($event)" />
-              }
+              <div class="action-buttons position-absolute top-50 start-50 translate-middle">
+                <button class="btn btn-sm btn-outline-primary mb-1" (click)="editTeam(team)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="deleteTeam(team)">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex-grow-1 ms-3 d-flex flex-column justify-content-between">
+              <h5 class="text-start mb-2">{{ team.name }}</h5>
+              <div class="pokemon-list d-flex align-items-center flex-nowrap overflow-auto">
+                @for (pokemon of team.data; track $index) {
+                <img [src]="getSpriteUrl(pokemon.species)" alt="{{ pokemon.species }}" class="pokemon-sprite"
+                  (click)="bounce($event)" />
+                }
+              </div>
             </div>
           </div>
+        </div>
         }
       </div>
+    </div>
     }
 
     <div class="text-center mt-4">
@@ -31,11 +46,4 @@
       </button>
     </div>
   </div>
-
-  @if (selectedTeam()) {
-  <build-tool
-    [teamToEdit]="selectedTeam()!"
-    (closeEditor)="selectedTeam.set(null)">
-  </build-tool>
-}
 </div>

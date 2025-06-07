@@ -16,4 +16,9 @@ export const pagesRoutes: Routes = [
         loadComponent: () => import("./team-builder/build-tool/build-tool.component").then((c) => c.BuildToolComponent),
         title: "Team Builder | ShowDAW"
     },
+    {
+        path: "battle",
+        loadComponent: () => import("./battle/battle.component").then((c) => c.BattleComponent),
+        title: "Battle | ShowDAW"
+    }
 ];

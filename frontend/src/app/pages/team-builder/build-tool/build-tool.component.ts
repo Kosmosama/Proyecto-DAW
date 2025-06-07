@@ -1,6 +1,6 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TeamBuilderService } from '../../../core/services/teamBuilder.service';
+import { PokemonService } from '../../../core/services/pokemon.service';
 import { pokemonNameValidator } from '../../../shared/validators/pokemon-builder.validator';
 import { TeamsService } from '../../../core/services/teams.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -14,7 +14,7 @@ import { Team } from '../../../core/interfaces/team.model';
 })
 export class BuildToolComponent {
 
-  private tbService = inject(TeamBuilderService);
+  private pokemonService = inject(PokemonService);
   private teamsService = inject(TeamsService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -22,10 +22,10 @@ export class BuildToolComponent {
   teamToEdit = input<Team>();
   team = signal(Array(6).fill(0));
 
-  speciesList = signal<string[]>(this.tbService.getSpecies());
-  abilitiesList = signal<string[]>(this.tbService.getAbilities());
-  itemsList = signal<string[]>(this.tbService.getItems());
-  movesList = signal<string[]>(this.tbService.getMoves());
+  speciesList = signal<string[]>(this.pokemonService.getSpecies());
+  abilitiesList = signal<string[]>(this.pokemonService.getAbilities());
+  itemsList = signal<string[]>(this.pokemonService.getItems());
+  movesList = signal<string[]>(this.pokemonService.getMoves());
 
   teraTypes = signal([
     'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison',
@@ -77,46 +77,72 @@ export class BuildToolComponent {
     });
 
     this.pokemonForms = Array.from({ length: 6 }, (_, i) => {
-      const form = new FormGroup({
-        name: new FormControl('', {
-          nonNullable: true,
-          validators: [Validators.required, pokemonNameValidator(this.speciesList())]
-        }),
-        item: new FormControl('', { nonNullable: true }),
-        ability: new FormControl('', { nonNullable: true }),
-        teraType: new FormControl('', { nonNullable: true }),
-        EVs: new FormGroup({
-          HP: new FormControl(1, { nonNullable: true }),
-          Atk: new FormControl(0, { nonNullable: true }),
-          Def: new FormControl(0, { nonNullable: true }),
-          SpA: new FormControl(0, { nonNullable: true }),
-          SpD: new FormControl(0, { nonNullable: true }),
-          Spe: new FormControl(0, { nonNullable: true }),
-        }),
-        nature: new FormControl('', { nonNullable: true }),
-        moves: new FormGroup({
-          move1: new FormControl('', { nonNullable: true }),
-          move2: new FormControl('', { nonNullable: true }),
-          move3: new FormControl('', { nonNullable: true }),
-          move4: new FormControl('', { nonNullable: true }),
-        })
-      });
-
-      form.controls.name.valueChanges.subscribe(async (value) => {
-        const species = this.speciesList().find(s => s.toLowerCase() === value.toLowerCase());
-        if (species) {
-          const data = await this.tbService.getSpeciesData(species);
-          this.pokemonSprites[i] = this.tbService.getPokemonSprite(species);
-          this.legalAbilities[i] = data.abilities;
-          this.legalMoves[i] = data.moves;
-        } else {
-          this.pokemonSprites[i] = '';
-          this.legalAbilities[i] = [];
-          this.legalMoves[i] = [];
-        }
-      });
-
+      const form = this.createPokemonForm();
+      this.subscribeToNameChanges(form, i);
       return form;
+    });
+  }
+
+  private createPokemonForm(): FormGroup<{
+    name: FormControl<string>;
+    item: FormControl<string>;
+    ability: FormControl<string>;
+    teraType: FormControl<string>;
+    EVs: FormGroup<{
+      HP: FormControl<number>;
+      Atk: FormControl<number>;
+      Def: FormControl<number>;
+      SpA: FormControl<number>;
+      SpD: FormControl<number>;
+      Spe: FormControl<number>;
+    }>;
+    nature: FormControl<string>;
+    moves: FormGroup<{
+      move1: FormControl<string>;
+      move2: FormControl<string>;
+      move3: FormControl<string>;
+      move4: FormControl<string>;
+    }>;
+  }> {
+    return new FormGroup({
+      name: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, pokemonNameValidator(this.speciesList())]
+      }),
+      item: new FormControl('', { nonNullable: true }),
+      ability: new FormControl('', { nonNullable: true }),
+      teraType: new FormControl('', { nonNullable: true }),
+      EVs: new FormGroup({
+        HP: new FormControl(1, { nonNullable: true }),
+        Atk: new FormControl(0, { nonNullable: true }),
+        Def: new FormControl(0, { nonNullable: true }),
+        SpA: new FormControl(0, { nonNullable: true }),
+        SpD: new FormControl(0, { nonNullable: true }),
+        Spe: new FormControl(0, { nonNullable: true }),
+      }),
+      nature: new FormControl('', { nonNullable: true }),
+      moves: new FormGroup({
+        move1: new FormControl('', { nonNullable: true }),
+        move2: new FormControl('', { nonNullable: true }),
+        move3: new FormControl('', { nonNullable: true }),
+        move4: new FormControl('', { nonNullable: true }),
+      })
+    });
+  }
+
+  private subscribeToNameChanges(form: FormGroup, i: number) {
+    form.get('name')?.valueChanges.subscribe(async (value) => {
+      const species = this.speciesList().find(s => s.toLowerCase() === value.toLowerCase());
+      if (species) {
+        const data = await this.pokemonService.getSpeciesData(species);
+        this.pokemonSprites[i] = this.pokemonService.getPokemonSprite(species);
+        this.legalAbilities[i] = data.abilities;
+        this.legalMoves[i] = data.moves;
+      } else {
+        this.pokemonSprites[i] = '';
+        this.legalAbilities[i] = [];
+        this.legalMoves[i] = [];
+      }
     });
   }
 
@@ -173,7 +199,6 @@ export class BuildToolComponent {
       }
     } catch (error) {
       alert('Este equipo no existe o no te pertenece');
-
       this.router.navigate(['/team-builder']);
     }
   }
@@ -197,8 +222,8 @@ export class BuildToolComponent {
         }
       });
 
-      const data = await this.tbService.getSpeciesData(p.species);
-      this.pokemonSprites[i] = this.tbService.getPokemonSprite(p.species);
+      const data = await this.pokemonService.getSpeciesData(p.species);
+      this.pokemonSprites[i] = this.pokemonService.getPokemonSprite(p.species);
       this.legalAbilities[i] = data.abilities;
       this.legalMoves[i] = data.moves;
     }

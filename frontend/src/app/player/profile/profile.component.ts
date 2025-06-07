@@ -4,7 +4,7 @@ import { Player } from '../../core/interfaces/player.model';
 import { PokemonData } from '../../core/interfaces/pokemon.model';
 import { Team } from '../../core/interfaces/team.model';
 import { PlayerService } from '../../core/services/player.service';
-import { TeamBuilderService } from '../../core/services/teamBuilder.service';
+import { PokemonService } from '../../core/services/pokemon.service';
 import { TeamsService } from '../../core/services/teams.service';
 import { FriendListComponent } from '../../shared/components/friend-list/friend-list.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -21,7 +21,7 @@ import { AvatarModalComponent } from '../../shared/components/modals/avatar-moda
 export class ProfileComponent {
   private playerService = inject(PlayerService);
   private teamsService = inject(TeamsService);
-  private teamBuilderService = inject(TeamBuilderService);
+  private pokemonService = inject(PokemonService);
   private fb = inject(NonNullableFormBuilder);
   private modalService = inject(NgbModal)
 
@@ -60,7 +60,7 @@ export class ProfileComponent {
   }
 
   getSpriteUrl(species: string): string {
-    return this.teamBuilderService.getPokemonSprite(species);
+    return this.pokemonService.getPokemonSprite(species);
   }
 
   toggleEditForms(): void {

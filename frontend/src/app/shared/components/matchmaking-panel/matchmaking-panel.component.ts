@@ -3,13 +3,13 @@ import { MatchmakingService } from '../../../core/services/matchMaking.service';
 import { TeamsService } from '../../../core/services/teams.service';
 import { Team } from '../../../core/interfaces/team.model';
 import { FormsModule } from '@angular/forms';
-import { TeamBuilderService } from '../../../core/services/teamBuilder.service';
-import { Router } from '@angular/router';
+import { PokemonService } from '../../../core/services/pokemon.service';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'matchmaking-panel',
   templateUrl: './matchmaking-panel.component.html',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   styleUrl: './matchmaking-panel.component.scss',
 })
 export class MatchmakingPanelComponent {
@@ -17,7 +17,7 @@ export class MatchmakingPanelComponent {
   isSearching = false;
   private matchmakingService = inject(MatchmakingService);
   private teamsService = inject(TeamsService);
-  private teamBuilderService = inject(TeamBuilderService)
+  private pokemonService = inject(PokemonService)
   private router = inject(Router);
 
   playerTeams = signal<Team[]>([]);
@@ -72,9 +72,8 @@ export class MatchmakingPanelComponent {
     this.selectedTeam.set(team);
   }
 
-
   getSpriteUrl(species: string): string {
-    return this.teamBuilderService.getPokemonSprite(species);
+    return this.pokemonService.getPokemonSprite(species);
   }
 
 }

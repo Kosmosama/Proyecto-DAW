@@ -1,0 +1,16 @@
+.background-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.5;
+}
+
+.team-builder-wrapper {
+    position: relative;
+    padding: 1rem;
+    max-height: 100vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}

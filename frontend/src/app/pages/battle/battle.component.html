@@ -1,1 +1,33 @@
-<p>battle works!</p>
+@if (playerActive() && enemyActive()) {
+  <div>
+    <h2>Tu Pokémon: {{ playerActive()?.species }}</h2>
+    <img [src]="playerActive()?.spriteUrl" [alt]="playerActive()?.species" width="100" />
+    <p>Selecciona un movimiento:</p>
+
+    <div class="moves">
+      @for (move of playerActive()?.moves ?? []; track $index) {
+        <button (click)="doTurn(move)">
+          {{ move }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+@if (enemyActive()) {
+  <div>
+    <h2>Enemigo: {{ enemyActive()?.species }}</h2>
+    <img [src]="enemyActive()?.spriteUrl" [alt]="enemyActive()?.species" width="100" />
+  </div>
+}
+
+<hr />
+
+<div>
+  <h3>Battle Log</h3>
+  <ul>
+    @for (line of battleLog(); track $index) {
+      <li>{{ line }}</li>
+    }
+  </ul>
+</div>
