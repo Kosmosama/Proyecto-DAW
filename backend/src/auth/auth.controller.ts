@@ -46,7 +46,6 @@ export class AuthController {
     @ApiOperation({ summary: 'Logout the current player' })
     @ApiResponse({ status: 204, description: 'Logout successful.' })
     logout(@Player() player: PlayerPrivate): Promise<void> {
-        console.log(player);
         return this.authService.logout(player);
     }
 

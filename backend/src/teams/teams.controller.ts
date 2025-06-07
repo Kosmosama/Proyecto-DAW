@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Player } from 'src/auth/decorators/player.decorator';
 import { PlayerPrivate } from 'src/player/interfaces/player-private.interface';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -40,26 +40,6 @@ export class TeamController {
         await this.teamService.create(player.id, createTeamDto);
     }
 
-    @Get()
-    @ApiOperation({ summary: 'Get all teams for logged player' })
-    @ApiResponse({ status: 200, description: 'List of teams.' })
-    @ApiResponse({ status: 401, description: 'Unauthorized.' })
-    async findAll(
-        @Player() player: PlayerPrivate
-    ) {
-        return this.teamService.findAllByPlayer(player.id);
-    }
-
-    @Get('/player/:playerId')
-    @ApiOperation({ summary: 'Get all teams for a specific player' })
-    @ApiParam({ name: 'playerId', type: String, description: 'ID of the player' })
-    @ApiResponse({ status: 200, description: 'List of teams.' })
-    async findAllByPlayerId(
-        @Param('playerId') playerId: number
-    ) {
-        return this.teamService.findAllByPlayer(playerId);
-    }
-
     @Get(':teamId')
     @ApiOperation({ summary: 'Get a specific team by ID' })
     @ApiParam({ name: 'teamId', type: Number, description: 'ID of the team' })
@@ -71,6 +51,19 @@ export class TeamController {
         @Param('teamId', ParseIntPipe) teamId: number
     ) {
         return this.teamService.findOne(player.id, teamId);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Get all teams for any player or the logged-in player' })
+    @ApiQuery({ name: 'playerId', required: false, type: Number, description: 'Optional player ID to filter teams by' })
+    @ApiResponse({ status: 200, description: 'List of teams.' })
+    @ApiResponse({ status: 401, description: 'Unauthorized.' })
+    async findAll(
+        @Player() player: PlayerPrivate,
+        @Query('playerId') playerId?: number
+    ) {
+        const targetPlayerId = playerId ?? player.id;
+        return this.teamService.findAllByPlayer(targetPlayerId);
     }
 
     @Delete(':teamId')

@@ -38,6 +38,7 @@ export class StatusService {
             clearTimeout(this.disconnectTimers.get(playerId)!);
             this.disconnectTimers.delete(playerId);
             this.logger.debug(`Cancelled offline timer for player ${playerId} due to new connection.`);
+            return;
         }
 
         // If this is the first active socket for the player, mark them as online
