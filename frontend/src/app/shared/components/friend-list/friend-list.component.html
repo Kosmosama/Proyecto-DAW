@@ -1,54 +1,48 @@
-<div class="friends-card container">
-    <div class="card text-center">
-        <div class="card-header">
-            <h2>{{ title() }}</h2>
-        </div>
-
-        <div class="card-body">
-            <div class="friends-list">
-                @if (loading()) {
-                Loading friends...
-                }
-                @if (!loading()) {
-                @for (friend of friendsWithStatus; track $index) {
-                <div class="friend-card d-flex align-items-center border rounded p-2 mb-2"
-                    [attr.title]="!friend.online ? ('Last login: ' + (friend.lastLogin | date:'medium')) : null">
-
-                    <a [routerLink]="[`/player/profile/${friend.id}`]">
-                        <img [src]="friend.photo ? '/images/avatars/' + friend.photo : '/images/icons/default-avatar.jpg'"
-                            (error)="onImageError($event)" alt="{{ friend.username }}'s photo"
-                            class="img-fluid rounded-circle friend-avatar me-2" />
-                    </a>
-
-                    <div class="friend-info flex-grow-1">
-                        <a [routerLink]="[`/player/profile/${friend.id}`]"
-                            class="fw-bold text-dark text-decoration-none friend-name d-block">
-                            {{ friend.username }}
-                        </a>
-                        <span class="friend-status d-block"
-                            [ngClass]="{'text-success': friend.online, 'text-danger last-login-info': !friend.online}">
-                            {{ friend.online ? 'Online' : 'Offline ' }}
-                            @if (!friend.online) {
-                            <i class="bi bi-info-square"></i>
-                            }
-                        </span>
-                    </div>
-
-                    <button (click)="sendBattleRequest(friend.id!); $event.stopPropagation(); $event.preventDefault();"
-                        [disabled]="!friend.online" class="btn btn-sm btn-outline-dark py-2 ms-2"
-                        title="Enviar solicitud de batalla">
-                        <i class="bi bi-controller fs-3"></i>
-                    </button>
-                </div>
-                }
-                }
-            </div>
-        </div>
+<div class="friends-card container p-3" style="max-width: 350px; background-color: #fef9f6; border-radius: 8px;">
+    <div class="header mb-3 text-center">
+        <h2 class="text-danger fw-bold">{{ title() }}</h2>
     </div>
-    <friend-battle-checkout-modal
-  [friendId]="pendingBattleFriendId()!"
-  [show]="showBattleModal()"
-  (close)="showBattleModal.set(false)"
-  (confirmed)="onTeamConfirmed($event)">
-</friend-battle-checkout-modal>
+
+    <div class="friends-list" style="max-height: 320px; overflow-y: auto;">
+        @if (loading()) {
+        <p class="text-muted fst-italic text-center my-3">Loading friends...</p>
+        }
+        @if (!loading()) {
+        @for (friend of friendsWithStatus; track $index) {
+        <div class="friend-card d-flex align-items-center p-2 mb-2 rounded"
+            [attr.title]="!friend.online ? ('Last login: ' + (friend.lastLogin | date:'medium')) : null">
+            <a [routerLink]="[`/player/profile/${friend.id}`]"
+                class="d-flex align-items-center text-decoration-none me-3 friend-a">
+                <img [src]="friend.photo ? '/images/avatars/' + friend.photo : '/images/icons/default-avatar.jpg'"
+                    (error)="onImageError($event)" alt="{{ friend.username }}'s photo"
+                    class="friend-avatar rounded-circle" style="width: 48px; height: 48px; object-fit: cover;" />
+            </a>
+
+            <div class="friend-info flex-grow-1">
+                <a [routerLink]="[`/player/profile/${friend.id}`]"
+                    class="fw-bold text-danger text-decoration-none d-block friend-name">
+                    {{ friend.username }}
+                </a>
+                <span class="friend-status d-block"
+                    [ngClass]="{'text-success': friend.online, 'text-danger': !friend.online}">
+                    {{ friend.online ? 'Online' : 'Offline ' }}
+                    @if (!friend.online) {
+                    <i class="bi bi-info-square"></i>
+                    }
+                </span>
+            </div>
+
+            <button (click)="sendBattleRequest(friend.id!); $event.stopPropagation(); $event.preventDefault();"
+                [disabled]="!friend.online" class="btn btn-sm btn-outline-danger py-1 px-2 ms-2"
+                title="Enviar solicitud de batalla">
+                <i class="bi bi-controller fs-5"></i>
+            </button>
+        </div>
+        }
+        }
+    </div>
 </div>
+
+<friend-battle-checkout-modal [friendId]="pendingBattleFriendId()!" [show]="showBattleModal()"
+    (close)="showBattleModal.set(false)" (confirmed)="onTeamConfirmed($event)">
+</friend-battle-checkout-modal>

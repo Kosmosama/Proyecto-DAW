@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginResponse } from '../interfaces/auth.model';
 import { Player, PlayerLogin, PlayerResponse } from '../interfaces/player.model';
@@ -137,11 +137,23 @@ export class AuthService {
     /**
      * Logs out the user and clears all authentication data.
      */
-    logout(): void {
-        this.http.post('auth/logout', {}).subscribe(); // opcionalmente manejar errores
-        this.clearAuth();
-        this.router.navigate(['/auth/login']);
+    logout(): Observable<any> {
+
+        return this.http.post('auth/logout', {}, {
+        }).pipe(
+            tap(() => {
+                this.clearAuth();
+                
+                this.router.navigate(['/auth/login']);
+            }),
+            catchError(err => {
+                this.clearAuth();
+                this.router.navigate(['/auth/login']);
+                return throwError(() => err);
+            })
+        );
     }
+
 
 
     /**

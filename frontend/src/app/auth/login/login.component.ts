@@ -65,7 +65,8 @@ export class LoginComponent implements CanComponentDeactivate {
       .subscribe({
         next: () => {
           this.saved = true;
-          this.router.navigate(['pages/home']);
+          // this.router.navigate(['pages/home']);
+          window.location.href = '/pages/home';
         },
         error: (error) => {
           this.errors.set(error.status);
