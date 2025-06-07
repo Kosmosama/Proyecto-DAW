@@ -26,6 +26,7 @@ export class ProfileComponent {
   private modalService = inject(NgbModal)
 
   playerProfile = signal<Player | null>(null);
+  isOwnProfile = signal<boolean>(false);
   showEditForms = signal<boolean>(false);
   profile = input.required<Player>();
   teams = signal<Team[]>([]);
@@ -38,6 +39,11 @@ export class ProfileComponent {
   constructor() {
     effect(() => {
       this.playerProfile.set(this.profile());
+
+      this.playerService.getProfile().subscribe((loggedInPlayer) => {
+        const visited = this.profile();
+        this.isOwnProfile.set(loggedInPlayer.id === visited.id);
+      });
     })
 
     this.teamsService.getTeams().subscribe((response: any) => {
@@ -68,20 +74,25 @@ export class ProfileComponent {
   }
 
   openAvatarModal() {
-    const modalRef = this.modalService.open(AvatarModalComponent, {
-      size: 'lg',
-      backdrop: 'static',
-    });
+    if (this.isOwnProfile()) {
+      const modalRef = this.modalService.open(AvatarModalComponent, {
+        size: 'lg',
+        backdrop: 'static',
+      });
 
-    modalRef.componentInstance.currentAvatar = this.playerProfile()!.photo;
+      modalRef.componentInstance.currentAvatar = this.playerProfile()!.photo;
 
-    modalRef.result
-      .then((newAvatar: string) => {
-        if (newAvatar) {
-          this.submitEditForm(newAvatar);
-        }
-      })
-      .catch(() => { });
+      modalRef.result
+        .then((newAvatar: string) => {
+          if (newAvatar) {
+            this.submitEditForm(newAvatar);
+          }
+        })
+        .catch(() => { });
+    }else{
+      console.warn('Avatar modal can only be opened for own profile');
+    }
+
   }
 
   submitEditForm(avatar?: string): void {

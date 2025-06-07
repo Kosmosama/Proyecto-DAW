@@ -21,3 +21,18 @@ img {
     border: 1px solid #ccc;
     border-radius: 8px;
 }
+
+.hp-bar {
+    width: 100px;
+    height: 10px;
+    background: #ddd;
+    border: 1px solid #444;
+    margin: 5px 0;
+}
+
+.hp-fill {
+    height: 100%;
+    color: white;
+    font-size: 0.75rem;
+    text-align: center;
+}

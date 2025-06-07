@@ -3,7 +3,7 @@
     <div class="d-flex align-items-start">
       <div class="d-flex align-items-start me-4">
         <div class="avatar-container">
-          <div class="avatar-wrapper" (click)="openAvatarModal()">
+          <div class="avatar-wrapper" [class.editable]="isOwnProfile()" (click)="isOwnProfile() && openAvatarModal()">
             <img
               [src]="playerProfile()?.photo ? '/images/avatars/' + playerProfile()?.photo : '/images/icons/default-avatar.jpg'"
               (error)="onImageError($event)" alt="{{ playerProfile()!.username }}'s photo" class="avatar rounded m-4" />
@@ -19,9 +19,11 @@
             <small class="tag">#{{ playerProfile()!.tag }}</small>
           </h2>
           <p class="text-muted">{{ playerProfile()!.email }}</p>
+          @if (isOwnProfile()) {
           <button (click)="toggleEditForms()" class="btn btn-danger">
             Edit profile
           </button>
+          }
         </div>
       </div>
 
@@ -77,11 +79,11 @@
         </div>
       </div>
     </div>
-
+    @if (isOwnProfile()) {
     <div class="col-lg-4">
       <app-friends-list [title]="'Online Friends'" [showOnlyOnline]="true"></app-friends-list>
 
     </div>
-
+    }
   </div>
 </div>

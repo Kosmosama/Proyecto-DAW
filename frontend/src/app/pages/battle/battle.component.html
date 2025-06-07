@@ -1,33 +1,68 @@
-@if (playerActive() && enemyActive()) {
-  <div>
-    <h2>Tu Pokémon: {{ playerActive()?.species }}</h2>
-    <img [src]="playerActive()?.spriteUrl" [alt]="playerActive()?.species" width="100" />
-    <p>Selecciona un movimiento:</p>
+<div class="battle-container">
+  @if(battleService.isBattleOver()) {
+  <h2>¡Batalla terminada!</h2>
+  @if(battleService.winner() === 'player') {
+  <p>¡Ganaste! 🎉</p>
+  }
+  @if(battleService.winner() === 'enemy') {
+  <p>Perdiste... 😢</p>
+  }
+  }
 
+  @if(!battleService.isBattleOver()) {
+  <h2>Turno {{ battleService.turn() }}</h2>
+
+  <section class="teams">
+    <div class="team player-team">
+      <h3>Tu equipo</h3>
+      <ul>
+        @for(state of playerBattleStates(); track $index) {
+        <li (click)="switchTo($index)" [class.active]="$index === battleService.getPlayerActiveIndex()"
+          [class.fainted]="state.fainted">
+          {{ state.pokemon.species }} (HP: {{ state.currentHP }}/{{ state.maxHP }})
+        </li>
+        }
+      </ul>
+      <p>
+        <strong>Activo:</strong> {{ playerActive()?.pokemon!.species }}
+      </p>
+    </div>
+
+    <div class="team enemy-team">
+      <h3>Equipo enemigo</h3>
+      <ul>
+        @for(state of enemyBattleStates(); track $index) {
+        <li [class.active]="$index === battleService.getEnemyActiveIndex()" [class.fainted]="state.fainted">
+          {{ state.pokemon.species }} (HP: {{ state.currentHP }}/{{ state.maxHP }})
+        </li>
+        }
+      </ul>
+      <p>
+        <strong>Activo enemigo:</strong> {{ enemyActive()?.pokemon!.species }}
+      </p>
+    </div>
+  </section>
+
+  <section class="actions">
+    <h3>Elige un movimiento</h3>
+    @if(playerActive()) {
     <div class="moves">
-      @for (move of playerActive()?.moves ?? []; track $index) {
-        <button (click)="doTurn(move)">
-          {{ move }}
-        </button>
+      @for(move of playerActive()!.pokemon.moves; track $index) {
+      <button (click)="doTurn(move)" [disabled]="battleService.isBattleOver()">
+        {{ move }}
+      </button>
       }
     </div>
-  </div>
-}
-
-@if (enemyActive()) {
-  <div>
-    <h2>Enemigo: {{ enemyActive()?.species }}</h2>
-    <img [src]="enemyActive()?.spriteUrl" [alt]="enemyActive()?.species" width="100" />
-  </div>
-}
-
-<hr />
-
-<div>
-  <h3>Battle Log</h3>
-  <ul>
-    @for (line of battleLog(); track $index) {
-      <li>{{ line }}</li>
     }
-  </ul>
+  </section>
+
+  <section class="log">
+    <h3>Registro de batalla</h3>
+    <ul>
+      @for(logEntry of battleService.battleLog(); track $index) {
+      <li>{{ logEntry }}</li>
+      }
+    </ul>
+  </section>
+  }
 </div>

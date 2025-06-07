@@ -1,28 +1,32 @@
 .avatar-wrapper {
   position: relative;
   display: inline-block;
-  cursor: pointer;
 
-  .avatar {
-    width: 96px;
-    height: 96px;
-    object-fit: cover;
-    border: 3px solid #474747dc;
-    padding: 0.3em;
-    transition: opacity 0.3s ease;
-  }
+  &.editable {
+    cursor: pointer;
 
-  .edit-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.5rem;
-    color: rgb(61, 58, 58);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
+    &:hover {
+      .avatar {
+        opacity: 0.4;
+      }
+
+      .edit-icon {
+        opacity: 1;
+      }
+    }
   }
+}
+
+.edit-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  color: rgb(61, 58, 58);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 
   &:hover {
     .avatar {

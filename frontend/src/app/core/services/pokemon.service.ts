@@ -46,4 +46,18 @@ export class PokemonService {
         return { abilities, moves };
     }
 
+    getBaseHP(name: string): number {
+        const species = Dex.species.get(name);
+        if (!species || !species.baseStats.hp) return 1;
+
+        const base = species.baseStats.hp;
+        const iv = 31;
+        const ev = 0;
+        const level = 100;
+
+        const hp = Math.floor(((2 * base + iv + Math.floor(ev / 4)) * level) / 100) + level + 10;
+        return hp;
+    }
+
+
 }
