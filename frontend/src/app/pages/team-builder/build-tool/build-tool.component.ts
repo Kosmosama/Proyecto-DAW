@@ -1,10 +1,11 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, input, model, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PokemonService } from '../../../core/services/pokemon.service';
 import { pokemonNameValidator } from '../../../shared/validators/pokemon-builder.validator';
 import { TeamsService } from '../../../core/services/teams.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Team } from '../../../core/interfaces/team.model';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'build-tool',
@@ -180,20 +181,24 @@ export class BuildToolComponent {
           move4: (f.get('moves.move4')?.value ?? '').trim(),
         }
       }))
-      .filter(p => p.name && p.item && p.ability && Object.values(p.moves).some(m => m));
+      .filter(p => p.name && p.ability && Object.values(p.moves).some(m => m));
 
     const parsed = this.teamsService.parseTeam(rawTeam);
-    this.teamsService.postTeam(teamName, parsed).subscribe(() => {
-      this.teamName.reset();
-      this.pokemonForms.forEach(f => f.reset());
-      this.pokemonSprites = [];
-      this.router.navigate(['/team-builder']);
-    });
+
+    if (!this.teamToEdit()) {
+      this.teamsService.postTeam(teamName, parsed).subscribe(() => {
+        this.router.navigate(['/team-builder']);
+      });
+    } else {
+      this.teamsService.editTeam(this.teamToEdit()!.id?.toString(), teamName, parsed).subscribe(() => {
+        this.router.navigate(['/team-builder']);
+      });
+    }
   }
 
   async loadTeamToEdit(teamId: string) {
     try {
-      const team = await this.teamsService.getTeamById(teamId).toPromise();
+      const team = await firstValueFrom(this.teamsService.getTeamById(teamId));
       if (team) {
         await this.setTeamToEdit(team);
       }
@@ -204,6 +209,7 @@ export class BuildToolComponent {
   }
 
   private async setTeamToEdit(team: Team) {
+    // this.teamToEdit.set(team);
     this.teamName.setValue(team.name);
 
     for (let i = 0; i < team.data.length; i++) {
