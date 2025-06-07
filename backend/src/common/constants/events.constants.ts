@@ -29,8 +29,11 @@ export const SocketEvents = {
     },
     Game: {
         Listen: {
+            ChatMessage: "game:chat:message"
         },
         Emit: {
+            MatchEnd: 'game:match:end',
+            MatchForfeit: 'game:match:forfeit',
         },
     },
 } as const;

@@ -1,9 +1,10 @@
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { Server } from 'socket.io';
+import { Namespace, Server } from 'socket.io';
 import { SocketEvents } from 'src/common/constants/events.constants';
 import { PLAYER_SOCKETS_PREFIX } from 'src/common/constants/redis.constants';
+import { emitToPlayer } from 'src/common/utils/emit.util';
 import { v4 as uuidv4 } from 'uuid';
 
 const MATCH_PREFIX = 'game:match:';
@@ -37,23 +38,23 @@ export class GameService {
         await this.redis.sadd(`${PLAYER_MATCHES_PREFIX}${playerAId}`, roomId);
         await this.redis.sadd(`${PLAYER_MATCHES_PREFIX}${playerBId}`, roomId);
 
-        // Join all known sockets of both players to the match room
-        const socketsA = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerAId}`);
-        const socketsB = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerBId}`);
+        // Join sockets to the room
+        await Promise.all([
+            this.joinPlayerToRoom(this.redis, server, playerAId, roomId),
+            this.joinPlayerToRoom(this.redis, server, playerBId, roomId),
+        ]);
 
-        for (const socketId of [...socketsA, ...socketsB]) {
-            const socket = server.sockets.sockets.get(socketId);
-            socket?.join(roomId);
-        }
+        // Notify players of the match
+        await Promise.all([
+            emitToPlayer(this.redis, server, playerAId, SocketEvents.Matchmaking.Emit.MatchFound, match),
+            emitToPlayer(this.redis, server, playerBId, SocketEvents.Matchmaking.Emit.MatchFound, match),
+        ]);
 
-        // Emit match info to both players individually (to trigger match UI init)
-        socketsA.forEach(socketId => server.to(socketId).emit(SocketEvents.Matchmaking.Emit.MatchFound, match));
-        socketsB.forEach(socketId => server.to(socketId).emit(SocketEvents.Matchmaking.Emit.MatchFound, match));
+        this.logger.debug(`Match created for player ${playerAId} and player ${playerBId} in the room with id ${roomId}`);
     }
 
     async restoreActiveMatches(playerId: number, server: Server): Promise<void> {
         const matchIds = await this.redis.smembers(`${PLAYER_MATCHES_PREFIX}${playerId}`);
-        const sockets = await this.redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
 
         for (const roomId of matchIds) {
             const raw = await this.redis.get(`${MATCH_PREFIX}${roomId}`);
@@ -61,12 +62,11 @@ export class GameService {
 
             const match: MatchRoomData = JSON.parse(raw);
 
-            for (const socketId of sockets) {
-                const socket = server.sockets.sockets.get(socketId);
-                socket?.join(roomId); // Rejoin match room
-                socket?.emit(SocketEvents.Matchmaking.Emit.MatchFound, match); // Re-trigger UI
-            }
+            await this.joinPlayerToRoom(this.redis, server, playerId, roomId);
+            await emitToPlayer(this.redis, server, playerId, SocketEvents.Matchmaking.Emit.MatchFound, match);
         }
+
+        this.logger.debug(`Matches restored for player ${playerId}`);
     }
 
     async handlePlayerDisconnect(playerId: number, server: Server): Promise<void> {
@@ -79,21 +79,23 @@ export class GameService {
             const match: MatchRoomData = JSON.parse(matchRaw);
             const opponentId = match.playerA.id === playerId ? match.playerB.id : match.playerA.id;
 
-            // Emit forfeit event to opponent
-            server.to(roomId).emit('match:forfeit', {
+            server.to(roomId).emit(SocketEvents.Game.Emit.MatchForfeit, {
                 roomId,
                 winner: opponentId,
                 reason: 'Opponent disconnected',
             });
 
-            // Clean up Redis
             await this.redis.del(`${MATCH_PREFIX}${roomId}`);
             await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${playerId}`, roomId);
             await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${opponentId}`, roomId);
         }
+
+        this.logger.debug(`Lost all concurrent matches for player ${playerId}`);
     }
 
     async handleChatMessage(server: Server, playerId: number, roomId: string, message: string): Promise<void> {
+        this.logger.debug(`Player ${playerId} sent the message: ${message}`);
+
         if (message.trim().toUpperCase() !== 'WIN') return;
 
         const matchKey = `${MATCH_PREFIX}${roomId}`;
@@ -101,7 +103,6 @@ export class GameService {
         if (!matchRaw) return;
 
         const match: MatchRoomData = JSON.parse(matchRaw);
-
         const isInMatch = [match.playerA.id, match.playerB.id].includes(playerId);
         if (!isInMatch) return;
 
@@ -120,11 +121,25 @@ export class GameService {
         await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${players[0]}`, roomId);
         await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${players[1]}`, roomId);
 
-        server.to(roomId).emit('match:end', {
+        server.to(roomId).emit(SocketEvents.Game.Emit.MatchEnd, {
             winner: winnerId,
             roomId,
         });
 
-        this.logger.log(`Match ${roomId} completed. Winner: ${winnerId}`);
+        this.logger.debug(`Match ${roomId} completed. Winner: ${winnerId}, Team: ${winnerId === match.playerA.id ? match.playerA.teamId : match.playerB.teamId}`);
+    }
+
+    private async joinPlayerToRoom(redis: Redis, server: Server, playerId: number, roomId: string) {
+        return;
+        // const sockets = await redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
+        // if (sockets.length === 0) return;
+
+        // await Promise.all(
+        //     sockets.map(socketId => {
+        //         const socket = server.sockets.sockets.get(socketId);
+        //         if (socket) socket.join(roomId);
+        //         return Promise.resolve();
+        //     }),
+        // );
     }
 }
