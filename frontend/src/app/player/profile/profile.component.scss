@@ -1,20 +1,7 @@
-.avatar-wrapper {
+.avatar-wrapper.editable {
+  cursor: pointer;
   position: relative;
   display: inline-block;
-
-  &.editable {
-    cursor: pointer;
-
-    &:hover {
-      .avatar {
-        opacity: 0.4;
-      }
-
-      .edit-icon {
-        opacity: 1;
-      }
-    }
-  }
 }
 
 .edit-icon {
@@ -22,94 +9,78 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.5rem;
-  color: rgb(61, 58, 58);
+  font-size: 1.6rem;
+  color: #d32f2f;
   opacity: 0;
   pointer-events: none;
+  border-radius: 50%;
+  background-color: white;
+  padding: 2px;
   transition: opacity 0.3s ease;
-
-  &:hover {
-    .avatar {
-      opacity: 0.4;
-    }
-
-    .edit-icon {
-      opacity: 1;
-    }
-  }
 }
 
-
-.username {
-  font-weight: 700;
-  color: #d32f2f;
+.avatar-wrapper.editable:hover .edit-icon {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.edit-profile-form {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 10;
-  min-width: 500px;
+.container-fluid {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-.tag {
-  font-weight: 400;
-  color: #666;
-  font-size: 1rem;
+.sidebar {
+  width: 280px;
+  max-height: 100%;
+  background-color: #fef9f6;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
 }
 
-.email {
-  font-size: 0.95rem;
+.edit-form {
+  background-color: #fff4e6;
+  border-radius: 8px;
+  min-width: 100%;
 }
 
-.friendlist {
-  background-color: #f8f9fa;
-  color: #999;
-  max-height: 500px;
-  font-style: italic;
+.online-friends {
+  background-color: #fff4e6;
 }
 
-.user-info {
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-
-    .avatar {
-      margin-bottom: 1rem;
-    }
-  }
+.teams-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff7e6;
+  border-radius: 10px;
+  padding: 1rem;
 }
 
-.card-body.team-scroll {
+.team-card {
+  background-color: #fff9f2;
+  border-radius: 6px;
+  max-height: 80px;
+  overflow: hidden;
+}
+
+.team-scroll {
   flex: 1;
   overflow-y: auto;
   padding-right: 0.5rem;
-
-  scrollbar-width: thin;
-  scrollbar-color: #ccc transparent;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: #ccc;
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-
-  .card {
-    max-width: 480px;
-  }
 }
 
-.card.teams-container {
-  height: 500px;
-  display: flex;
-  flex-direction: column;
+@media (max-width: 768px) {
+  .d-flex.flex-md-row {
+    flex-direction: column !important;
+  }
+
+  .sidebar {
+    width: 100% !important;
+    max-height: none !important;
+  }
+
+  .online-friends {
+    max-height: 150px;
+  }
 }

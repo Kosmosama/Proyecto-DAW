@@ -44,7 +44,17 @@ export class SidebarComponent implements OnInit {
   }
 
   logout() {
-    this.statusService.disconnect();
-    this.authService.logout();
+    this.authService.logout().subscribe({
+      next: () => {
+        this.statusService.disconnect();
+        console.log('Logout exitoso');
+      },
+      error: (err) => {
+        this.statusService.disconnect();
+
+        console.warn('Error al hacer logout', err);
+      }
+    });
   }
+
 }

@@ -44,17 +44,18 @@ export class ProfileComponent {
         const visited = this.profile();
         this.isOwnProfile.set(loggedInPlayer.id === visited.id);
       });
-    })
 
-    this.teamsService.getTeams().subscribe((response: any) => {
-      const parsedTeams: Team[] = response.data.map((team: any) => ({
-        ...team,
-        data: typeof team.data === 'string'
-          ? JSON.parse(team.data) as PokemonData[]
-          : team.data
-      }));
-      this.teams.set(parsedTeams);
-    });
+
+      this.teamsService.getTeamsByPlayerId(this.profile().id?.toString()!).subscribe((response: any) => {
+        const parsedTeams: Team[] = response.data.map((team: any) => ({
+          ...team,
+          data: typeof team.data === 'string'
+            ? JSON.parse(team.data) as PokemonData[]
+            : team.data
+        }));
+        this.teams.set(parsedTeams);
+      });
+    })
   }
 
   onImageError(event: Event) {
@@ -89,7 +90,7 @@ export class ProfileComponent {
           }
         })
         .catch(() => { });
-    }else{
+    } else {
       console.warn('Avatar modal can only be opened for own profile');
     }
 
