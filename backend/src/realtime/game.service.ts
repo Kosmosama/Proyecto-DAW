@@ -130,16 +130,14 @@ export class GameService {
     }
 
     private async joinPlayerToRoom(redis: Redis, server: Server, playerId: number, roomId: string) {
-        return;
-        // const sockets = await redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
-        // if (sockets.length === 0) return;
+        const socketIds = await redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
+        if (!socketIds.length) return;
 
-        // await Promise.all(
-        //     sockets.map(socketId => {
-        //         const socket = server.sockets.sockets.get(socketId);
-        //         if (socket) socket.join(roomId);
-        //         return Promise.resolve();
-        //     }),
-        // );
+        const socketsMap = await server.in(socketIds).fetchSockets();
+
+        for (const socket of socketsMap) {
+            socket.join(roomId);
+            this.logger.debug(`Player ${playerId}'s socket ${socket.id} joined room ${roomId}`);
+        }
     }
 }
