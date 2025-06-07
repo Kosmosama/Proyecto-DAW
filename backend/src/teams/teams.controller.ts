@@ -40,16 +40,6 @@ export class TeamController {
         await this.teamService.create(player.id, createTeamDto);
     }
 
-    @Get()
-    @ApiOperation({ summary: 'Get all teams for a player' })
-    @ApiResponse({ status: 200, description: 'List of teams.' })
-    @ApiResponse({ status: 401, description: 'Unauthorized.' })
-    async findAll(
-        @Player() player: PlayerPrivate
-    ) {
-        return this.teamService.findAllByPlayer(player.id);
-    }
-
     @Get(':teamId')
     @ApiOperation({ summary: 'Get a specific team by ID' })
     @ApiParam({ name: 'teamId', type: Number, description: 'ID of the team' })
@@ -61,6 +51,16 @@ export class TeamController {
         @Param('teamId', ParseIntPipe) teamId: number
     ) {
         return this.teamService.findOne(player.id, teamId);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Get all teams for a player' })
+    @ApiResponse({ status: 200, description: 'List of teams.' })
+    @ApiResponse({ status: 401, description: 'Unauthorized.' })
+    async findAll(
+        @Player() player: PlayerPrivate
+    ) {
+        return this.teamService.findAllByPlayer(player.id);
     }
 
     @Delete(':teamId')
