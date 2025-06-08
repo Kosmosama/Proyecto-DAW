@@ -1,29 +1,56 @@
 export const SocketEvents = {
-  Status: {
+  Friends: {
     Listen: {
       FriendsOnline: 'friends:online',
       FriendOnline: 'friend:online',
       FriendOffline: 'friend:offline',
+    }
+  },
+  GeneralChat: {
+    Emit: {
+      MessageUnique: 'general:message:unique',
     },
+    Listen: {
+      MessageBroadcast: 'general:message:broadcast',
+    }
   },
   Matchmaking: {
-    Listen: {
-      MatchFound: 'match:found',
-      BattleRequestReceived: 'battle:request:received',
-      BattleRequestCancelled: 'battle:request:cancelled',
-      BattleRequest: 'battle:request',
-      BattleAccept: 'battle:accept',
-      BattleCancel: 'battle:cancel',
+    Emit: {
       Join: 'matchmaking:join',
       Leave: 'matchmaking:leave',
     },
-    Emit: {
+    Listen: {
       MatchFound: 'match:found',
-      BattleRequest: 'battle:request',
-      BattleCancel: 'battle:cancel',
-      BattleAccept: 'battle:accept',
-      Join: 'matchmaking:join',
-      Leave: 'matchmaking:leave',
+    }
+  },
+  Battle: {
+    Emit: {
+      Request: 'battle:request',
+      Accept: 'battle:accept',
+      Cancel: 'battle:cancel',
+    },
+    Listen: {
+      RequestReceived: 'battle:request:received',
+      RequestCancelled: 'battle:request:cancelled',
+      RequestExpired: 'battle:request:expired',
+    }
+  },
+  Game: {
+    Emit: {
+      Action: 'game:match:action',
+      Chat: 'game:match:chat',
+    },
+    Listen: {
+      BattleAction: 'game:match:emit:action',
+      ChatMessage: 'game:match:emit:chat',
+      MatchEnd: 'game:match:end',
+      MatchForfeit: 'game:match:forfeit',
+      TeamPrivate: 'game:state:teamPrivate',
+      TeamPublic: 'game:state:teamPublic',
+      Move: 'game:match:move',
+      Damage: 'game:match:damage',
+      Switch: 'game:match:switch',
+      SelectNew: 'game:match:selectNew',
     }
   }
 } as const;

@@ -15,12 +15,9 @@ export class TeamsService {
         return this.http.post<void>('teams', { name: teamName, data: { team: teamData } });
     }
 
-    getTeams(): Observable<{ data: Team[] }> {
-        return this.http.get<{ data: Team[] }>('teams');
-    }
-
-    getTeamsByPlayerId(playerId: string) {
-        return this.http.get<{ data: Team[] }>(`teams/player/${playerId}`);
+    getTeams(playerId?: number) {
+        const params = playerId ? { params: { playerId } } : {};
+        return this.http.get<{ data: Team[] }>('teams', params);
     }
 
     getTeamById(id: string): Observable<Team> {

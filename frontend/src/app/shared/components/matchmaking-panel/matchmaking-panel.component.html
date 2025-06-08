@@ -1,43 +1,41 @@
-<div class="card matchmaking-card text-light mx-auto mt-4" style="max-width: 400px;">
-  <div class="card-body">
-    <label for="selectEquipo" class="form-label fw-semibold">
+<div class="matchmaking-container mx-auto mt-4 p-3" style="max-width: 400px; background-color: #fef9f6; border-radius: 12px;">
+  <h3 class="fw-bold text-danger mb-3 text-center">Quick battle</h3>
+
+  <div class="mb-3">
+    <label for="selectEquipo" class="form-label fw-bold text-danger">
       Select your team:
     </label>
-    <select id="selectEquipo" class="form-select mb-3" [ngModel]="selectedTeamId"
-      (ngModelChange)="updateSelectedTeam($event);">
-
+    <select id="selectEquipo" class="form-select border-danger" [ngModel]="selectedTeamId"
+      (ngModelChange)="updateSelectedTeam($event)">
       @for (team of playerTeams(); track team.id) {
-      <option [value]="team.id">{{ team.name }}</option>
+        <option [value]="team.id">{{ team.name }}</option>
       }
-
     </select>
+  </div>
 
-    @if (selectedTeam()) {
+  @if (selectedTeam()) {
     <div class="d-flex justify-content-center mb-3 flex-wrap gap-2">
       @for (pokemon of selectedTeam()?.data; track $index) {
-      <img [src]="getSpriteUrl(pokemon.species)" [alt]="pokemon.species" width="48" height="48"
-        style="image-rendering: pixelated;" />
+        <img [src]="getSpriteUrl(pokemon.species)" [alt]="pokemon.species" width="48" height="48"
+          style="image-rendering: pixelated;" />
       }
     </div>
-    }
+  }
 
-    @if (isSearching) {
-    <button (click)="stopSearch()" class="btn btn-danger w-100">
+  @if (isSearching) {
+    <button (click)="stopSearch()" class="btn btn-outline-danger w-100 mb-2">
       Cancel matchmaking
     </button>
-    } @else {
-    <button (click)="startSearch()" [disabled]="!selectedTeamId()" class="btn btn-primary w-100">
+  } @else {
+    <button (click)="startSearch()" [disabled]="!selectedTeamId()" class="btn btn-outline-primary w-100 mb-2">
       Find game
     </button>
-    }
-  </div>
-  <div>
-    <div class="d-flex justify-content-center">
-      <button class="btn btn-warning m-3"
-        [routerLink]="['/pages/battle']"
-        [queryParams]="{ number: selectedTeamId() }"
-        routerLinkActive="router-link-active">
-        Battle demo
-      </button>
+  }
+
+  <div class="d-flex justify-content-center">
+    <button class="btn btn-outline-warning px-4" [routerLink]="['/pages/battle']"
+      [queryParams]="{ number: selectedTeamId() }" routerLinkActive="router-link-active">
+      Battle demo
+    </button>
   </div>
 </div>

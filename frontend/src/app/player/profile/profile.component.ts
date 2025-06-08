@@ -47,7 +47,7 @@ export class ProfileComponent {
       });
 
 
-      this.teamsService.getTeamsByPlayerId(this.profile().id?.toString()!).subscribe((response: any) => {
+      this.teamsService.getTeams(this.profile().id).subscribe((response: any) => {
         const parsedTeams: Team[] = response.data.map((team: any) => ({
           ...team,
           data: typeof team.data === 'string'

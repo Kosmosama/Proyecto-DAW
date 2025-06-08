@@ -1,28 +1,26 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { BattleService } from '../../core/services/battle.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-battle',
-  templateUrl: './battle.component.html',
-  styleUrls: ['./battle.component.scss'],
+    selector: 'app-battle',
+    templateUrl: './battle.component.html',
+    styleUrls: ['./battle.component.scss'],
+    standalone: true,
+    imports: [FormsModule],
 })
 export class BattleComponent {
 
-  public battleService = inject(BattleService);
-  constructor() {}
+    private battleService = inject(BattleService);
+    chatInput = '';
+    messages = this.battleService.messages;
 
-  // Señales para binding en template
-  playerBattleStates = this.battleService['playerBattleStates'];
-  enemyBattleStates = this.battleService['enemyBattleStates'];
+    constructor() { }
 
-  playerActive = () => this.battleService.getPlayerActive();
-  enemyActive = () => this.battleService.getEnemyActive();
-
-  doTurn(moveName: string) {
-    this.battleService.doTurn(moveName);
-  }
-
-  switchTo(index: number) {
-    this.battleService.playerSwitchTo(index);
-  }
+    sendMessage() {
+        const msg = this.chatInput.trim();
+        if (!msg) return;
+        this.battleService.sendChatMessage(msg);
+        this.chatInput = '';
+    }
 }

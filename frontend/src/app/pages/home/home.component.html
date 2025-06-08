@@ -1,13 +1,23 @@
 <div class="background-layer" [style.backgroundImage]="backgroundUrl()"></div>
 
 <div class="main-content">
-
-    <matchmaking-panel></matchmaking-panel>
-
+    <div class="row">
+        <div class="col-md-4">
+            <matchmaking-panel></matchmaking-panel>
+        </div>
+        <div class="col-md-8 d-flex justify-content-center">
+            <div class="card shadow-lg w-100" style="max-width: 950px;">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Pokédex Smogon</h5>
+                </div>
+                <div class="card-body p-0" style="background: #f8f9fa;">
+                    <iframe
+                        src="https://www.smogon.com/dex/sv/pokemon/"
+                        frameborder="0"
+                        style="width: 100%; height: 760px; zoom: 0.7; border: none; display: block;">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-<!-- <div class="d-flex justify-content-center">
-    <iframe src="https://www.smogon.com/dex/sv/pokemon/" frameborder="0" class="flex-shrink-0"
-        style="width: 900px; height: 760px; zoom: 0.7; max-width: 100vw; max-height: 100vh;">
-    </iframe>
-</div> -->

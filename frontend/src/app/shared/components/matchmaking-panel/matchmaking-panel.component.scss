@@ -1,3 +1,35 @@
-.matchmaking-card {
-    background-color: #212529;
+.matchmaking-container select.form-select {
+  border-width: 2px;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.btn-outline-primary {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+  background-color: #1976d2;
+  color: white;
+}
+
+.btn-outline-danger {
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+
+.btn-outline-danger:hover:not(:disabled) {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.btn-outline-warning {
+  border-color: #ffa000;
+  color: #ffa000;
+}
+
+.btn-outline-warning:hover:not(:disabled) {
+  background-color: #ffa000;
+  color: white;
 }

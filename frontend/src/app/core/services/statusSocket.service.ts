@@ -33,17 +33,17 @@ export class StatusSocketService {
       console.log('Disconnected from status namespace');
     });
 
-    this.socket.on(SocketEvents.Status.Listen.FriendsOnline, (data) => {
+    this.socket.on(SocketEvents.Friends.Listen.FriendsOnline, (data) => {
       console.log('Your online friends:', data);
       this.onlineFriendIds.set(data);
     });
 
-    this.socket.on(SocketEvents.Status.Listen.FriendOnline, (id: number) => {
+    this.socket.on(SocketEvents.Friends.Listen.FriendOnline, (id: number) => {
       console.log(`Friend ${id} came online`);
       this.onlineFriendIds.update((friendIds) => [...friendIds, id]);
     });
 
-    this.socket.on(SocketEvents.Status.Listen.FriendOffline, (id: number) => {
+    this.socket.on(SocketEvents.Friends.Listen.FriendOffline, (id: number) => {
       console.log(`Friend ${id} went offline`);
       this.onlineFriendIds.update((friendIds) =>
         friendIds.filter((i) => i !== id)
