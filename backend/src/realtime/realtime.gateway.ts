@@ -172,36 +172,19 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         }
     }
 
-    /**
-     * Handles a chat message from a player.
-     * @param {Socket} client - The socket client sending the message.
-     * @param {Object} data - The chat message data.
-     * @param {number} playerId - The ID of the player sending the message.
-     * @returns 
-     */
-    @SubscribeMessage(SocketEvents.Game.Listen.ChatMessage)
-    async onChatMessage(
+    @SubscribeMessage('game:match:action')
+    async onPlayerAction(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { roomId: string; message: string },
-        @PlayerIdWs() playerId: number,
+        @MessageBody() data: { roomId: string; action: PlayerAction },
+        @PlayerIdWs() playerId: number
     ) {
-        if (!data?.roomId || typeof data.message !== 'string') {
-            client.emit(SocketEvents.Game.Listen.ChatMessage, { error: 'Invalid chat message data' });
-            return;
-        }
-
-        try {
-            await this.gameService.handleChatMessage(this.server, playerId, data.roomId, data.message);
-        } catch (err) {
-            client.emit(SocketEvents.Game.Listen.ChatMessage, { error: err.message });
-        }
+        await this.gameService.handlePlayerAction(playerId, data.roomId, data.action, this.server);
     }
+}
 
-    // Maybe do it
-    // @SubscribeMessage('battle:requests:get')
-    // async onGetBattleRequests(@PlayerIdWs() playerId: number) {
-    //     const requests = await this.matchmakingService.getPendingBattleRequests(playerId);
-    //     return requests;
-    // }
-
+interface PlayerAction {
+    type: 'switch' | 'move' | 'forfeit';
+    index?: number;
+    pokeIndex?: number;
+    moveIndex?: number;
 }

@@ -1,112 +1,226 @@
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { Namespace, Server } from 'socket.io';
-import { SocketEvents } from 'src/common/constants/events.constants';
-import { PLAYER_SOCKETS_PREFIX } from 'src/common/constants/redis.constants';
+import { Server } from 'socket.io';
 import { emitToPlayer } from 'src/common/utils/emit.util';
 import { v4 as uuidv4 } from 'uuid';
+import { Generation, Generations } from '@pkmn/data';
+import { Dex, PokemonSet } from '@pkmn/dex';
+import { calculate, Pokemon as SimPokemon, Move } from '@smogon/calc';
+import { SocketEvents } from 'src/common/constants/events.constants';
+import { TeamService } from 'src/teams/teams.service';
 
 const MATCH_PREFIX = 'game:match:';
 const PLAYER_MATCHES_PREFIX = 'game:playerMatches:';
 
-interface MatchRoomData {
-    id: string;
-    playerA: { id: number; teamId: number };
-    playerB: { id: number; teamId: number };
+interface BattlePokemon extends PokemonSet {
+    currentHp: number;
+    fainted: boolean;
+}
+
+interface PlayerAction {
+    type: 'switch' | 'move' | 'forfeit';
+    index?: number;
+    pokeIndex?: number;
+    moveIndex?: number;
+}
+
+interface BattlePlayerState {
+    id: number;
+    team: BattlePokemon[];
+    activeIndex: number;
+    actionsReceived: boolean;
+    action?: PlayerAction;
+    fainted: boolean;
+}
+
+interface BattleState {
+    roomId: string;
+    format: string;
+    gen: Generation;
+    playerA: BattlePlayerState;
+    playerB: BattlePlayerState;
 }
 
 @Injectable()
 export class GameService {
     private readonly logger = new Logger(GameService.name);
+    private readonly gens = new Generations(Dex);
 
     constructor(
         @InjectRedis() private readonly redis: Redis,
+        private readonly teamService: TeamService,
     ) { }
 
     async createMatch(playerAId: number, teamAId: number, playerBId: number, teamBId: number, server: Server): Promise<void> {
         const roomId = uuidv4();
         const roomKey = `${MATCH_PREFIX}${roomId}`;
 
-        const match: MatchRoomData = {
-            id: roomId,
-            playerA: { id: playerAId, teamId: teamAId },
-            playerB: { id: playerBId, teamId: teamBId },
+        const teamA = await this.teamService.findOne(playerAId, teamAId);
+        const teamB = await this.teamService.findOne(playerBId, teamBId);
+
+        const parsedA: BattlePokemon[] = teamA.data.map(p => ({ ...p, currentHp: 100, fainted: false }));
+        const parsedB: BattlePokemon[] = teamB.data.map(p => ({ ...p, currentHp: 100, fainted: false }));
+
+        const gen = this.gens.get(9);
+
+        const matchState: BattleState = {
+            roomId,
+            format: teamA.format,
+            gen,
+            playerA: {
+                id: playerAId,
+                team: parsedA,
+                activeIndex: 0,
+                actionsReceived: false,
+                fainted: false,
+            },
+            playerB: {
+                id: playerBId,
+                team: parsedB,
+                activeIndex: 0,
+                actionsReceived: false,
+                fainted: false,
+            },
         };
 
-        await this.redis.set(roomKey, JSON.stringify(match));
-        await this.redis.sadd(`${PLAYER_MATCHES_PREFIX}${playerAId}`, roomId);
-        await this.redis.sadd(`${PLAYER_MATCHES_PREFIX}${playerBId}`, roomId);
+        await this.redis.set(`game:matchState:${roomId}`, JSON.stringify(matchState));
 
-        // Join sockets to the room
-        await Promise.all([
-            this.joinPlayerToRoom(this.redis, server, playerAId, roomId),
-            this.joinPlayerToRoom(this.redis, server, playerBId, roomId),
-        ]);
+        await emitToPlayer(this.redis, server, playerAId, SocketEvents.Matchmaking.Emit.MatchFound, roomId);
+        await emitToPlayer(this.redis, server, playerBId, SocketEvents.Matchmaking.Emit.MatchFound, roomId);
 
-        // Notify players of the match
-        await Promise.all([
-            emitToPlayer(this.redis, server, playerAId, SocketEvents.Matchmaking.Emit.MatchFound, match),
-            emitToPlayer(this.redis, server, playerBId, SocketEvents.Matchmaking.Emit.MatchFound, match),
-        ]);
-
-        this.logger.debug(`Match created for player ${playerAId} and player ${playerBId} in the room with id ${roomId}`);
+        await this.sendTeamStates(server, roomId, matchState);
     }
 
-    async restoreActiveMatches(playerId: number, server: Server): Promise<void> {
-        const matchIds = await this.redis.smembers(`${PLAYER_MATCHES_PREFIX}${playerId}`);
+    private async sendTeamStates(server: Server, roomId: string, state: BattleState) {
+        const pubTeam = (team: BattlePokemon[]) =>
+            team.map(p => ({ species: p.species, fainted: p.fainted }));
 
-        for (const roomId of matchIds) {
-            const raw = await this.redis.get(`${MATCH_PREFIX}${roomId}`);
-            if (!raw) continue;
+        await emitToPlayer(this.redis, server, state.playerA.id, 'game:state:teamPrivate', state.playerA.team);
+        await emitToPlayer(this.redis, server, state.playerB.id, 'game:state:teamPrivate', state.playerB.team);
 
-            const match: MatchRoomData = JSON.parse(raw);
+        await emitToPlayer(this.redis, server, state.playerA.id, 'game:state:teamPublic', pubTeam(state.playerB.team));
+        await emitToPlayer(this.redis, server, state.playerB.id, 'game:state:teamPublic', pubTeam(state.playerA.team));
+    }
 
-            await this.joinPlayerToRoom(this.redis, server, playerId, roomId);
-            await emitToPlayer(this.redis, server, playerId, SocketEvents.Matchmaking.Emit.MatchFound, match);
+    async handlePlayerAction(playerId: number, roomId: string, action: PlayerAction, server: Server) {
+        const key = `game:matchState:${roomId}`;
+        const stateRaw = await this.redis.get(key);
+        if (!stateRaw) return;
+
+        const state: BattleState = JSON.parse(stateRaw);
+        const player = state.playerA.id === playerId ? state.playerA : state.playerB;
+        if (player.actionsReceived) return;
+
+        if (action.type === 'switch') {
+            const to = action.index!;
+            if (player.team[to]?.fainted) {
+                player.activeIndex = player.team.findIndex(p => !p.fainted);
+            } else {
+                player.activeIndex = to;
+            }
         }
 
-        this.logger.debug(`Matches restored for player ${playerId}`);
+        player.action = action;
+        player.actionsReceived = true;
+
+        if (state.playerA.actionsReceived && state.playerB.actionsReceived) {
+            await this.processTurn(state, server);
+        } else {
+            await this.redis.set(key, JSON.stringify(state));
+        }
     }
 
-    async handlePlayerDisconnect(playerId: number, server: Server): Promise<void> {
-        const matchIds = await this.redis.smembers(`${PLAYER_MATCHES_PREFIX}${playerId}`);
+    private async processTurn(state: BattleState, server: Server) {
+        const key = `game:matchState:${state.roomId}`;
+        const gen = state.gen;
 
-        for (const roomId of matchIds) {
-            const matchRaw = await this.redis.get(`${MATCH_PREFIX}${roomId}`);
-            if (!matchRaw) continue;
+        const getSpeed = (player: BattlePlayerState) =>
+            Dex.species.get(player.team[player.activeIndex].species).baseStats.spe;
 
-            const match: MatchRoomData = JSON.parse(matchRaw);
-            const opponentId = match.playerA.id === playerId ? match.playerB.id : match.playerA.id;
-
-            server.to(roomId).emit(SocketEvents.Game.Emit.MatchForfeit, {
-                roomId,
-                winner: opponentId,
-                reason: 'Opponent disconnected',
-            });
-
-            await this.redis.del(`${MATCH_PREFIX}${roomId}`);
-            await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${playerId}`, roomId);
-            await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${opponentId}`, roomId);
+        if (state.playerA.action?.type === 'forfeit') {
+            await this.reportWinner(server, state.roomId, state.playerB.id);
+            return;
+        }
+        if (state.playerB.action?.type === 'forfeit') {
+            await this.reportWinner(server, state.roomId, state.playerA.id);
+            return;
         }
 
-        this.logger.debug(`Lost all concurrent matches for player ${playerId}`);
+        if (state.playerA.action?.type === 'switch' || state.playerB.action?.type === 'switch') {
+            const aSpeed = getSpeed(state.playerA);
+            const bSpeed = getSpeed(state.playerB);
+            const [first, second] = (aSpeed >= bSpeed)
+                ? [state.playerA, state.playerB]
+                : [state.playerB, state.playerA];
+
+            if (first.action?.type === 'switch') {
+                first.activeIndex = first.action.index!;
+                await emitToPlayer(this.redis, server, first.id, 'game:match:switch', first.activeIndex);
+            }
+
+            if (second.action?.type === 'switch') {
+                second.activeIndex = second.action.index!;
+                await emitToPlayer(this.redis, server, second.id, 'game:match:switch', second.activeIndex);
+            }
+        }
+
+        const aMove = state.playerA.action?.type === 'move';
+        const bMove = state.playerB.action?.type === 'move';
+
+        const [firstMover, secondMover] = (getSpeed(state.playerA) >= getSpeed(state.playerB))
+            ? [state.playerA, state.playerB]
+            : [state.playerB, state.playerA];
+
+        if (aMove || bMove) {
+            await this.handleMove(firstMover, secondMover, gen, server, state);
+        }
+
+        state.playerA.actionsReceived = false;
+        state.playerB.actionsReceived = false;
+        state.playerA.action = undefined;
+        state.playerB.action = undefined;
+
+        await this.redis.set(key, JSON.stringify(state));
     }
 
-    async handleChatMessage(server: Server, playerId: number, roomId: string, message: string): Promise<void> {
-        this.logger.debug(`Player ${playerId} sent the message: ${message}`);
+    private async handleMove(
+        attacker: BattlePlayerState,
+        defender: BattlePlayerState,
+        gen: Generation,
+        server: Server,
+        state: BattleState
+    ) {
+        const atkSet = attacker.team[attacker.activeIndex];
+        const defSet = defender.team[defender.activeIndex];
 
-        if (message.trim().toUpperCase() !== 'WIN') return;
+        const atk = new SimPokemon(gen, attacker.team[attacker.activeIndex].species);
+        const def = new SimPokemon(gen, defender.team[defender.activeIndex].species);
 
-        const matchKey = `${MATCH_PREFIX}${roomId}`;
-        const matchRaw = await this.redis.get(matchKey);
-        if (!matchRaw) return;
+        const move = Dex.moves.get(atkSet.moves[attacker.action!.moveIndex!]);
+        const result = calculate(gen, atk, def, move as unknown as Move);
+        const dmg = Array.isArray(result.damage) ? result.damage[0] : result.damage;
 
-        const match: MatchRoomData = JSON.parse(matchRaw);
-        const isInMatch = [match.playerA.id, match.playerB.id].includes(playerId);
-        if (!isInMatch) return;
+        const defHp = defSet.currentHp;
+        const newHp = Math.max(0, defHp - (typeof dmg === 'number' ? dmg : 0));
+        defSet.currentHp = newHp;
+        defSet.fainted = newHp <= 0;
 
-        await this.reportWinner(server, roomId, playerId);
+        if (defSet.fainted) {
+            await emitToPlayer(this.redis, server, attacker.id, 'game:match:move', { move: move, damage: dmg, target: defender.id });
+            await emitToPlayer(this.redis, server, defender.id, 'game:match:damage', { hp: 0 });
+
+            const hasRemaining = defender.team.some(p => p.currentHp > 0 && !p.fainted);
+            if (!hasRemaining) {
+                await this.reportWinner(server, state.roomId, attacker.id);
+            } else {
+                defender.fainted = true;
+                await emitToPlayer(this.redis, server, defender.id, 'game:match:selectNew', {});
+            }
+        } else {
+            await emitToPlayer(this.redis, server, attacker.id, 'game:match:move', { move: move, damage: dmg, target: defender.id });
+            await emitToPlayer(this.redis, server, defender.id, 'game:match:damage', { hp: newHp });
+        }
     }
 
     private async reportWinner(server: Server, roomId: string, winnerId: number): Promise<void> {
@@ -114,10 +228,11 @@ export class GameService {
         const raw = await this.redis.get(key);
         if (!raw) return;
 
-        const match: MatchRoomData = JSON.parse(raw);
+        const match = JSON.parse(raw);
         const players = [match.playerA.id, match.playerB.id];
 
         await this.redis.del(key);
+        await this.redis.del(`game:matchState:${roomId}`);
         await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${players[0]}`, roomId);
         await this.redis.srem(`${PLAYER_MATCHES_PREFIX}${players[1]}`, roomId);
 
@@ -126,18 +241,6 @@ export class GameService {
             roomId,
         });
 
-        this.logger.debug(`Match ${roomId} completed. Winner: ${winnerId}, Team: ${winnerId === match.playerA.id ? match.playerA.teamId : match.playerB.teamId}`);
-    }
-
-    private async joinPlayerToRoom(redis: Redis, server: Server, playerId: number, roomId: string) {
-        const socketIds = await redis.smembers(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
-        if (!socketIds.length) return;
-
-        const socketsMap = await server.in(socketIds).fetchSockets();
-
-        for (const socket of socketsMap) {
-            socket.join(roomId);
-            this.logger.debug(`Player ${playerId}'s socket ${socket.id} joined room ${roomId}`);
-        }
+        this.logger.debug(`Match ${roomId} completed. Winner: ${winnerId}`);
     }
 }
