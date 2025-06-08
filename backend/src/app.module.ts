@@ -10,7 +10,6 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
 import { RedisFlushService } from './common/redis-flush.service';
 import { redisAsyncConfig } from './config/redis.config';
 import { typeOrmAsyncConfig } from './config/typeorm.config';
-import { GameModule } from './game/game.module';
 import { PlayerModule } from './player/player.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { TeamsModule } from './teams/teams.module';
@@ -22,7 +21,6 @@ import { TeamsModule } from './teams/teams.module';
         RedisModule.forRootAsync(redisAsyncConfig),
         PlayerModule,
         RealtimeModule,
-        GameModule,
         AuthModule,
         TeamsModule,
     ],
