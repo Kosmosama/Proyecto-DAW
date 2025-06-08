@@ -29,11 +29,20 @@ export const SocketEvents = {
     },
     Game: {
         Listen: {
-            ChatMessage: "game:chat:message"
+            Action: 'game:match:action',
+            Chat: 'game:match:chat',
         },
         Emit: {
+            BattleAction: 'game:match:emit:action',
+            ChatMessage: 'game:match:emit:chat',
             MatchEnd: 'game:match:end',
             MatchForfeit: 'game:match:forfeit',
+            TeamPrivate: 'game:state:teamPrivate',
+            TeamPublic: 'game:state:teamPublic',
+            Move: 'game:match:move',
+            Damage: 'game:match:damage',
+            Switch: 'game:match:switch',
+            SelectNew: 'game:match:selectNew',
         },
     },
 } as const;

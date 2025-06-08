@@ -10,3 +10,7 @@ export const MATCHMAKING_DATA_PREFIX = 'matchmaking:data:';
 export const BATTLE_REQUEST_PREFIX = 'battle:request:';
 export const PLAYER_PENDING_REQUESTS = 'player:pending:requests';
 export const PLAYER_INCOMING_REQUESTS = 'player:incoming:requests';
+
+export const MATCH_PREFIX = 'game:match:';
+export const PLAYER_MATCHES_PREFIX = 'game:playerMatches:';
+export const MATCH_STATE_PREFIX = 'game:matchState:';

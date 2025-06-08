@@ -7,9 +7,9 @@ import { BATTLE_REQUEST_PREFIX, MATCHMAKING_DATA_PREFIX, MATCHMAKING_PLAYERS, MA
 import { emitToPlayer } from 'src/common/utils/emit.util';
 import { PlayerService } from 'src/player/player.service';
 import { TeamService } from 'src/teams/teams.service';
+import { GameService } from './game.service';
 import { FriendBattleRequest } from './interfaces/friend-battle-request.interface';
 import { MatchmakingEntry } from './interfaces/matchmaking-entry.interface';
-import { GameService } from './game.service';
 
 @Injectable()
 export class MatchmakingService {
@@ -295,6 +295,4 @@ export class MatchmakingService {
         if (areFriends) await this.redis.sadd(key, to.toString());
         return areFriends;
     }
-
-    // #TODO Create method to GET pending requests? outgoing and incoming
 }

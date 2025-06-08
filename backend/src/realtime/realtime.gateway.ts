@@ -7,10 +7,12 @@ import { PlayerIdWs } from './decorators/player-ws.decorator';
 import { BattleRequestAcceptDto } from './dto/battle-request-accept.dto';
 import { BattleRequestCancelDto } from './dto/battle-request-cancel.dto';
 import { BattleRequestDto } from './dto/battle-request.dto';
+import { GameActionDto } from './dto/game-action.dto';
+import { GameChatDto } from './dto/game-chat.dto';
 import { MatchmakingJoinDto } from './dto/matchmaking-join.dto';
+import { GameService } from './game.service';
 import { MatchmakingService } from './matchmaking.service';
 import { StatusService } from './status.service';
-import { GameService } from './game.service';
 
 @WebSocketGateway({
     namespace: 'status',
@@ -172,19 +174,21 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         }
     }
 
-    @SubscribeMessage('game:match:action')
+    @SubscribeMessage(SocketEvents.Game.Listen.Action)
     async onPlayerAction(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { roomId: string; action: PlayerAction },
+        @MessageBody() data: GameActionDto,
         @PlayerIdWs() playerId: number
     ) {
         await this.gameService.handlePlayerAction(playerId, data.roomId, data.action, this.server);
     }
-}
 
-interface PlayerAction {
-    type: 'switch' | 'move' | 'forfeit';
-    index?: number;
-    pokeIndex?: number;
-    moveIndex?: number;
+    @SubscribeMessage(SocketEvents.Game.Listen.Chat)
+    async onPlayerChat(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: GameChatDto,
+        @PlayerIdWs() playerId: number
+    ) {
+        await this.gameService.handlePlayerChat(data.roomId, playerId, data.message, this.server);
+    }
 }
