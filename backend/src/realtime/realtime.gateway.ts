@@ -7,10 +7,12 @@ import { PlayerIdWs } from './decorators/player-ws.decorator';
 import { BattleRequestAcceptDto } from './dto/battle-request-accept.dto';
 import { BattleRequestCancelDto } from './dto/battle-request-cancel.dto';
 import { BattleRequestDto } from './dto/battle-request.dto';
+import { GameActionDto } from './dto/game-action.dto';
+import { GameChatDto } from './dto/game-chat.dto';
 import { MatchmakingJoinDto } from './dto/matchmaking-join.dto';
+import { GameService } from './game.service';
 import { MatchmakingService } from './matchmaking.service';
 import { StatusService } from './status.service';
-import { GameService } from './game.service';
 
 @WebSocketGateway({
     namespace: 'status',
@@ -172,36 +174,21 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         }
     }
 
-    /**
-     * Handles a chat message from a player.
-     * @param {Socket} client - The socket client sending the message.
-     * @param {Object} data - The chat message data.
-     * @param {number} playerId - The ID of the player sending the message.
-     * @returns 
-     */
-    @SubscribeMessage(SocketEvents.Game.Listen.ChatMessage)
-    async onChatMessage(
+    @SubscribeMessage(SocketEvents.Game.Listen.Action)
+    async onPlayerAction(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { roomId: string; message: string },
-        @PlayerIdWs() playerId: number,
+        @MessageBody() data: GameActionDto,
+        @PlayerIdWs() playerId: number
     ) {
-        if (!data?.roomId || typeof data.message !== 'string') {
-            client.emit(SocketEvents.Game.Listen.ChatMessage, { error: 'Invalid chat message data' });
-            return;
-        }
-
-        try {
-            await this.gameService.handleChatMessage(this.server, playerId, data.roomId, data.message);
-        } catch (err) {
-            client.emit(SocketEvents.Game.Listen.ChatMessage, { error: err.message });
-        }
+        await this.gameService.handlePlayerAction(playerId, data.roomId, data.action, this.server);
     }
 
-    // Maybe do it
-    // @SubscribeMessage('battle:requests:get')
-    // async onGetBattleRequests(@PlayerIdWs() playerId: number) {
-    //     const requests = await this.matchmakingService.getPendingBattleRequests(playerId);
-    //     return requests;
-    // }
-
+    @SubscribeMessage(SocketEvents.Game.Listen.Chat)
+    async onPlayerChat(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: GameChatDto,
+        @PlayerIdWs() playerId: number
+    ) {
+        await this.gameService.handlePlayerChat(data.roomId, playerId, data.message, this.server);
+    }
 }
