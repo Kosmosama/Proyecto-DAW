@@ -109,6 +109,7 @@ export class GameService {
         if (action.type === 'switch') {
             const idx = action.index!;
             if (player.team[idx]?.fainted) {
+                // Fallback to first non-fainted pokemon if chosen Pokémon is fainted
                 player.activeIndex = player.team.findIndex(p => !p.fainted);
             } else {
                 player.activeIndex = idx;
@@ -168,6 +169,7 @@ export class GameService {
                 this.logger.debug(`Socket ${socketId} of player ${playerId} joined room ${roomId}`);
             }
 
+            // Re-emit match found event so client can rehydrate UI state
             await emitToPlayer(this.redis, server, playerId, SocketEvents.Matchmaking.Emit.MatchFound, roomId);
         }
     }
@@ -227,9 +229,12 @@ export class GameService {
     private async processTurn(state: BattleState, server: Server): Promise<void> {
         const key = `${MATCH_STATE_PREFIX}:${state.roomId}`;
         const gen = state.gen;
+
+        // Determine speed using base stat of the active Pokémon
         const getSpeed = (p: BattlePlayerState) =>
             Dex.species.get(p.team[p.activeIndex].species).baseStats.spe;
 
+        // Fast forfeit check: if either player forfeited, declare the opponent the winner
         if (state.playerA.action?.type === 'forfeit') {
             await this.reportWinner(server, state.roomId, state.playerB.id);
             return;
@@ -239,10 +244,13 @@ export class GameService {
             return;
         }
 
+        // Handle switch logic | faster player switches first
         if (state.playerA.action?.type === 'switch' || state.playerB.action?.type === 'switch') {
             const aSp = getSpeed(state.playerA);
             const bSp = getSpeed(state.playerB);
             const [first, second] = aSp >= bSp ? [state.playerA, state.playerB] : [state.playerB, state.playerA];
+
+            // Only actually switch if requested
             if (first.action?.type === 'switch') {
                 first.activeIndex = first.action.index!;
                 await emitToPlayer(this.redis, server, first.id, SocketEvents.Game.Emit.Switch, first.activeIndex);
@@ -253,6 +261,7 @@ export class GameService {
             }
         }
 
+        // Determine move order based on speed again | if at least one is using a move
         const aMove = state.playerA.action?.type === 'move';
         const bMove = state.playerB.action?.type === 'move';
         const [firstMover, secondMover] =
@@ -260,10 +269,12 @@ export class GameService {
                 ? [state.playerA, state.playerB]
                 : [state.playerB, state.playerA];
 
+        // Handle move execution
         if (aMove || bMove) {
             await this.handleMove(firstMover, secondMover, gen, server, state);
         }
 
+        // Reset turn "flags" for next turn
         state.playerA.actionsReceived = false;
         state.playerB.actionsReceived = false;
         state.playerA.action = undefined;
@@ -281,19 +292,25 @@ export class GameService {
      * @return {Promise<void>} No return value.
      */
     private async handleMove(attacker: BattlePlayerState, defender: BattlePlayerState, gen: Generation, server: Server, state: BattleState): Promise<void> {
+        
+        // Pokemon building
         const atkSet = attacker.team[attacker.activeIndex];
         const defSet = defender.team[defender.activeIndex];
         const atk = new SimPokemon(gen, atkSet.species, { moves: atkSet.moves });
         const def = new SimPokemon(gen, defSet.species);
+
+        // Select the move from attacker's action and calculate the damage
         const moveName = atkSet.moves[attacker.action!.moveIndex!];
         const move = new SimMove(gen, moveName);
         const result = calculate(gen, atk, def, move);
-        const dmg = Array.isArray(result.damage) ? result.damage[0] : result.damage;
 
+        // Determine damage and apply to defender's HP
+        const dmg = Array.isArray(result.damage) ? result.damage[0] : result.damage;
         const newHp = Math.max(0, defSet.currentHp - (typeof dmg === 'number' ? dmg : 0));
         defSet.currentHp = newHp;
         defSet.fainted = newHp <= 0;
 
+        // Check if defender fainted and whether the game ends or prompts a new switch
         if (defSet.fainted) {
             await emitToPlayer(this.redis, server, attacker.id, SocketEvents.Game.Emit.Move, { move: moveName, damage: dmg, target: defender.id });
             await emitToPlayer(this.redis, server, defender.id, SocketEvents.Game.Emit.Damage, { hp: 0 });
@@ -305,6 +322,7 @@ export class GameService {
                 await emitToPlayer(this.redis, server, defender.id, SocketEvents.Game.Emit.SelectNew, {});
             }
         } else {
+            // If not fainted, just report the damage
             await emitToPlayer(this.redis, server, attacker.id, SocketEvents.Game.Emit.Move, { move: moveName, damage: dmg, target: defender.id });
             await emitToPlayer(this.redis, server, defender.id, SocketEvents.Game.Emit.Damage, { hp: newHp });
         }
