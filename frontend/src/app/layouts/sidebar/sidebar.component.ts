@@ -26,6 +26,8 @@ export class SidebarComponent implements OnInit {
     { label: 'Home', link: 'pages/home', icon: 'bi bi-house-door' },
     { label: 'Friends', link: 'player/friends', icon: 'bi bi-controller' },
     { label: 'Team Builder', link: 'pages/team-builder', icon: 'bi bi-person-plus' },
+    { label: 'Chat', link: 'pages/chat', icon: 'bi bi-chat' },
+
   ];
 
   ngOnInit(): void {

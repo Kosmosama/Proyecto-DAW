@@ -1,26 +1,16 @@
-import { Component, inject, signal } from '@angular/core';
-import { BattleService } from '../../core/services/battle.service';
-import { FormsModule } from '@angular/forms';
+import { Component } from "@angular/core";
 
 @Component({
     selector: 'app-battle',
     templateUrl: './battle.component.html',
     styleUrls: ['./battle.component.scss'],
     standalone: true,
-    imports: [FormsModule],
+    imports: [],
 })
 export class BattleComponent {
 
-    private battleService = inject(BattleService);
-    chatInput = '';
-    messages = this.battleService.messages;
-
-    constructor() { }
-
-    sendMessage() {
-        const msg = this.chatInput.trim();
-        if (!msg) return;
-        this.battleService.sendChatMessage(msg);
-        this.chatInput = '';
+    constructor() { 
+        console.log('BattleComponent initialized');
     }
+
 }
