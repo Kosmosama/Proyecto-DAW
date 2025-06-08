@@ -13,6 +13,7 @@ import { MatchmakingJoinDto } from './dto/matchmaking-join.dto';
 import { GameService } from './game.service';
 import { MatchmakingService } from './matchmaking.service';
 import { StatusService } from './status.service';
+import { GeneralChatDto } from './dto/general-chat.dto';
 
 @WebSocketGateway({
     namespace: 'status',
@@ -174,6 +175,12 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         }
     }
 
+    /**
+     * Handles a player's action during a game.
+     * @param {Socket} client - The socket client making the request.
+     * @param {GameActionDto} data - The data containing the room ID and action.
+     * @param {number} playerId - The ID of the player performing the action.
+     */
     @SubscribeMessage(SocketEvents.Game.Listen.Action)
     async onPlayerAction(
         @ConnectedSocket() client: Socket,
@@ -183,6 +190,12 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         await this.gameService.handlePlayerAction(playerId, data.roomId, data.action, this.server);
     }
 
+    /**
+     * Handles a player's chat message during a game.
+     * @param {Socket} client - The socket client making the request.
+     * @param {GameChatDto} data - The data containing the room ID and message.
+     * @param {number} playerId - The ID of the player sending the message.
+     */
     @SubscribeMessage(SocketEvents.Game.Listen.Chat)
     async onPlayerChat(
         @ConnectedSocket() client: Socket,
@@ -190,5 +203,32 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         @PlayerIdWs() playerId: number
     ) {
         await this.gameService.handlePlayerChat(data.roomId, playerId, data.message, this.server);
+    }
+
+    /**
+     * Handles a general chat message from a player.
+     * @param {Socket} client - The socket client making the request.
+     * @param {GeneralChatDto} data - The data containing the message.
+     * @param {number} playerId - The ID of the player sending the message.
+     */
+    @SubscribeMessage(SocketEvents.GeneralChat.Listen.MessageUnique)
+    async onGeneralChatMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: GeneralChatDto,
+        @PlayerIdWs() playerId: number
+    ) {
+        if (!data?.message || typeof data.message !== 'string' || !data.message.trim()) {
+            client.emit(SocketEvents.GeneralChat.Listen.MessageUnique, { error: 'Invalid message content' });
+            return;
+        }
+
+        const payload = {
+            playerId,
+            message: data.message,
+            timestamp: Date.now(),
+        };
+
+        // Broadcast to all connected sockets
+        this.server.emit(SocketEvents.GeneralChat.Emit.MessageBroadcast, payload);
     }
 }

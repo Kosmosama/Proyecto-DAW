@@ -6,6 +6,14 @@ export const SocketEvents = {
             FriendOffline: 'friend:offline',
         },
     },
+    GeneralChat: {
+        Listen: {
+            MessageUnique: 'general:message:unique',
+        },
+        Emit: {
+            MessageBroadcast: 'general:message:broadcast',
+        },
+    },
     Matchmaking: {
         Listen: {
             Join: 'matchmaking:join',
