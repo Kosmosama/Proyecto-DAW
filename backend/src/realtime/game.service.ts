@@ -133,7 +133,7 @@ export class GameService {
      * @param {Server} server - The Socket.IO server instance.
      * @return {Promise<void>} No return value.
      */
-    async handlePlayerChat(roomId: string, playerId: number, message: string, server: Server): Promise<void> {
+    async handleGameRoomChat(roomId: string, playerId: number, message: string, server: Server): Promise<void> {
         if (!(await this.isPlayerInRoom(playerId, roomId))) {
             this.logger.warn(`Unauthorized chat attempt by player ${playerId} in room ${roomId}`);
             return;

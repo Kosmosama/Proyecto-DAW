@@ -168,6 +168,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         @MessageBody() data: BattleRequestCancelDto,
         @PlayerIdWs() playerId: number
     ) {
+        if (!data?.from || isNaN(Number(data.from))) {
+            client.emit(SocketEvents.Battle.Listen.Cancel, { error: 'Invalid or missing sender ID' });
+            return;
+        }
+
         try {
             await this.matchmakingService.cancelBattleRequest(playerId, data.from, this.server);
         } catch (err) {
@@ -187,7 +192,32 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         @MessageBody() data: GameActionDto,
         @PlayerIdWs() playerId: number
     ) {
-        await this.gameService.handlePlayerAction(playerId, data.roomId, data.action, this.server);
+        if (!data?.roomId || typeof data.roomId !== 'string') {
+            client.emit(SocketEvents.Game.Listen.Action, { error: 'Invalid or missing room ID' });
+            return;
+        }
+
+        const validTypes = ['switch', 'move', 'forfeit'];
+        if (!data?.action || !validTypes.includes(data.action.type)) {
+            client.emit(SocketEvents.Game.Listen.Action, { error: 'Invalid or missing action type' });
+            return;
+        }
+
+        if (data.action.type === 'switch' && (typeof data.action.pokeIndex !== 'number' || isNaN(data.action.pokeIndex))) {
+            client.emit(SocketEvents.Game.Listen.Action, { error: 'Invalid or missing pokeIndex for switch action' });
+            return;
+        }
+
+        if (data.action.type === 'move' && (typeof data.action.moveIndex !== 'number' || isNaN(data.action.moveIndex))) {
+            client.emit(SocketEvents.Game.Listen.Action, { error: 'Invalid or missing moveIndex for move action' });
+            return;
+        }
+
+        try {
+            await this.gameService.handlePlayerAction(playerId, data.roomId, data.action, this.server);
+        } catch (err) {
+            client.emit(SocketEvents.Game.Listen.Action, { error: err.message });
+        }
     }
 
     /**
@@ -197,12 +227,26 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
      * @param {number} playerId - The ID of the player sending the message.
      */
     @SubscribeMessage(SocketEvents.Game.Listen.Chat)
-    async onPlayerChat(
+    async onGameRoomChat(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: GameChatDto,
         @PlayerIdWs() playerId: number
     ) {
-        await this.gameService.handlePlayerChat(data.roomId, playerId, data.message, this.server);
+        if (!data?.roomId || typeof data.roomId !== 'string') {
+            client.emit(SocketEvents.Game.Listen.Chat, { error: 'Invalid or missing room ID' });
+            return;
+        }
+
+        if (!data?.message || typeof data.message !== 'string' || !data.message.trim()) {
+            client.emit(SocketEvents.Game.Listen.Chat, { error: 'Invalid message content' });
+            return;
+        }
+
+        try {
+            await this.gameService.handleGameRoomChat(data.roomId, playerId, data.message, this.server);
+        } catch (err) {
+            client.emit(SocketEvents.Game.Listen.Chat, { error: err.message });
+        }
     }
 
     /**
