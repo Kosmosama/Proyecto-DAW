@@ -42,7 +42,7 @@ export class MatchmakingService {
         const opponentIds = await this.redis.zrange(MATCHMAKING_QUEUE, 0, 0);
         if (opponentIds.length === 0) {
             await this.addToQueue(playerId, teamId);
-            this.logger.debug(`Player ${playerId} placed in matchmaking queue`);
+            // this.logger.debug(`Player ${playerId} placed in matchmaking queue`);
             return;
         }
 
@@ -87,7 +87,7 @@ export class MatchmakingService {
         pipeline.srem(MATCHMAKING_PLAYERS, pid);
         pipeline.del(`${MATCHMAKING_DATA_PREFIX}${pid}`);
         await pipeline.exec();
-        this.logger.debug(`Player ${playerId} left matchmaking`);
+        // this.logger.debug(`Player ${playerId} left matchmaking`);
     }
 
     /**
@@ -101,7 +101,7 @@ export class MatchmakingService {
      */
     async sendBattleRequest(from: number, to: number, teamId: number, server: Server): Promise<void> {
         if (from === to) throw new Error('Cannot send battle request to self');
-        this.logger.debug(`Battle request from ${from} to ${to} with team ID ${teamId}`);
+        // this.logger.debug(`Battle request from ${from} to ${to} with team ID ${teamId}`);
 
         if (!(await this.ensureFriendshipCached(from, to)))
             throw new Error('Players are not friends');
@@ -125,7 +125,7 @@ export class MatchmakingService {
         await this.redis.sadd(`${PLAYER_INCOMING_REQUESTS}:${to}`, key);
 
         await emitToPlayer(this.redis, server, to, SocketEvents.Battle.Emit.RequestReceived, { from });
-        this.logger.debug(`Battle request sent from ${from} to ${to}`);
+        // this.logger.debug(`Battle request sent from ${from} to ${to}`);
     }
 
     /**
@@ -145,7 +145,7 @@ export class MatchmakingService {
 
         if (existed) {
             await emitToPlayer(this.redis, server, to, SocketEvents.Battle.Emit.RequestCancelled, { from });
-            this.logger.debug(`Battle request from ${from} to ${to} cancelled`);
+            // this.logger.debug(`Battle request from ${from} to ${to} cancelled`);
         } else {
             this.logger.warn(`Attempted to cancel non-existent battle request from ${from} to ${to}`);
         }
@@ -189,10 +189,10 @@ export class MatchmakingService {
             this.teamService.findOne(to, toTeamId),
         ]);
 
-        this.logger.debug(`Friend battle accepted:
-            Player ${from} (Team ${request.fromTeamId})  
-            vs  
-            Player ${to} (Team ${toTeamId})`);
+        // this.logger.debug(`Friend battle accepted:
+        //     Player ${from} (Team ${request.fromTeamId})  
+        //     vs  
+        //     Player ${to} (Team ${toTeamId})`);
 
         this.gameService.createMatch(
             from,
@@ -220,7 +220,7 @@ export class MatchmakingService {
         pipeline.del(`${PLAYER_INCOMING_REQUESTS}:${pid}`);
         await pipeline.exec();
 
-        this.logger.debug(`Cleaned up ${outgoing.length + incoming.length} battle requests for player ${playerId}`);
+        // this.logger.debug(`Cleaned up ${outgoing.length + incoming.length} battle requests for player ${playerId}`);
     }
 
     private async addToQueue(playerId: number, teamId: number): Promise<void> {
@@ -231,7 +231,7 @@ export class MatchmakingService {
         pipeline.hset(`${MATCHMAKING_DATA_PREFIX}${pid}`, 'teamId', teamId.toString());
         pipeline.sadd(MATCHMAKING_PLAYERS, pid);
         await pipeline.exec();
-        this.logger.debug(`Added player ${playerId} to matchmaking queue`);
+        // this.logger.debug(`Added player ${playerId} to matchmaking queue`);
     }
 
     /**
@@ -263,10 +263,10 @@ export class MatchmakingService {
             this.teamService.findOne(p2.playerId, p2.teamId),
         ]);
 
-        this.logger.debug(`MATCH READY:
-            Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
-            /VS/
-            Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
+        // this.logger.debug(`MATCH READY:
+        //     Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
+        //     /VS/
+        //     Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
 
         this.gameService.createMatch(
             p1.playerId,
