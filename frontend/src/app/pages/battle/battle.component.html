@@ -1,16 +1,1 @@
-<div class="battle-chat-container">
-    <h3>Chat de Batalla</h3>
-    <div class="chat-messages"
-        style="height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem;">
-        @for (msg of messages(); track $index) {
-        <div>
-            {{ msg }}
-        </div>
-        }
-    </div>
-    <form (ngSubmit)="sendMessage()" class="d-flex gap-2">
-        <input type="text" class="form-control" [(ngModel)]="chatInput" name="chatInput"
-            placeholder="Escribe un mensaje..." autocomplete="off" required />
-        <button class="btn btn-primary" type="submit">Enviar</button>
-    </form>
-</div>
+BattleComponent works!

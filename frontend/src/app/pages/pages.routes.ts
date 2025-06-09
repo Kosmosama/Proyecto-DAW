@@ -20,5 +20,10 @@ export const pagesRoutes: Routes = [
         path: "battle",
         loadComponent: () => import("./battle/battle.component").then((c) => c.BattleComponent),
         title: "Battle | ShowDAW"
+    },
+    {
+        path: "chat",
+        loadComponent: () => import("./chat/chat.component").then((c) => c.ChatComponent),
+        title: "Chat | ShowDAW"
     }
 ];

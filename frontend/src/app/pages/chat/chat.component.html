@@ -1,0 +1,30 @@
+<div class="rotomphone-container">
+  <svg viewBox="0 0 1340 650" xmlns="http://www.w3.org/2000/svg" class="rotomphone-svg">
+    <rect x="20" y="40" width="1300" height="560" rx="200" ry="50" fill="#e74c3c" stroke="#a42d22" stroke-width="7" />
+    <path d="M120 40
+                 Q380 0 640 40
+                 Q900 80 1160 40
+                 Q1220 0 1280 40
+                 Z" fill="#c0392b" stroke="#a42d22" stroke-width="5" />
+    <path d="M560 600 L670 645 L780 600 Z" fill="#c0392b" stroke="#a42d22" stroke-width="5" />
+    <rect x="60" y="90" width="1220" height="470" rx="120" ry="30" fill="#fff" stroke="#444" stroke-width="4" />
+    <circle cx="400" cy="560" r="36" fill="#f39c12" />
+    <circle cx="940" cy="560" r="36" fill="#f39c12" />
+    <line x1="60" y1="560" x2="1280" y2="560" stroke="#d35400" stroke-width="8" stroke-linecap="round" />
+  </svg>
+
+  <div class="chat-screen">
+    <div class="chat-window">
+      @for(msg of messages(); track msg) {
+      <div class="message d-flex align-items-center">
+        <img [src]="(getUserAvatar(msg.playerId) | async) | avatarFallback"
+          alt="{{ (getUserName(msg.playerId) | async) || 'Usuario' }}'s avatar" class="avatar rounded-circle me-2"
+          width="40" height="40" />
+        <b class="me-2">{{ getUserName(msg.playerId) | async }}:</b> {{ msg.message }}
+      </div>
+      }
+    </div>
+    <input [(ngModel)]="newMessage" (keydown.enter)="send()" placeholder="Escribe un mensaje..." />
+
+  </div>
+</div>
