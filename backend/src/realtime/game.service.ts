@@ -166,7 +166,7 @@ export class GameService {
             const socket = await server.sockets.sockets.get(socketId);
             if (socket) {
                 socket.join(roomId);
-                this.logger.debug(`Socket ${socketId} of player ${playerId} joined room ${roomId}`);
+                // this.logger.debug(`Socket ${socketId} of player ${playerId} joined room ${roomId}`);
             }
 
             // Re-emit match found event so client can rehydrate UI state
@@ -352,7 +352,7 @@ export class GameService {
             roomId,
         });
 
-        this.logger.debug(`Match ${roomId} completed. Winner: ${winnerId}`);
+        // this.logger.debug(`Match ${roomId} completed. Winner: ${winnerId}`);
     }
 
     /**
@@ -370,7 +370,7 @@ export class GameService {
         const sockets = await server.in(socketIds).fetchSockets();
         for (const socket of sockets) {
             socket.join(roomId);
-            this.logger.debug(`Player ${playerId}'s socket ${socket.id} joined room ${roomId}`);
+            // this.logger.debug(`Player ${playerId}'s socket ${socket.id} joined room ${roomId}`);
         }
     }
 }

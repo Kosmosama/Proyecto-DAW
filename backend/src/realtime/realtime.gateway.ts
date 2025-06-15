@@ -45,7 +45,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
             const player = await this.authService.authenticateClient(client);
             client.data.playerId = player.id;
 
-            this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
+            // this.logger.debug(`Player ${player.id} connected with socket ${client.id}`);
             await this.statusService.handleNewConnection(client, player.id, this.server);
         } catch (err) {
             this.logger.warn(`Unauthorized socket connection: ${err.message}`);
@@ -64,7 +64,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
             return;
         }
 
-        this.logger.debug(`Player ${playerId} with socket id ${client.id} disconnected.`);
+        // this.logger.debug(`Player ${playerId} with socket id ${client.id} disconnected.`);
     }
 
     /**

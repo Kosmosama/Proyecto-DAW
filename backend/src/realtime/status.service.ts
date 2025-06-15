@@ -37,7 +37,7 @@ export class StatusService {
         if (this.disconnectTimers.has(playerId)) {
             clearTimeout(this.disconnectTimers.get(playerId)!);
             this.disconnectTimers.delete(playerId);
-            this.logger.debug(`Cancelled offline timer for player ${playerId} due to new connection.`);
+            // this.logger.debug(`Cancelled offline timer for player ${playerId} due to new connection.`);
             return;
         }
 
@@ -60,7 +60,7 @@ export class StatusService {
         if (!playerIdStr) return null;
 
         const playerId = parseInt(playerIdStr, 10);
-        this.logger.debug(`Handling disconnect for player ${playerId} with socket ${client.id}`);
+        // this.logger.debug(`Handling disconnect for player ${playerId} with socket ${client.id}`);
 
         await this.playerService.updateLastLogin(playerId);
 
@@ -70,7 +70,7 @@ export class StatusService {
         // Check if the player has any sockets left
         const remaining = await this.redis.scard(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
         if (remaining === 0) {
-            this.logger.debug(`Starting offline timer for player ${playerId}`);
+            // this.logger.debug(`Starting offline timer for player ${playerId}`);
 
             // Wait 5 seconds before officially marking the player offline (grace period)
             const timer = setTimeout(async () => {
@@ -85,16 +85,16 @@ export class StatusService {
                     await this.gameService.handlePlayerDisconnected(playerId, server);
 
                     await this.broadcastOfflineStatusToFriends(playerId, server);
-                    this.logger.debug(`Player ${playerId} is no longer online.`);
+                    // this.logger.debug(`Player ${playerId} is no longer online.`);
                 } else {
-                    this.logger.debug(`Player ${playerId} reconnected during grace period.`);
+                    // this.logger.debug(`Player ${playerId} reconnected during grace period.`);
                 }
                 this.disconnectTimers.delete(playerId);
             }, 5000);
 
             this.disconnectTimers.set(playerId, timer);
         } else {
-            this.logger.debug(`Player ${playerId} still has ${remaining} active socket(s).`);
+            // this.logger.debug(`Player ${playerId} still has ${remaining} active socket(s).`);
         }
 
         return playerId;
@@ -107,7 +107,7 @@ export class StatusService {
      * @returns {Promise<void>} No return value.
      */
     private async broadcastOnlineStatusToFriends(playerId: number, server: Server): Promise<void> {
-        this.logger.debug(`Broadcasting online status for player ${playerId} to friends`);
+        // this.logger.debug(`Broadcasting online status for player ${playerId} to friends`);
         const friends = await this.playerService.getFriends(playerId);
         const friendIds: number[] = (friends?.data ?? []).map((f: { id: number }) => f.id);
 
@@ -140,7 +140,7 @@ export class StatusService {
      * @returns {Promise<void>} No return value.
      */
     private async broadcastOfflineStatusToFriends(playerId: number, server: Server) {
-        this.logger.debug(`Broadcasting offline status for player ${playerId} to friends`);
+        // this.logger.debug(`Broadcasting offline status for player ${playerId} to friends`);
 
         // Retrieve and remove cached friend IDs from Redis
         const friendIdStrings = await this.redis.smembers(`${PLAYER_FRIENDS_PREFIX}${playerId}`);
