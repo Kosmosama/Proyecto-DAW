@@ -189,18 +189,18 @@ export class MatchmakingService {
             this.teamService.findOne(to, toTeamId),
         ]);
 
-        // this.logger.debug(`Friend battle accepted:
-        //     Player ${from} (Team ${request.fromTeamId})  
-        //     vs  
-        //     Player ${to} (Team ${toTeamId})`);
+        this.logger.debug(`Friend battle accepted:
+            Player ${from} (Team ${request.fromTeamId})  
+            vs  
+            Player ${to} (Team ${toTeamId})`);
 
-        this.gameService.createMatch(
-            from,
-            request.fromTeamId,
-            to,
-            toTeamId,
-            server,
-        );
+        // this.gameService.createMatch(
+        //     from,
+        //     request.fromTeamId,
+        //     to,
+        //     toTeamId,
+        //     server,
+        // );
     }
 
     /**
@@ -263,18 +263,18 @@ export class MatchmakingService {
             this.teamService.findOne(p2.playerId, p2.teamId),
         ]);
 
-        // this.logger.debug(`MATCH READY:
-        //     Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
-        //     /VS/
-        //     Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
+        this.logger.debug(`MATCH READY:
+            Player ${p1.playerId} Team: ${JSON.stringify(team1.data, null, 2)}
+            /VS/
+            Player ${p2.playerId} Team: ${JSON.stringify(team2.data, null, 2)}`);
 
-        this.gameService.createMatch(
-            p1.playerId,
-            p1.teamId,
-            p2.playerId,
-            p2.teamId,
-            server,
-        );
+        // this.gameService.createMatch(
+        //     p1.playerId,
+        //     p1.teamId,
+        //     p2.playerId,
+        //     p2.teamId,
+        //     server,
+        // );
 
         return true;
     }

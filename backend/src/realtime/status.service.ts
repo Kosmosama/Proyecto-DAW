@@ -37,7 +37,7 @@ export class StatusService {
         if (this.disconnectTimers.has(playerId)) {
             clearTimeout(this.disconnectTimers.get(playerId)!);
             this.disconnectTimers.delete(playerId);
-            // this.logger.debug(`Cancelled offline timer for player ${playerId} due to new connection.`);
+            await this.broadcastOnlineStatusToFriends(playerId, server, false);
             return;
         }
 
@@ -45,7 +45,10 @@ export class StatusService {
         const socketCount = await this.redis.scard(`${PLAYER_SOCKETS_PREFIX}${playerId}`);
         if (socketCount === 1) {
             await this.redis.sadd(ONLINE_PLAYERS, playerId.toString());
-            await this.broadcastOnlineStatusToFriends(playerId, server);
+            await this.broadcastOnlineStatusToFriends(playerId, server, true);
+        } else {
+            // Player already online with other sockets, just send online friends list to this new socket
+            await this.broadcastOnlineStatusToFriends(playerId, server, false);
         }
     }
 
@@ -106,8 +109,7 @@ export class StatusService {
      * @param {Server} server The Socket.IO server instance.
      * @returns {Promise<void>} No return value.
      */
-    private async broadcastOnlineStatusToFriends(playerId: number, server: Server): Promise<void> {
-        // this.logger.debug(`Broadcasting online status for player ${playerId} to friends`);
+    private async broadcastOnlineStatusToFriends(playerId: number, server: Server, notifyFriends = true): Promise<void> {
         const friends = await this.playerService.getFriends(playerId);
         const friendIds: number[] = (friends?.data ?? []).map((f: { id: number }) => f.id);
 
@@ -126,11 +128,15 @@ export class StatusService {
 
         const onlineFriendIds = friendIds.filter((_, i) => results?.[i]?.[1] === 1);
 
+        // Always send the online friends list to the reconnecting player
         await emitToPlayer(this.redis, server, playerId, SocketEvents.Friends.Emit.FriendsOnline, onlineFriendIds);
 
-        await Promise.all(
-            onlineFriendIds.map(id => emitToPlayer(this.redis, server, id, SocketEvents.Friends.Emit.FriendOnline, playerId))
-        );
+        // Only notify friends that this player is online if explicitly told to
+        if (notifyFriends) {
+            await Promise.all(
+                onlineFriendIds.map(id => emitToPlayer(this.redis, server, id, SocketEvents.Friends.Emit.FriendOnline, playerId))
+            );
+        }
     }
 
     /**
