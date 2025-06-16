@@ -157,11 +157,11 @@ export class TeamService {
             throw new BadRequestException('Team must contain 1 to 6 Pokémon');
         }
 
-        try {
-            await this.checkLegality(parsedTeam, gen, false);
-        } catch (err) {
-            throw new BadRequestException('Team legality check failed');
-        }
+        // try {
+        //     await this.checkLegality(parsedTeam, gen, false);
+        // } catch (err) {
+        //     throw new BadRequestException('Team legality check failed');
+        // }
 
         return parsedTeam;
     }
